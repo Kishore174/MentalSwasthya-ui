@@ -4,6 +4,7 @@ import {
   MdOutlineDashboard,
   MdPeopleOutline,
   MdSelfImprovement,
+  MdQueueMusic
 } from "react-icons/md";
 import { FiLogOut, FiChevronRight } from "react-icons/fi";
 import logo from "../Assets/logo.jpg";
@@ -24,9 +25,21 @@ const menuItems = [
     roles: ["admin", "individual", "user"],
   },
   {
-    name: "Meditation",
+    name: "Breathing",
     path: "/meditation",
     icon: MdSelfImprovement,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Affirmations",
+    path: "/affirmations",
+    icon: MdQueueMusic,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Meditation Playlist",
+    path: "/meditation-playlist",
+    icon: MdQueueMusic,
     roles: ["admin", "individual", "user"],
   },
   {

@@ -9,7 +9,8 @@ import SplashScreen from "./Admin/SplashScreen";
 import AboutMentalSwasthya from "./Admin/AboutMentalSwasthya";
 import Dashboard from "./Admin/Dashboard";
 import MeditationScreen from "./Admin/MeditationScreen";
- 
+import AffirmationsScreen from "./Admin/AffirmationsScreen";
+import MeditationPlaylistScreen from "./Admin/MeditationPlaylistScreen";
 
 function App() {
   return (
@@ -26,8 +27,9 @@ function App() {
   <Route path="/" element={<Mainfol />}>
     <Route index element={<Dashboard />} />
     <Route path="meditation" element={<MeditationScreen />} />
+    <Route path="affirmations" element={<AffirmationsScreen />} />
+    <Route path="meditation-playlist" element={<MeditationPlaylistScreen />} />
     {/* <Route path="users" element={<Users />} /> */}
- 
 
 
   </Route>
