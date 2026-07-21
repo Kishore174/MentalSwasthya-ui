@@ -111,18 +111,29 @@ const AboutMentalSwasthya = () => {
   const [heroVisible, setHeroVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
 
+  const isEmbedded = false;
+
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 60);
     return () => clearTimeout(t);
   }, []);
 
   const handleContinue = () => {
-    markAboutSeen(user);
-    navigate("/", { replace: true });
+    if (window.location.pathname.includes("/app")) {
+      navigate("/app/meditation");
+    } else {
+      markAboutSeen(user);
+      navigate("/app", { replace: true });
+    }
   };
 
   return (
-    <div style={{ background: "#f7f9f4", fontFamily: "'DM Sans', sans-serif", minHeight: "100vh" }}>
+    <div style={{ 
+      background: "#f7f9f4", 
+      fontFamily: "'DM Sans', sans-serif", 
+      minHeight: "100vh",
+      overflow: "hidden",
+    }}>
 
       {/* ══════════════════════════ HERO ══════════════════════════ */}
       <header style={{
@@ -164,37 +175,39 @@ const AboutMentalSwasthya = () => {
         </svg>
 
         {/* Nav bar */}
-        <div style={{
-          position: "relative", zIndex: 10,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "28px 48px",
-          opacity: heroVisible ? 1 : 0,
-          transform: heroVisible ? "none" : "translateY(-14px)",
-          transition: "opacity 0.7s 0.1s, transform 0.7s 0.1s",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src={loginicon} alt="logo" style={{
-              width: 40, height: 40, borderRadius: 11,
-              objectFit: "cover",
-              border: "1px solid rgba(168,200,150,0.22)",
-              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-            }} />
-            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.6)" }}>
-              MentalSwasthya
-            </span>
-          </div>
+        {!isEmbedded && (
           <div style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "8px 16px", borderRadius: 99,
-            background: "rgba(125,150,103,0.12)",
-            border: "0.5px solid rgba(168,200,150,0.2)",
+            position: "relative", zIndex: 10,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "28px 48px",
+            opacity: heroVisible ? 1 : 0,
+            transform: heroVisible ? "none" : "translateY(-14px)",
+            transition: "opacity 0.7s 0.1s, transform 0.7s 0.1s",
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,0.6)" }} />
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.55)" }}>
-              First Time Guide
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <img src={loginicon} alt="logo" style={{
+                width: 40, height: 40, borderRadius: 11,
+                objectFit: "cover",
+                border: "1px solid rgba(168,200,150,0.22)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              }} />
+              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.6)" }}>
+                MentalSwasthya
+              </span>
+            </div>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 7,
+              padding: "8px 16px", borderRadius: 99,
+              background: "rgba(125,150,103,0.12)",
+              border: "0.5px solid rgba(168,200,150,0.2)",
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,0.6)" }} />
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.55)" }}>
+                First Time Guide
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hero content */}
         <div style={{
@@ -455,15 +468,15 @@ const AboutMentalSwasthya = () => {
           }}>
             <div>
               <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "#9aab8d", marginBottom: 10 }}>
-                This page appears only on first sign-in
+                {isEmbedded ? "Jump back into practice" : "This page appears only on first sign-in"}
               </p>
               <h4 style={{
                 fontFamily: "'Cormorant Garamond', serif",
                 fontSize: "clamp(1.6rem, 3vw, 2.4rem)", fontWeight: 600,
                 color: "#1a2416", letterSpacing: "-0.02em", lineHeight: 1.1,
               }}>
-                Ready to begin your<br />
-                <em style={{ fontStyle: "italic", color: "#7d9667" }}>wellness journey?</em>
+                {isEmbedded ? "Ready to start your" : "Ready to begin your"}<br />
+                <em style={{ fontStyle: "italic", color: "#7d9667" }}>{isEmbedded ? "daily breathing practice?" : "wellness journey?"}</em>
               </h4>
             </div>
 
@@ -500,7 +513,7 @@ const AboutMentalSwasthya = () => {
               onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.97)"; }}
               onMouseUp={(e) => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; }}
             >
-              Continue to Dashboard
+              {isEmbedded ? "Explore Breathing Exercises" : "Continue to Dashboard"}
               <span style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 width: 28, height: 28, borderRadius: "50%",

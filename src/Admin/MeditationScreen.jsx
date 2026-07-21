@@ -14,41 +14,120 @@ import {
   startBreathingSession,
 } from "../Api/breathingApi";
 
+const presets = {
+  triangle: [
+    {
+      label: "4-7-8",
+      displayTechnique: "4-7-8 Breathing",
+      apiTechniqueCandidates: ["4-7-8", "4-7-8 Breathing", "triangle", "Triangle"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Hold", seconds: 7 },
+        { name: "Exhale", seconds: 8 },
+      ],
+    },
+    {
+      label: "4-4-8",
+      displayTechnique: "4-4-8 Breathing",
+      apiTechniqueCandidates: ["4-4-8", "4-4-8 Breathing", "triangle", "Triangle"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Hold", seconds: 4 },
+        { name: "Exhale", seconds: 8 },
+      ],
+    },
+    {
+      label: "5-2-7",
+      displayTechnique: "5-2-7 Breathing",
+      apiTechniqueCandidates: ["5-2-7", "5-2-7 Breathing", "triangle", "Triangle"],
+      phases: [
+        { name: "Inhale", seconds: 5 },
+        { name: "Hold", seconds: 2 },
+        { name: "Exhale", seconds: 7 },
+      ],
+    },
+  ],
+  box: [
+    {
+      label: "4-4-4-4",
+      displayTechnique: "4-4-4-4 Box Breathing",
+      apiTechniqueCandidates: ["4-4-4-4", "4-4-4-4 Breathing", "box", "Box"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Hold", seconds: 4 },
+        { name: "Exhale", seconds: 4 },
+        { name: "Hold", seconds: 4 },
+      ],
+    },
+    {
+      label: "5-2-7-2",
+      displayTechnique: "5-2-7-2 Box Breathing",
+      apiTechniqueCandidates: ["5-2-7-2", "5-2-7-2 Breathing", "box", "Box"],
+      phases: [
+        { name: "Inhale", seconds: 5 },
+        { name: "Hold", seconds: 2 },
+        { name: "Exhale", seconds: 7 },
+        { name: "Hold", seconds: 2 },
+      ],
+    },
+    {
+      label: "4-4-6-2",
+      displayTechnique: "4-4-6-2 Box Breathing",
+      apiTechniqueCandidates: ["4-4-6-2", "4-4-6-2 Breathing", "box", "Box"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Hold", seconds: 4 },
+        { name: "Exhale", seconds: 6 },
+        { name: "Hold", seconds: 2 },
+      ],
+    },
+  ],
+  circle: [
+    {
+      label: "4-4",
+      displayTechnique: "4-4 Breathing",
+      apiTechniqueCandidates: ["4-4", "4-4 Breathing", "circle", "Circle"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Exhale", seconds: 4 },
+      ],
+    },
+    {
+      label: "5-7",
+      displayTechnique: "5-7 Breathing",
+      apiTechniqueCandidates: ["5-7", "5-7 Breathing", "circle", "Circle"],
+      phases: [
+        { name: "Inhale", seconds: 5 },
+        { name: "Exhale", seconds: 7 },
+      ],
+    },
+    {
+      label: "4-6",
+      displayTechnique: "4-6 Breathing",
+      apiTechniqueCandidates: ["4-6", "4-6 Breathing", "circle", "Circle"],
+      phases: [
+        { name: "Inhale", seconds: 4 },
+        { name: "Exhale", seconds: 6 },
+      ],
+    },
+  ],
+};
+
 const techniques = {
   triangle: {
     label: "Triangle",
-    displayTechnique: "4-7-8 Breathing",
-    apiTechniqueCandidates: ["4-7-8", "triangle", "Triangle", "4-7-8 Breathing"],
     shape: "triangle",
-    phases: [
-      { name: "Inhale", seconds: 4 },
-      { name: "Hold", seconds: 7 },
-      { name: "Exhale", seconds: 8 },
-    ],
   },
   box: {
     label: "Box",
-    displayTechnique: "4-4-4-4 Breathing",
-    apiTechniqueCandidates: ["4-4-4-4", "box", "Box", "4-4-4-4 Breathing"],
     shape: "box",
-    phases: [
-      { name: "Inhale", seconds: 4 },
-      { name: "Hold", seconds: 4 },
-      { name: "Exhale", seconds: 4 },
-      { name: "Hold", seconds: 4 },
-    ],
   },
   circle: {
     label: "Circle",
-    displayTechnique: "4-4 Breathing",
-    apiTechniqueCandidates: ["4-4", "circle", "Circle", "4-4 Breathing"],
     shape: "circle",
-    phases: [
-      { name: "Inhale", seconds: 4 },
-      { name: "Exhale", seconds: 4 },
-    ],
   },
 };
+
 
 const durations = [
   { label: "1 min", value: 60 },
@@ -103,6 +182,7 @@ const isLocalSession = (id) => typeof id === "string" && id.startsWith("local-")
 
 const MeditationScreen = () => {
   const [selectedTechnique, setSelectedTechnique] = useState("triangle");
+  const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(180);
   const [customDurationMinutes, setCustomDurationMinutes] = useState("");
   const [customDurationSeconds, setCustomDurationSeconds] = useState("");
@@ -119,7 +199,17 @@ const MeditationScreen = () => {
   const [historyCount, setHistoryCount] = useState(0);
   const completedRef = useRef(false);
 
-  const config = techniques[selectedTechnique];
+  const activePreset = presets[selectedTechnique][selectedPresetIndex];
+  const config = useMemo(() => {
+    return {
+      shape: selectedTechnique,
+      label: techniques[selectedTechnique].label,
+      displayTechnique: activePreset.displayTechnique,
+      apiTechniqueCandidates: activePreset.apiTechniqueCandidates,
+      phases: activePreset.phases,
+    };
+  }, [selectedTechnique, activePreset]);
+
   const cycleSeconds = config.phases.reduce((total, phase) => total + phase.seconds, 0);
   const totalCycles = Math.max(1, Math.ceil(durationSeconds / cycleSeconds));
   const progress = durationSeconds ? Math.min(100, (elapsedSeconds / durationSeconds) * 100) : 0;
@@ -198,6 +288,7 @@ const MeditationScreen = () => {
 
   const handleTechniqueChange = (key) => {
     setSelectedTechnique(key);
+    setSelectedPresetIndex(0);
     resetLocalSession();
   };
 
@@ -345,6 +436,188 @@ const MeditationScreen = () => {
     );
   }
 
+  const isSessionActive = sessionId !== null;
+
+  if (isSessionActive) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
+        {/* Glowing aura behind shape */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[450px] md:h-[450px] bg-[#7d9667]/15 rounded-full blur-[80px] pointer-events-none transition-transform duration-1000"
+             style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
+
+        {/* Top bar with minimal info and stop/exit button */}
+        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in">
+          <div className="text-left">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
+              {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
+            </span>
+            <h3 className="text-sm font-bold text-white/50">
+              Cycle {Math.min(cyclesCompleted + 1, totalCycles)} of {totalCycles}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={handleStop}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            title="Exit Full View"
+          >
+            <FiSquare size={16} />
+          </button>
+        </div>
+
+        {/* Center content: the breathing shape & active phase */}
+        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
+          <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] flex items-center justify-center">
+            {/* Outer animated breathing circle progress indicator */}
+            <svg className="absolute inset-0 -rotate-90 w-full h-full" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+              <circle
+                cx="60"
+                cy="60"
+                r="54"
+                fill="none"
+                stroke="#a8c896"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 54}`}
+                strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
+                style={{ transition: "stroke-dashoffset 0.5s ease" }}
+              />
+            </svg>
+
+            {/* Breathing shape with animated scale */}
+            <div className={`breath-shape-full ${config.shape} ${isRunning ? "is-running" : ""}`}>
+              <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none">
+                {isRunning ? currentPhase.name : "Paused"}
+              </span>
+            </div>
+          </div>
+
+          {/* Large timer */}
+          <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-8">
+            {formatTime(remainingSeconds)}
+          </h2>
+
+          {/* Detailed phase sequence tracker */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
+            {config.phases.map((p, idx) => {
+              const isActive = isRunning && p.name === currentPhase.name;
+              return (
+                <React.Fragment key={idx}>
+                  <span
+                    className={`px-3 py-1.5 rounded-xl transition-all ${
+                      isActive
+                        ? "bg-[#7d9667] text-white font-extrabold shadow-lg shadow-[#7d9667]/20 scale-105 border border-[#7d9667]/30"
+                        : "bg-white/5 text-white/50 border border-white/5"
+                    }`}
+                  >
+                    {p.name} ({p.seconds}s)
+                  </span>
+                  {idx < config.phases.length - 1 && (
+                    <span className="text-white/20 mx-0.5">•</span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Bottom bar with controls */}
+        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => setSoundOn(!soundOn)}
+              className="text-white/60 hover:text-white transition-colors"
+              title="Toggle Sound"
+            >
+              {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setVibrationOn(!vibrationOn)}
+              className={`transition-colors ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
+              title="Toggle Vibration"
+            >
+              <FiZap size={20} />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isRunning ? (
+              <button
+                type="button"
+                onClick={() => setIsRunning(false)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all"
+              >
+                <FiPause />
+                Pause
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsRunning(true)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse"
+              >
+                <FiPlay />
+                Resume
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleStop}
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all"
+            >
+              <FiSquare />
+              Stop
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          .breath-shape-full {
+            width: 180px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: linear-gradient(145deg, #7d9667, #9db98a);
+            box-shadow: 0 0 50px rgba(168, 200, 150, 0.4);
+            transition: border-radius 0.4s ease, clip-path 0.4s ease;
+          }
+
+          .breath-shape-full.circle {
+            border-radius: 999px;
+          }
+
+          .breath-shape-full.box {
+            border-radius: 36px;
+          }
+
+          .breath-shape-full.triangle {
+            border-radius: 0;
+            clip-path: polygon(50% 0%, 100% 88%, 0% 88%);
+            padding-top: 45px;
+          }
+
+          .breath-shape-full.is-running {
+            animation: breatheScaleFull ${cycleSeconds}s ease-in-out infinite;
+          }
+
+          @keyframes breatheScaleFull {
+            0%, 100% { transform: scale(0.82); opacity: 0.9; }
+            42% { transform: scale(1.18); opacity: 1; box-shadow: 0 0 70px rgba(168, 200, 150, 0.5); }
+            68% { transform: scale(1.18); opacity: 1; box-shadow: 0 0 70px rgba(168, 200, 150, 0.5); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-130px)] rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
@@ -360,21 +633,43 @@ const MeditationScreen = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(techniques).map(([key, item]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => handleTechniqueChange(key)}
-              className={`rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${
-                selectedTechnique === key
-                  ? "bg-[#7d9667] text-white shadow-lg shadow-[#7d9667]/25"
-                  : "bg-white text-gray-400 hover:text-[#7d9667]"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="flex flex-col items-end gap-2 w-full lg:w-auto">
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(techniques).map(([key, item]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => handleTechniqueChange(key)}
+                className={`rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${
+                  selectedTechnique === key
+                    ? "bg-[#7d9667] text-white shadow-lg shadow-[#7d9667]/25"
+                    : "bg-white text-gray-400 hover:text-[#7d9667]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-1 bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-gray-100/50 shadow-sm mt-1">
+            {presets[selectedTechnique].map((preset, index) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  setSelectedPresetIndex(index);
+                  resetLocalSession();
+                }}
+                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${
+                  selectedPresetIndex === index
+                    ? "bg-[#7d9667] text-white shadow-sm"
+                    : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -409,9 +704,31 @@ const MeditationScreen = () => {
             <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
               {formatTime(remainingSeconds)}
             </h2>
-            <p className="text-sm text-gray-400 mt-3">
+            <p className="text-sm text-gray-400 mt-2">
               Cycle {Math.min(cyclesCompleted + 1, totalCycles)}/{totalCycles}
             </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-gray-400 mt-4 font-semibold max-w-[90%]">
+              {config.phases.map((p, idx) => {
+                const isActive = isRunning && p.name === currentPhase.name;
+                return (
+                  <React.Fragment key={idx}>
+                    <span
+                      className={`px-2 py-1 rounded-lg transition-all ${
+                        isActive
+                          ? "bg-[#eef6ea] text-[#7d9667] font-extrabold border border-[#7d9667]/20 scale-105"
+                          : "bg-gray-50 text-gray-400"
+                      }`}
+                    >
+                      {p.name} ({p.seconds}s)
+                    </span>
+                    {idx < config.phases.length - 1 && (
+                      <span className="text-gray-300 mx-0.5">•</span>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
 
             <div className="flex flex-wrap justify-center gap-3 mt-8">
               <button

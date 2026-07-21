@@ -1,11 +1,21 @@
 import React, { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Footer from './Footer'
 
 const Mainfol = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const isAboutPage = location.pathname === "/app/about";
+  
+  if (isAboutPage) {
+    return (
+      <div className='w-full min-h-screen bg-[#f7f9f4]'>
+        <Outlet />
+      </div>
+    )
+  }
   
   return (
     <div className='flex flex-1 min-h-screen bg-[#f6f9f3]'>

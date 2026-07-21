@@ -11,9 +11,9 @@ const MeditationPlaylistScreen = () => {
       subtitle="A curated collection of guided meditations and ambient sounds to help you find balance, reduce stress, and achieve calm."
       coverImage={coverImage}
       apiEndpoint="/meditation"
-      themeColor="#508c9f" // Approximate color from the screenshot for inputs
-      bgGradient="bg-gradient-to-br from-[#e8f4f6] via-[#f5fbfb] to-[#dcf0f3]"
-      buttonBg="bg-[#508c9f]"
+      themeColor="#7d9667"
+      bgGradient="bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb]"
+      buttonBg="bg-[#7d9667]"
     />
   );
 };

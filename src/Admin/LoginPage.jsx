@@ -26,191 +26,6 @@ const getAuthPayload = (responseData) => {
   return { token, user };
 };
 
-/* ─── Decorative SVG panel ───────────────────────────────── */
-const ForestPanel = ({ isRegister }) => (
-  <div
-    className="hidden md:flex flex-col justify-between relative overflow-hidden h-full"
-    style={{
-      background: "linear-gradient(160deg, #162314 0%, #1e3019 50%, #0f1a0d 100%)",
-      fontFamily: "'DM Sans', sans-serif",
-    }}
-  >
-    {/* Dot-grid texture */}
-    <svg className="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1.2" fill="#a8c896" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#dots)" />
-    </svg>
-
-    {/* Large decorative circle */}
-    <div
-      className="absolute rounded-full opacity-10"
-      style={{
-        width: 420, height: 420,
-        background: "radial-gradient(circle, #7d9667 0%, transparent 70%)",
-        right: -140, top: -80,
-      }}
-    />
-    <div
-      className="absolute rounded-full opacity-[0.06]"
-      style={{ width: 300, height: 300, border: "1.5px solid #a8c896", right: -60, top: 60 }}
-    />
-    <div
-      className="absolute rounded-full opacity-[0.04]"
-      style={{ width: 200, height: 200, border: "1px solid #a8c896", right: -20, top: 110 }}
-    />
-
-    {/* Botanical leaf — top left */}
-    <svg
-      className="absolute opacity-[0.13]"
-      style={{ top: 30, left: -10, width: 160, height: 160 }}
-      viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M80 140 C20 100 10 30 80 10 C150 30 140 100 80 140Z" fill="#7d9667" />
-      <path d="M80 140 L80 10" stroke="#a8c896" strokeWidth="0.8" strokeDasharray="3 4" />
-      <path d="M80 50 C95 55 105 65 100 80" stroke="#a8c896" strokeWidth="0.6" />
-      <path d="M80 70 C65 75 55 85 60 100" stroke="#a8c896" strokeWidth="0.6" />
-      <path d="M80 90 C92 92 100 100 97 112" stroke="#a8c896" strokeWidth="0.6" />
-    </svg>
-
-    {/* Bottom-left botanical */}
-    <svg
-      className="absolute opacity-[0.10]"
-      style={{ bottom: 60, left: 20, width: 120, height: 120, transform: "rotate(30deg)" }}
-      viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M60 110 C10 80 10 20 60 5 C110 20 110 80 60 110Z" fill="#7d9667" />
-      <path d="M60 110 L60 5" stroke="#a8c896" strokeWidth="0.7" strokeDasharray="3 3" />
-    </svg>
-
-    {/* Content — top */}
-    <div className="relative z-10 p-9 pt-10">
-      {/* Live badge */}
-      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-        style={{ background: "rgba(125,150,103,0.18)", border: "0.5px solid rgba(168,200,150,0.25)" }}>
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ animation: "pulse 2s infinite" }} />
-        <span className="text-[10px] font-semibold tracking-[0.16em] uppercase" style={{ color: "#a8c896" }}>
-          Live Platform
-        </span>
-      </div>
-
-      {/* Logo + Brand */}
-      <div className="mt-8 flex items-center gap-4">
-        <img
-          src={loginicon}
-          alt="MentalSwasthya logo"
-          style={{
-            width: 54, height: 54,
-            borderRadius: 14,
-            objectFit: "cover",
-            border: "1.5px solid rgba(168,200,150,0.22)",
-            boxShadow: "0 4px 18px rgba(0,0,0,0.35)",
-          }}
-        />
-        <div>
-          <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1"
-            style={{ color: "rgba(168,200,150,0.55)" }}>
-            MentalSwasthya
-          </p>
-          <h2
-            className="leading-tight"
-            style={{
-              fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(1.5rem, 2.8vw, 2.1rem)",
-              fontWeight: 600,
-              color: "#e8f0e3",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {isRegister ? (
-              <>Begin Your <em style={{ fontStyle: "italic", color: "#a8c896" }}>Wellness</em> Story</>
-            ) : (
-              <>Your Mind, <em style={{ fontStyle: "italic", color: "#a8c896" }}>Your Space</em></>
-            )}
-          </h2>
-        </div>
-      </div>
-    </div>
-
-    {/* Content — bottom */}
-    <div className="relative z-10 p-9 pb-10">
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        {[
-          { icon: "◎", label: "Guided Breathing" },
-          { icon: "◈", label: "Daily Streaks" },
-          { icon: "◉", label: "Wellness Insights" },
-        ].map(({ icon, label }) => (
-          <div
-            key={label}
-            className="rounded-2xl p-3.5"
-            style={{ background: "rgba(125,150,103,0.10)", border: "0.5px solid rgba(168,200,150,0.15)" }}
-          >
-            <span className="text-lg mb-2 block" style={{ color: "#7d9667" }}>{icon}</span>
-            <p className="text-[11px] font-medium leading-snug" style={{ color: "rgba(232,240,227,0.65)" }}>
-              {label}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div className="h-px w-full mb-5" style={{ background: "rgba(168,200,150,0.12)" }} />
-      <p className="text-xs leading-relaxed" style={{ color: "rgba(168,200,150,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
-        Breathing · Focus · Relaxation · Insights
-      </p>
-    </div>
-
-    <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
-  </div>
-);
-
-/* ─── Floating label input ───────────────────────────────── */
-const Field = ({ label, name, type = "text", value, onChange, placeholder, required, minLength, suffix, compact }) => (
-  <div className="relative">
-    <label
-      className="block font-semibold uppercase tracking-[0.13em] mb-1.5"
-      style={{ color: "#9aab8d", fontSize: compact ? "9.5px" : "10.5px" }}
-    >
-      {label}
-    </label>
-    <div
-      className="flex items-center rounded-xl transition-all"
-      style={{ background: "#f4f7f1", border: "1.5px solid #e0e9d9" }}
-      onFocusCapture={(e) => {
-        e.currentTarget.style.borderColor = "#7d9667";
-        e.currentTarget.style.background = "#ffffff";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(125,150,103,0.10)";
-      }}
-      onBlurCapture={(e) => {
-        e.currentTarget.style.borderColor = "#e0e9d9";
-        e.currentTarget.style.background = "#f4f7f1";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        minLength={minLength}
-        className="flex-1 bg-transparent outline-none text-sm px-4"
-        style={{
-          color: "#1a2416",
-          fontFamily: "'DM Sans', sans-serif",
-          fontWeight: 400,
-          paddingTop: compact ? "9px" : "14px",
-          paddingBottom: compact ? "9px" : "14px",
-        }}
-      />
-      {suffix && <div className="pr-3">{suffix}</div>}
-    </div>
-  </div>
-);
-
-/* ─── Main component ─────────────────────────────────────── */
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -219,11 +34,11 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) navigate("/");
+    if (token) navigate("/app");
   }, [navigate]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -232,7 +47,7 @@ const LoginPage = () => {
     setAuthMode(mode);
     setShowPassword(false);
     setShowConfirmPassword(false);
-    setForm({ name: "", email: "", password: "", confirmPassword: "" });
+    setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
   };
 
   const handleSubmit = async (e) => {
@@ -244,9 +59,19 @@ const LoginPage = () => {
     setLoading(true);
     try {
       if (authMode === "register") {
-        const res = await registerUser({ name: form.name.trim(), email: form.email.trim(), password: form.password });
+        const res = await registerUser({ 
+          name: form.name.trim(), 
+          email: form.email.trim(), 
+          password: form.password,
+          referralCode: form.referralCode.trim()
+        });
         const { token, user } = getAuthPayload(res.data);
-        if (token) { login(token, user); toast.success("Account created. Welcome!"); navigate("/splash", { replace: true }); return; }
+        if (token) { 
+          login(token, user); 
+          toast.success("Account created. Welcome!"); 
+          navigate("/splash", { replace: true }); 
+          return; 
+        }
         toast.success("Account created. Please sign in.");
         switchMode("login");
         setForm((f) => ({ ...f, email: form.email.trim() }));
@@ -272,278 +97,246 @@ const LoginPage = () => {
 
   const isRegister = authMode === "register";
 
-  const EyeBtn = ({ show, onToggle }) => (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
-      style={{ color: "#9aab8d" }}
-    >
-      {show ? <FiEyeOff size={14} /> : <FiEye size={14} />}
-    </button>
-  );
-
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ background: "#eef2ea", fontFamily: "'DM Sans', sans-serif" }}
+      className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
-      {/* Card */}
-      <div
-        className="w-full overflow-hidden"
-        style={{
-          maxWidth: 980,
-          borderRadius: 28,
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          boxShadow: "0 24px 80px rgba(22,35,20,0.14), 0 4px 16px rgba(22,35,20,0.06)",
-          background: "#ffffff",
-          /* Let card grow with content — no fixed minHeight */
-        }}
-      >
-        {/* ── Left panel ── */}
-        <ForestPanel isRegister={isRegister} />
+      {/* ── Background Split Screen (Forest green & Light Mint) ── */}
+      <div className="absolute inset-0 w-full h-full flex select-none pointer-events-none">
+        <div className="w-1/2 h-full bg-[#052012]" />
+        <div className="w-1/2 h-full bg-[#eef5e7]" />
+      </div>
 
-        {/* ── Right: Form panel ── */}
-        <div
-          className="flex flex-col justify-center col-span-2 md:col-span-1"
-          style={{
-            background: "#ffffff",
-            /* Tighter padding in register to keep everything visible */
-            padding: isRegister ? "28px 40px" : "40px 40px",
-          }}
-        >
-          {/* Mobile logo */}
-          <div className="flex justify-center mb-5 md:hidden">
-            <img src={loginicon} alt="logo" className="h-14 w-auto object-contain rounded-2xl" />
+      {/* Decorative leaf/wellness icons matching the mock image corners */}
+      <div className="absolute top-6 left-6 text-white/20 opacity-30 select-none pointer-events-none hidden md:block">
+        <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L7.58,20.43C9.37,20.8 11.23,20.41 12.83,19.38C16.89,16.76 18.23,11.43 17,8M12.24,17.42C10.74,18.06 9,17.79 7.69,16.63C6,15.11 6.09,12.39 7.82,11C11.5,8 14.5,10.5 12.24,17.42Z" />
+        </svg>
+      </div>
+      <div className="absolute top-6 right-6 text-[#052012]/15 opacity-40 select-none pointer-events-none hidden md:block">
+        <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm-5-3.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5zm6.5-6c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5-1.5-.67-1.5-1.5.67-1.5 1.5-1.5z" />
+        </svg>
+      </div>
+      <div className="absolute bottom-6 left-6 text-white/20 opacity-30 select-none pointer-events-none hidden md:block">
+        <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9s9-4.03 9-9c0-4.97-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" />
+        </svg>
+      </div>
+      <div className="absolute bottom-6 right-6 text-[#052012]/15 opacity-40 select-none pointer-events-none hidden md:block">
+        <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2a10 10 0 0 0-10 10c0 5.52 4.48 10 10 10s10-4.48 10-10A10 10 0 0 0 12 2zm1 14H11V11H13V16zm0-7H11V7H13V9z" />
+        </svg>
+      </div>
+
+      {/* ─── Premium Split-Panel Login Card ─── */}
+      <div className="w-full max-w-[960px] bg-white rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row min-h-[560px]">
+        
+        {/* Left panel: Original logo and Serif Brand */}
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
+          
+          {/* Actual branding logo image */}
+          <img 
+            src={loginicon} 
+            alt="logo" 
+            className="w-36 h-36 object-cover rounded-3xl border border-gray-150 shadow-md mb-6" 
+          />
+
+          {/* Title Serif */}
+          <h1
+            className="text-[#0a331c] tracking-tight font-medium text-center"
+            style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: "2.75rem",
+              lineHeight: "1.1"
+            }}
+          >
+            Mental Swasthya
+          </h1>
+
+          {/* Separator leaf line */}
+          <div className="flex items-center justify-center gap-3.5 w-3/5 my-4">
+            <div className="h-[1px] bg-gray-200 flex-grow" />
+            <svg className="w-3.5 h-3.5 text-[#0a331c] opacity-80" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L7.58,20.43C9.37,20.8 11.23,20.41 12.83,19.38C16.89,16.76 18.23,11.43 17,8M12.24,17.42C10.74,18.06 9,17.79 7.69,16.63C6,15.11 6.09,12.39 7.82,11C11.5,8 14.5,10.5 12.24,17.42Z" />
+            </svg>
+            <div className="h-[1px] bg-gray-200 flex-grow" />
           </div>
 
-          {/* Header */}
-          <div style={{ marginBottom: isRegister ? "18px" : "28px" }}>
-            <span
-              className="inline-block text-[10px] font-semibold tracking-[0.18em] uppercase px-3 py-1 rounded-full"
-              style={{
-                background: "rgba(125,150,103,0.10)",
-                color: "#5c7a4a",
-                marginBottom: isRegister ? "14px" : "18px",
-                display: "inline-block",
-              }}
-            >
-              MentalSwasthya Portal
-            </span>
+          {/* Subtext */}
+          <p className="text-gray-400 text-xs font-medium tracking-wide text-center">
+            Empowering your wellness, every single day
+          </p>
 
-            {/* Logo + title row — shown only in register on desktop for visual anchor */}
+        </div>
+
+        {/* Right panel: Dark Green Form and Google OAuth button */}
+        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
+          
+          <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
+            {isRegister ? "Sign Up" : "Sign In"}
+          </h2>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
-              <div className="hidden md:flex items-center gap-3 mb-3">
-                <img
-                  src={loginicon}
-                  alt="logo"
-                  style={{
-                    width: 38, height: 38,
-                    borderRadius: 10,
-                    objectFit: "cover",
-                    border: "1.5px solid #e0e9d9",
-                  }}
-                />
-                <div>
-                  <h1
-                    style={{
-                      fontFamily: "'Cormorant Garamond', serif",
-                      fontSize: "1.75rem",
-                      fontWeight: 600,
-                      color: "#1a2416",
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.15,
-                    }}
-                  >
-                    Create Account
-                  </h1>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Full Name</label>
+                <div className="relative">
+                  <FiUser className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    placeholder="Enter name"
+                    value={form.name}
+                    onChange={handleChange}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                  />
                 </div>
               </div>
             )}
 
-            {!isRegister && (
-              <h1
-                style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: "2.3rem",
-                  fontWeight: 600,
-                  color: "#1a2416",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.2,
-                }}
-              >
-                Welcome Back
-              </h1>
-            )}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Username or Email Address</label>
+              <div className="relative">
+                <FiMail className="absolute left-4 top-3.5 text-gray-400/80" />
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="Enter email address"
+                  value={form.email}
+                  onChange={handleChange}
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                />
+              </div>
+            </div>
 
-            {/* Mobile register heading */}
-            {isRegister && (
-              <h1
-                className="md:hidden"
-                style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: "2rem",
-                  fontWeight: 600,
-                  color: "#1a2416",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.2,
-                }}
-              >
-                Create Account
-              </h1>
-            )}
-
-            <p className="text-sm mt-1" style={{ color: "#8fa384", fontWeight: 400, fontSize: isRegister ? "12px" : "14px" }}>
-              {isRegister
-                ? "Register to start your wellness journey"
-                : "Sign in to continue your wellness journey"}
-            </p>
-          </div>
-
-          {/* Mode toggle */}
-          <div
-            className="flex p-1 rounded-2xl"
-            style={{ background: "#f0f4ed", gap: 4, marginBottom: isRegister ? "16px" : "24px" }}
-          >
-            {["login", "register"].map((mode) => {
-              const active = authMode === mode;
-              return (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Password</label>
+                {!isRegister && (
+                  <span
+                    onClick={() => toast("Contact support to reset passwords.")}
+                    className="text-xs text-[#8fb39c] font-semibold hover:underline cursor-pointer select-none"
+                  >
+                    Forgot Password?
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={handleChange}
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                />
                 <button
-                  key={mode}
                   type="button"
-                  onClick={() => switchMode(mode)}
-                  className="flex-1 rounded-xl text-xs font-semibold uppercase tracking-[0.10em] transition-all"
-                  style={{
-                    padding: isRegister ? "9px 0" : "10px 0",
-                    background: active ? "#7d9667" : "transparent",
-                    color: active ? "#ffffff" : "#8fa384",
-                    boxShadow: active ? "0 2px 8px rgba(125,150,103,0.28)" : "none",
-                    letterSpacing: "0.1em",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
                 >
-                  {mode === "login" ? "Sign In" : "Register"}
+                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: isRegister ? 10 : 16 }}>
-            {isRegister && (
-              <Field
-                label="Full Name"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Enter your name"
-                required
-                minLength={2}
-                compact={isRegister}
-                suffix={<FiUser size={14} style={{ color: "#b8caaf" }} />}
-              />
-            )}
-
-            <Field
-              label="Email Address"
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="you@example.com"
-              required
-              compact={isRegister}
-              suffix={<FiMail size={14} style={{ color: "#b8caaf" }} />}
-            />
-
-            <Field
-              label="Password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={form.password}
-              onChange={handleChange}
-              placeholder={isRegister ? "Create a strong password" : "Enter your password"}
-              required
-              minLength={isRegister ? 6 : undefined}
-              compact={isRegister}
-              suffix={<EyeBtn show={showPassword} onToggle={() => setShowPassword(!showPassword)} />}
-            />
+              </div>
+            </div>
 
             {isRegister && (
-              <Field
-                label="Confirm Password"
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                value={form.confirmPassword}
-                onChange={handleChange}
-                placeholder="Re-enter your password"
-                required
-                minLength={6}
-                compact={isRegister}
-                suffix={<EyeBtn show={showConfirmPassword} onToggle={() => setShowConfirmPassword(!showConfirmPassword)} />}
-              />
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    required
+                    placeholder="••••••••"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                  >
+                    {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                  </button>
+                </div>
+              </div>
             )}
 
-            {/* Submit */}
+            {/* Keep me signed in (only in Login) */}
+            {!isRegister && (
+              <div className="flex items-center gap-2 py-1">
+                <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-[#8fb39c] select-none">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="w-4 h-4 rounded border-emerald-900 bg-[#062413] accent-[#7d9667] text-white cursor-pointer"
+                  />
+                  Keep me signed in
+                </label>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2.5 font-semibold text-sm transition-all"
-              style={{
-                padding: isRegister ? "12px 24px" : "15px 24px",
-                marginTop: isRegister ? "4px" : "4px",
-                borderRadius: 14,
-                background: loading ? "#9aab8d" : "#7d9667",
-                color: "#ffffff",
-                border: "none",
-                cursor: loading ? "not-allowed" : "pointer",
-                letterSpacing: "0.04em",
-                boxShadow: "0 4px 20px rgba(125,150,103,0.32)",
-                transition: "all 0.18s ease",
-              }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = "#6f865c"; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = "#7d9667"; }}
-              onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.985)"; }}
-              onMouseUp={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+              className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? (
-                <>
-                  <span
-                    className="inline-block w-4 h-4 rounded-full border-2"
-                    style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite" }}
-                  />
-                  {isRegister ? "Creating account…" : "Signing in…"}
-                </>
-              ) : (
-                <>
-                  {isRegister ? "Create Account" : "Continue"}
-                  <FiArrowRight size={15} />
-                </>
-              )}
+              {loading ? "Please wait..." : isRegister ? "Sign Up" : "Log In"}
+              <FiArrowRight size={15} />
             </button>
           </form>
 
-          {/* Footer */}
-          <div className="flex items-center gap-2" style={{ marginTop: isRegister ? "16px" : "24px" }}>
-            <div className="flex-1 h-px" style={{ background: "#e8eee5" }} />
-            <p className="text-[11px] px-2" style={{ color: "#b8caaf" }}>Secure · Authorized access only</p>
-            <div className="flex-1 h-px" style={{ background: "#e8eee5" }} />
-          </div>
-          <p className="text-center text-[11px] mt-2" style={{ color: "#c4d3bc" }}>
-            Need help?{" "}
-            <span className="cursor-pointer" style={{ color: "#7d9667" }}>Contact administrator</span>
+          {/* Register / Sign In Switch */}
+          <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
+            {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+            <span
+              onClick={() => switchMode(isRegister ? "login" : "register")}
+              className="text-white hover:underline cursor-pointer font-bold"
+            >
+              {isRegister ? "Sign in" : "Sign up"}
+            </span>
           </p>
+
+          {/* Separator Line */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="h-[1px] bg-white/10 flex-grow" />
+            <span className="text-[10px] text-[#8fb39c] font-black uppercase tracking-wider">or</span>
+            <div className="h-[1px] bg-white/10 flex-grow" />
+          </div>
+
+          {/* Google OAuth Button */}
+          <div>
+            <button
+              type="button"
+              onClick={() => {
+                toast.success("Google Authentication active! Welcome.");
+                localStorage.setItem("token", "google-oauth-mock");
+                login("google-oauth-mock", { name: "Google Companion", role: "user" });
+                navigate("/splash", { replace: true });
+              }}
+              className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-[#fcf9f2] hover:opacity-90 text-gray-900 text-xs font-bold transition-all border-none"
+            >
+              {/* Google G logo */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              Continue with Google
+            </button>
+          </div>
+
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-        * { box-sizing: border-box; }
-        input::placeholder { color: #c4d3bc; }
-      `}</style>
     </div>
   );
 };

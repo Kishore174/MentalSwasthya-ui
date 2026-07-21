@@ -4,9 +4,10 @@ import {
   MdOutlineDashboard,
   MdPeopleOutline,
   MdSelfImprovement,
-  MdQueueMusic
+  MdQueueMusic,
+  MdBook
 } from "react-icons/md";
-import { FiLogOut, FiChevronRight } from "react-icons/fi";
+import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward } from "react-icons/fi";
 import logo from "../Assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
 
@@ -20,31 +21,61 @@ if (!document.head.querySelector('[href*="Cormorant"]')) document.head.appendChi
 const menuItems = [
   {
     name: "Dashboard",
-    path: "/",
+    path: "/app",
     icon: MdOutlineDashboard,
     roles: ["admin", "individual", "user"],
   },
   {
+    name: "About Us",
+    path: "/app/about",
+    icon: MdBook,
+    roles: ["admin", "individual", "user"],
+  },
+  {
     name: "Breathing",
-    path: "/meditation",
+    path: "/app/meditation",
     icon: MdSelfImprovement,
     roles: ["admin", "individual", "user"],
   },
   {
     name: "Affirmations",
-    path: "/affirmations",
+    path: "/app/affirmations",
     icon: MdQueueMusic,
     roles: ["admin", "individual", "user"],
   },
   {
     name: "Meditation Playlist",
-    path: "/meditation-playlist",
+    path: "/app/meditation-playlist",
     icon: MdQueueMusic,
     roles: ["admin", "individual", "user"],
   },
   {
+    name: "My Achievements",
+    path: "/app/achievements",
+    icon: FiAward,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Buy Subscription",
+    path: "/app/subscription",
+    icon: FiCreditCard,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Gift Cards",
+    path: "/app/gift-cards",
+    icon: FiGift,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Contact Us",
+    path: "/app/contact",
+    icon: FiMail,
+    roles: ["admin", "individual", "user"],
+  },
+  {
     name: "Users",
-    path: "/users",
+    path: "/app/users",
     icon: MdPeopleOutline,
     roles: ["admin"],
   },
@@ -289,6 +320,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
             <NavLink
               key={name}
               to={path}
+              end={path === "/app"}
               onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
               style={{ animationDelay: `${idx * 0.06}s` }}
               className={({ isActive }) =>

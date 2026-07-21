@@ -12,6 +12,7 @@ export const axiosInstance = axios.create({
   headers: {
     "x-api-key": API_KEY,
   },
+  withCredentials:true
 });
 
 axiosInstance.interceptors.request.use(
@@ -24,3 +25,6 @@ axiosInstance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+
+
+ 

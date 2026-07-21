@@ -1,14 +1,17 @@
 {
   "files": {
-    "main.css": "/static/css/main.628cef4b.css",
-    "main.js": "/static/js/main.3e451406.js",
+    "main.css": "/static/css/main.e8845172.css",
+    "main.js": "/static/js/main.d6740a83.js",
+    "static/media/walking_illustration.jpg": "/static/media/walking_illustration.4dbd56a1503b70a99df0.jpg",
+    "static/media/breathing_illustration.jpg": "/static/media/breathing_illustration.91b0fb433cf953d4d491.jpg",
+    "static/media/meditating_woman.jpg": "/static/media/meditating_woman.cd520adb93c8d3cb2cc4.jpg",
     "static/media/logo.jpg": "/static/media/logo.d0e9cd03712448f50c25.jpg",
     "index.html": "/index.html",
-    "main.628cef4b.css.map": "/static/css/main.628cef4b.css.map",
-    "main.3e451406.js.map": "/static/js/main.3e451406.js.map"
+    "main.e8845172.css.map": "/static/css/main.e8845172.css.map",
+    "main.d6740a83.js.map": "/static/js/main.d6740a83.js.map"
   },
   "entrypoints": [
-    "static/css/main.628cef4b.css",
-    "static/js/main.3e451406.js"
+    "static/css/main.e8845172.css",
+    "static/js/main.d6740a83.js"
   ]
 }

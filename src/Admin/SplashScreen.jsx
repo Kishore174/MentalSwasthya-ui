@@ -20,7 +20,7 @@ const SplashScreen = () => {
     const t1 = setTimeout(() => setPhase(1), 80);
     const t2 = setTimeout(() => setPhase(2), 1600);
     const t3 = setTimeout(() => {
-      navigate(hasSeenAbout(user) ? "/" : "/about", { replace: true });
+      navigate(hasSeenAbout(user) ? "/app" : "/about", { replace: true });
     }, 2100);
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, [navigate, user]);
