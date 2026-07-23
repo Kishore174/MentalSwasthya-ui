@@ -85,11 +85,8 @@ const LoginPage = () => {
       navigate("/splash", { replace: true });
     } catch (err) {
       console.error(err);
-      toast.error(
-        authMode === "register"
-          ? err?.response?.data?.message || "Unable to create account"
-          : "Invalid email or password"
-      );
+      const errorMsg = err?.response?.data?.message || err?.message || "Something went wrong";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

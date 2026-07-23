@@ -17,6 +17,7 @@ import ContactScreen from "./Admin/ContactScreen";
 import SubscriptionScreen from "./Admin/SubscriptionScreen";
 import GiftCardsScreen from "./Admin/GiftCardsScreen";
 import AchievementsScreen from "./Admin/AchievementsScreen";
+import { Toaster } from "react-hot-toast";
 
 const HomeRoute = () => {
   const { token, loading } = useAuth();
@@ -28,10 +29,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster position="top-right" reverseOrder={false} />
         <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+
 
           <Route element={<ProtectedRoute />}>
             <Route path="/splash" element={<SplashScreen />} />

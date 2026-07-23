@@ -1,13 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FiActivity,
+  FiAward,
   FiCalendar,
+  FiCheckCircle,
   FiClock,
+  FiDroplet,
   FiHeart,
+  FiMinus,
+  FiPlus,
   FiRefreshCcw,
+  FiShield,
   FiTrendingUp,
   FiWind,
+  FiZap,
 } from "react-icons/fi";
+import { FaFire } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { getBreathingHistory } from "../Api/breathingApi";
 
@@ -62,6 +70,533 @@ const getTechniqueLabel = (technique) => {
   };
 
   return labels[technique] || technique || "Breathing";
+};
+
+/* ==========================================
+   IMAGE 2: STREAK FREEZE STATUS COMPONENT
+   ========================================== */
+const StreakFreezeCard = () => {
+  const [usedCount, setUsedCount] = useState(() => {
+    try {
+      const saved = localStorage.getItem("mentalswasthya_streak_freeze");
+      if (saved) return JSON.parse(saved).used ?? 3;
+    } catch (e) { }
+    return 3;
+  });
+
+  const [cardTheme, setCardTheme] = useState("light");
+
+  const maxFreezes = 5;
+  const availableCount = Math.max(0, maxFreezes - usedCount);
+
+  const handleUseFreeze = () => {
+    if (availableCount > 0) {
+      const newUsed = usedCount + 1;
+      setUsedCount(newUsed);
+      try {
+        localStorage.setItem("mentalswasthya_streak_freeze", JSON.stringify({ used: newUsed, max: maxFreezes }));
+      } catch (e) { }
+    }
+  };
+
+  const handleRestoreFreeze = () => {
+    if (usedCount > 0) {
+      const newUsed = usedCount - 1;
+      setUsedCount(newUsed);
+      try {
+        localStorage.setItem("mentalswasthya_streak_freeze", JSON.stringify({ used: newUsed, max: maxFreezes }));
+      } catch (e) { }
+    }
+  };
+
+  // SVG Arc Math: Center = (160, 135), Radius = 100
+  const cx = 160;
+  const cy = 135;
+  const r = 100;
+
+  const fireEndAngle = 180 - usedCount * 36;
+
+  const getCoords = (deg) => {
+    const rad = (deg * Math.PI) / 180;
+    return {
+      x: cx + r * Math.cos(rad),
+      y: cy - r * Math.sin(rad)
+    };
+  };
+
+  const fireStart = getCoords(180);
+  const fireEnd = getCoords(fireEndAngle);
+  const iceEnd = getCoords(0);
+
+  const firePathD = usedCount > 0
+    ? `M ${fireStart.x} ${fireStart.y} A ${r} ${r} 0 0 1 ${fireEnd.x} ${fireEnd.y}`
+    : "";
+
+  const icePathD = availableCount > 0
+    ? `M ${fireEnd.x} ${fireEnd.y} A ${r} ${r} 0 0 1 ${iceEnd.x} ${iceEnd.y}`
+    : "";
+
+  const slots = Array.from({ length: maxFreezes }).map((_, i) => {
+    const angle = 180 - (i + 0.5) * 36;
+    const coords = getCoords(angle);
+    const isUsed = i < usedCount;
+    return { id: i, angle, ...coords, isUsed };
+  });
+
+  const isDark = cardTheme === "dark";
+
+  return (
+    <div className={`rounded-[28px] border transition-all duration-300 p-6 md:p-7 relative overflow-hidden ${isDark
+        ? "bg-gradient-to-b from-[#181d29] to-[#0f141f] border-slate-800 text-white shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+        : "bg-white border-[#e8efe3] text-[#22331b] shadow-[0_10px_30px_rgba(80,105,67,0.06)]"
+      }`}>
+      {/* Background ambient glow */}
+      <div className={`absolute -left-20 -top-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${isDark ? "bg-amber-500/10" : "bg-[#7d9667]/10"
+        }`} />
+      <div className={`absolute -right-20 -bottom-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${isDark ? "bg-cyan-500/10" : "bg-sky-200/20"
+        }`} />
+
+      {/* Header bar */}
+      <div className={`flex flex-wrap items-center justify-between gap-4 pb-4 border-b ${isDark ? "border-slate-800/80" : "border-[#e8efe3]"
+        }`}>
+        <div>
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-[#7d9667]"
+            }`}>MentalSwasthya • Streak</span>
+          <h2 className={`text-xl font-black tracking-tight flex items-center gap-2 mt-0.5 ${isDark ? "text-white" : "text-[#22331b]"
+            }`}>
+            <span className="inline-block animate-pulse text-amber-500">🔥</span> STREAK FREEZE STATUS
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className={`border rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-2 ${isDark ? "bg-slate-800/80 border-slate-700/60" : "bg-[#f4f8f1] border-[#e1eadb]"
+            }`}>
+            <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Current Streak:</span>
+            <span className="text-amber-500 font-extrabold">45 Days</span>
+          </div>
+
+          <div className={`border rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 ${isDark ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[#edf8f0] border-[#c8e6d0] text-[#4c9a62]"
+            }`}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            Daily Goal Completed
+          </div>
+
+          {/* <button
+            type="button"
+            onClick={() => setCardTheme(isDark ? "light" : "dark")}
+            className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
+              isDark
+                ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+                : "bg-[#eef6ea] border-[#7d9667]/20 text-[#7d9667] hover:bg-[#7d9667] hover:text-white"
+            }`}
+          >
+            {isDark ? "☀️ Light Theme" : "🌙 Dark Theme"}
+          </button> */}
+        </div>
+      </div>
+
+      {/* Main card content */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-6">
+
+        {/* Left Dragon Emblem / Status */}
+        <div className={`lg:col-span-3 flex flex-col items-center justify-center text-center p-5 rounded-2xl border ${isDark
+            ? "bg-slate-900/60 border-slate-800/80"
+            : "bg-[#fbfdf8] border-[#e8efe3]"
+          }`}>
+          <div className={`w-20 h-20 rounded-2xl border flex items-center justify-center mb-3 shadow-sm ${isDark
+              ? "bg-gradient-to-br from-amber-500/20 via-red-500/10 to-transparent border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.2)]"
+              : "bg-gradient-to-br from-amber-100 via-orange-50 to-amber-50 border-amber-200"
+            }`}>
+            <svg viewBox="0 0 64 64" className="w-14 h-14 text-amber-500 drop-shadow">
+              <path fill="currentColor" d="M32 4c-6 4-12 11-12 19 0 7 4 12 9 14-6 2-10 7-10 13 0 9 7 14 15 14s15-5 15-14c0-6-4-11-10-13 5-2 9-7 9-14 0-8-6-15-12-19zm-3 10c2 0 4 2 4 4s-2 4-4 4-4-2-4-4 2-4 4-4zm6 24c4 0 7 3 7 7s-3 7-7 7-7-3-7-7 3-7 7-7z" />
+            </svg>
+          </div>
+          <span className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-300" : "text-[#22331b]"
+            }`}>STREAK STATUS</span>
+          <span className="text-xs font-bold text-amber-600 mt-1">Dragon Guard Active</span>
+        </div>
+
+        {/* Center Arc Gauge */}
+        <div className="lg:col-span-6 flex flex-col items-center justify-center">
+          <div className="relative w-full max-w-[340px] aspect-[2/1] flex items-center justify-center">
+            <svg viewBox="0 0 320 160" className="w-full h-full overflow-visible">
+              <defs>
+                <linearGradient id="fireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#ef4444" />
+                </linearGradient>
+                <linearGradient id="iceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#38bdf8" />
+                  <stop offset="100%" stopColor="#0284c7" />
+                </linearGradient>
+              </defs>
+
+              {/* Base Background Track Arc */}
+              <path
+                d={`M ${fireStart.x} ${fireStart.y} A ${r} ${r} 0 0 1 ${iceEnd.x} ${iceEnd.y}`}
+                fill="none"
+                stroke={isDark ? "#1e293b" : "#f1f5f9"}
+                strokeWidth="22"
+                strokeLinecap="round"
+              />
+
+              {/* Fire Arc (Used) */}
+              {usedCount > 0 && (
+                <path
+                  d={firePathD}
+                  fill="none"
+                  stroke="url(#fireGradient)"
+                  strokeWidth="20"
+                  strokeLinecap="round"
+                  style={{ transition: "all 0.5s ease" }}
+                />
+              )}
+
+              {/* Ice Arc (Available) */}
+              {availableCount > 0 && (
+                <path
+                  d={icePathD}
+                  fill="none"
+                  stroke="url(#iceGradient)"
+                  strokeWidth="20"
+                  strokeLinecap="round"
+                  style={{ transition: "all 0.5s ease" }}
+                />
+              )}
+
+              {/* Slot Markers */}
+              {slots.map((slot) => (
+                <g key={slot.id} transform={`translate(${slot.x}, ${slot.y})`}>
+                  <circle
+                    r="13"
+                    fill={slot.isUsed ? (isDark ? "#7c2d12" : "#fef3c7") : (isDark ? "#0c4a6e" : "#e0f2fe")}
+                    stroke={slot.isUsed ? "#f59e0b" : "#38bdf8"}
+                    strokeWidth="2"
+                  />
+                  {slot.isUsed ? (
+                    <text x="0" y="4" textAnchor="middle" fontSize="12" fill="#f59e0b">🔥</text>
+                  ) : (
+                    <text x="0" y="4" textAnchor="middle" fontSize="12" fill="#0284c7">💧</text>
+                  )}
+                </g>
+              ))}
+
+              {/* Center Text Overlay */}
+              <g transform="translate(160, 110)">
+                <text x="-45" y="-15" textAnchor="middle" fontSize="22" fontWeight="900" fill="#f59e0b">{usedCount}</text>
+                <text x="-45" y="5" textAnchor="middle" fontSize="11" fontWeight="700" fill={isDark ? "#cbd5e1" : "#66785c"}>Used</text>
+
+                <text x="45" y="-15" textAnchor="middle" fontSize="22" fontWeight="900" fill="#0284c7">{availableCount}</text>
+                <text x="45" y="5" textAnchor="middle" fontSize="11" fontWeight="700" fill={isDark ? "#cbd5e1" : "#66785c"}>Available</text>
+              </g>
+            </svg>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-2 text-xs font-bold">
+            <span className="flex items-center gap-1.5 text-amber-600">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+              🔥 Used (Fire: {usedCount})
+            </span>
+            <span className="flex items-center gap-1.5 text-cyan-600">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
+              💧 Available (Ice: {availableCount})
+            </span>
+          </div>
+        </div>
+
+        {/* Right Info & Actions */}
+        <div className={`lg:col-span-3 flex flex-col justify-between h-full rounded-2xl border p-5 space-y-4 ${isDark
+            ? "bg-slate-900/60 border-slate-800/80"
+            : "bg-[#fbfdf8] border-[#e8efe3]"
+          }`}>
+          <div className="space-y-2">
+            <div className={`flex justify-between items-center text-xs font-bold border-b pb-2 ${isDark ? "border-slate-800" : "border-gray-200/80"
+              }`}>
+              <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Max Freezes:</span>
+              <span className={`font-extrabold ${isDark ? "text-white" : "text-[#22331b]"}`}>{maxFreezes} Freezes</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-bold">
+              <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Total:</span>
+              <span className={`font-extrabold ${isDark ? "text-white" : "text-[#22331b]"}`}>{maxFreezes}</span>
+            </div>
+          </div>
+
+          <div className={`pt-3 border-t space-y-2 ${isDark ? "border-slate-800" : "border-gray-200/80"}`}>
+            <span className={`text-[10px] font-black uppercase tracking-wider block ${isDark ? "text-slate-400" : "text-[#7d9667]"
+              }`}>Token Actions</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleUseFreeze}
+                disabled={availableCount === 0}
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:opacity-40 text-xs font-bold text-white shadow-sm transition-all flex items-center justify-center gap-1"
+              >
+                <FaFire size={14} /> Use
+              </button>
+              <button
+                type="button"
+                onClick={handleRestoreFreeze}
+                disabled={usedCount === 0}
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:opacity-40 text-xs font-bold text-white shadow-sm transition-all flex items-center justify-center gap-1"
+              >
+                <FiDroplet size={14} /> Restore
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+/* ==========================================
+   IMAGE 1: MILESTONE ACHIEVEMENTS COMPONENT
+   ========================================== */
+const MilestoneShieldBadge = ({ badgeType, achieved }) => {
+  const configs = {
+    bronze: {
+      shieldBorder: "#b45309",
+      bgGrad: "from-amber-900/60 to-amber-950/80",
+      subLabel: "15",
+      badgeNum: "1",
+      icon: "🏅"
+    },
+    silver: {
+      shieldBorder: "#64748b",
+      bgGrad: "from-slate-800/80 to-slate-900/80",
+      subLabel: "30",
+      badgeNum: "2",
+      icon: "🥈"
+    },
+    gold: {
+      shieldBorder: "#eab308",
+      bgGrad: "from-yellow-950/60 to-amber-950/80",
+      subLabel: "45",
+      badgeNum: "1",
+      icon: "🥇"
+    },
+    platinum: {
+      shieldBorder: "#06b6d4",
+      bgGrad: "from-cyan-950/60 to-teal-950/80",
+      subLabel: "60",
+      badgeNum: "60",
+      icon: "💿"
+    },
+    diamond: {
+      shieldBorder: "#3b82f6",
+      bgGrad: "from-blue-950/60 to-slate-950/80",
+      subLabel: "90",
+      badgeNum: "90",
+      icon: "💎"
+    }
+  };
+
+  const cfg = configs[badgeType] || configs.bronze;
+
+  return (
+    <div className="flex flex-col items-center group cursor-pointer transition-transform duration-300 hover:scale-105">
+      <div className="relative w-14 h-16 md:w-16 md:h-18 flex flex-col items-center justify-center filter drop-shadow-[0_6px_10px_rgba(0,0,0,0.5)]">
+        <svg viewBox="0 0 64 74" className="absolute inset-0 w-full h-full overflow-visible">
+          <defs>
+            <linearGradient id={`ringGrad-${badgeType}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={badgeType === 'bronze' ? '#f59e0b' : badgeType === 'silver' ? '#cbd5e1' : badgeType === 'gold' ? '#fde047' : badgeType === 'platinum' ? '#67e8f9' : '#60a5fa'} />
+              <stop offset="100%" stopColor={badgeType === 'bronze' ? '#78350f' : badgeType === 'silver' ? '#475569' : badgeType === 'gold' ? '#b45309' : badgeType === 'platinum' ? '#0e7490' : '#1e40af'} />
+            </linearGradient>
+          </defs>
+
+          <path
+            d="M 32 4 L 58 12 C 58 38 48 58 32 70 C 16 58 6 38 6 12 Z"
+            fill="#0f172a"
+            stroke={`url(#ringGrad-${badgeType})`}
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 32 8 L 54 15 C 54 36 45 54 32 64 C 19 54 10 36 10 15 Z"
+            fill="none"
+            stroke={achieved ? cfg.shieldBorder : "#334155"}
+            strokeWidth="1.5"
+            opacity="0.6"
+          />
+        </svg>
+
+        <div className="relative z-10 flex flex-col items-center justify-center -mt-1">
+          <div className={`w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center shadow-inner text-sm bg-gradient-to-b ${cfg.bgGrad}`}>
+            <span className="drop-shadow">{cfg.icon}</span>
+          </div>
+          <span className="text-[10px] font-black text-white mt-0.5 tracking-tighter drop-shadow-md">{cfg.subLabel}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MilestoneAchievementsCard = () => {
+  const [cardTheme, setCardTheme] = useState("light");
+
+  const milestoneData = [
+    { target: 15, badgeType: "bronze", level: 1, times: 12.0, color: "from-amber-500 via-amber-400 to-yellow-300", glow: "rgba(245, 158, 11, 0.4)", statusText: "ACHIEVED", countText: "12 TIMES", achieved: true },
+    { target: 30, badgeType: "silver", level: 2, times: 5.0, color: "from-slate-400 via-slate-300 to-slate-200", glow: "rgba(148, 163, 184, 0.4)", statusText: "ACHIEVED", countText: "5 TIMES", achieved: true },
+    { target: 45, badgeType: "gold", level: 1, times: 2.0, color: "from-amber-500 via-yellow-400 to-amber-300", glow: "rgba(251, 191, 36, 0.4)", statusText: "ACHIEVED", countText: "2 TIMES", achieved: true },
+    { target: 60, badgeType: "platinum", level: 60, times: 1.0, color: "from-teal-500 via-cyan-400 to-teal-300", glow: "rgba(6, 182, 212, 0.4)", statusText: "ACHIEVED", countText: "1 TIMES", achieved: true },
+    { target: 90, badgeType: "diamond", level: 90, times: 0, color: "from-gray-300 to-gray-400", glow: "rgba(0,0,0,0)", statusText: "NOT ACHIEVED", countText: "YET", achieved: false },
+  ];
+
+  const yAxisTicks = [
+    { label: "20+ TIMES", val: 20 },
+    { label: "15", val: 15 },
+    { label: "10", val: 10 },
+    { label: "5", val: 5 },
+    { label: "0", val: 0 },
+  ];
+
+  const maxY = 20;
+  const isDark = cardTheme === "dark";
+
+  return (
+    <div className={`rounded-[28px] border transition-all duration-300 p-6 md:p-8 relative overflow-hidden ${isDark
+        ? "bg-gradient-to-br from-[#0c1322] via-[#10192d] to-[#090d18] border-[#1e2d4a] text-white shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
+        : "bg-white border-[#e8efe3] text-[#22331b] shadow-[0_10px_30px_rgba(80,105,67,0.06)]"
+      }`}>
+
+      {/* Background Cyan / Sage Light Wave Lines */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-25" viewBox="0 0 1000 500" preserveAspectRatio="none">
+        <path d="M 0 250 Q 250 150, 500 280 T 1000 220" fill="none" stroke={isDark ? "#38bdf8" : "#7d9667"} strokeWidth="2" filter="blur(2px)" />
+        <path d="M 0 300 Q 300 200, 600 320 T 1000 180" fill="none" stroke={isDark ? "#22d3ee" : "#00a896"} strokeWidth="1.5" />
+      </svg>
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10 mb-8">
+        <div>
+          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-[#7d9667]"
+            }`}>MentalSwasthya • Rewards</span>
+          <h2 className={`text-2xl md:text-3xl font-black tracking-wider uppercase ${isDark ? "text-[#38bdf8] drop-shadow-[0_2px_10px_rgba(56,189,248,0.3)]" : "text-[#22331b]"
+            }`}>
+            MILESTONE ACHIEVEMENTS
+          </h2>
+          <p className={`text-xs font-bold uppercase tracking-[0.14em] mt-1 ${isDark ? "text-slate-400" : "text-[#66785c]"
+            }`}>
+            SUMMARY OF MILESTONES REACHED (TIMES COMPLETED)
+          </p>
+        </div>
+
+        {/* Theme Toggle */}
+        {/* <button
+          type="button"
+          onClick={() => setCardTheme(isDark ? "light" : "dark")}
+          className={`self-start md:self-auto px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+            isDark
+              ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
+              : "bg-[#eef6ea] border-[#7d9667]/20 text-[#7d9667] hover:bg-[#7d9667] hover:text-white"
+          }`}
+        >
+          {isDark ? "☀️ Light Theme" : "🌙 Dark Theme"}
+        </button> */}
+      </div>
+
+      {/* Chart Main Area */}
+      <div className="relative z-10 grid grid-cols-12 gap-2 md:gap-4 items-end min-h-[360px] pt-4 pb-2 px-2">
+
+        {/* Y-Axis Column */}
+        <div className={`col-span-2 md:col-span-1 flex flex-col justify-between h-[240px] text-right pr-2 font-extrabold text-[11px] md:text-xs ${isDark ? "text-slate-400" : "text-[#66785c]"
+          }`}>
+          {yAxisTicks.map((tick, idx) => (
+            <span key={idx} className="leading-none whitespace-nowrap">{tick.label}</span>
+          ))}
+        </div>
+
+        {/* Chart Column Canvas */}
+        <div className={`col-span-10 md:col-span-11 relative h-[240px] border-l border-b ${isDark ? "border-slate-700/80" : "border-[#e8efe3]"
+          }`}>
+
+          {/* Horizontal Gridlines */}
+          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+            {yAxisTicks.map((_, idx) => (
+              <div key={idx} className={`w-full border-b ${isDark ? "border-slate-800/60" : "border-gray-100"}`} />
+            ))}
+          </div>
+
+          {/* 5 Milestone Bars */}
+          <div className="absolute inset-0 grid grid-cols-5 gap-2 md:gap-6 px-2 md:px-6 items-end">
+            {milestoneData.map((item, index) => {
+              const heightPct = Math.min(100, (item.times / maxY) * 100);
+
+              return (
+                <div key={index} className="flex flex-col items-center h-full justify-end group">
+
+                  {/* Shield Badge */}
+                  <div className="mb-2 relative z-20">
+                    <MilestoneShieldBadge
+                      badgeType={item.badgeType}
+                      achieved={item.achieved}
+                    />
+                  </div>
+
+                  {/* Frequency Value */}
+                  <div className="mb-1 text-center h-5">
+                    <span className={`text-xs md:text-sm font-black tracking-tight ${isDark ? "text-white drop-shadow" : "text-[#22331b]"
+                      }`}>
+                      {item.times > 0 ? item.times.toFixed(1) : ""}
+                    </span>
+                  </div>
+
+                  {/* Vertical Column Track */}
+                  <div className={`w-full max-w-[64px] h-[160px] border rounded-t-lg relative flex items-end justify-center overflow-hidden shadow-inner ${isDark
+                      ? "bg-[#0c1f2d]/80 border-slate-800/80"
+                      : "bg-[#f4f8f1] border-[#e1eadb]"
+                    }`}>
+                    {item.times > 0 && (
+                      <div
+                        className={`w-full bg-gradient-to-t ${item.color} rounded-t-sm transition-all duration-1000`}
+                        style={{
+                          height: `${heightPct}%`,
+                          boxShadow: `0 0 15px ${item.glow}`
+                        }}
+                      />
+                    )}
+                  </div>
+
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* Bottom Status Cards */}
+      <div className="relative z-10 grid grid-cols-12 gap-2 md:gap-4 mt-4">
+        <div className="col-span-2 md:col-span-1" />
+        <div className="col-span-10 md:col-span-11 grid grid-cols-5 gap-2 md:gap-6 px-2 md:px-6">
+          {milestoneData.map((item, index) => (
+            <div
+              key={index}
+              className={`rounded-xl p-2 md:p-3 text-center border transition-all ${item.achieved
+                  ? isDark
+                    ? "bg-slate-800/90 border-slate-600 text-white shadow-sm"
+                    : "bg-[#f4f8f1] border-[#e1eadb] text-[#22331b] shadow-sm"
+                  : isDark
+                    ? "bg-slate-900/40 border-slate-800/60 text-slate-500"
+                    : "bg-gray-50 border-gray-100 text-gray-400"
+                }`}
+            >
+              <div className="text-[9px] md:text-[11px] font-black uppercase tracking-wider leading-tight">
+                {item.statusText}
+              </div>
+              <div className={`text-[10px] md:text-xs font-black uppercase tracking-wider mt-0.5 ${item.achieved ? "text-amber-500" : isDark ? "text-slate-500" : "text-gray-400"
+                }`}>
+                {item.countText}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
 };
 
 const Dashboard = () => {
@@ -131,7 +666,7 @@ const Dashboard = () => {
       completedHistory.map((session) => toDateInputValue(session.completedAt || session.createdAt))
     ).size;
     const totalBreathingSessions = completedHistory.length;
-    
+
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
@@ -207,7 +742,7 @@ const Dashboard = () => {
           counts[day] += 1;
         }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     // 3. Parse intentions
     try {
@@ -219,7 +754,7 @@ const Dashboard = () => {
           counts[day] += 1;
         }
       });
-    } catch (e) {}
+    } catch (e) { }
 
     // Add dummy values to populate weeks if completely empty to show realistic chart mockups
     const sum = counts.reduce((a, b) => a + b, 0);
@@ -271,7 +806,7 @@ const Dashboard = () => {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        
+
         {/* Left: 4 Circular Gauges */}
         <div className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-3 min-h-[300px]">
           <div>
@@ -280,15 +815,15 @@ const Dashboard = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 items-center justify-around gap-4 my-6">
-            
+
             {/* Circle 1: Daily Intention (Teal) */}
             <div className="flex flex-col items-center text-center">
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#00a896" strokeWidth="3"
-                          strokeDasharray={`${(statsData.intentionsDays / 31) * 100} 100`} strokeLinecap="round" 
-                          style={{ transition: "stroke-dasharray 0.8s ease" }} />
+                    strokeDasharray={`${(statsData.intentionsDays / 31) * 100} 100`} strokeLinecap="round"
+                    style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-lg font-black text-[#22331b]">{statsData.intentionsDays}</span>
@@ -304,8 +839,8 @@ const Dashboard = () => {
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#028090" strokeWidth="3"
-                          strokeDasharray={`${(statsData.breathingDays / 7) * 100} 100`} strokeLinecap="round"
-                          style={{ transition: "stroke-dasharray 0.8s ease" }} />
+                    strokeDasharray={`${(statsData.breathingDays / 7) * 100} 100`} strokeLinecap="round"
+                    style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-lg font-black text-[#22331b]">{statsData.breathingDays}</span>
@@ -321,8 +856,8 @@ const Dashboard = () => {
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8338ec" strokeWidth="3"
-                          strokeDasharray={`${(statsData.meditationDays / 7) * 100} 100`} strokeLinecap="round"
-                          style={{ transition: "stroke-dasharray 0.8s ease" }} />
+                    strokeDasharray={`${(statsData.meditationDays / 7) * 100} 100`} strokeLinecap="round"
+                    style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-lg font-black text-[#22331b]">{statsData.meditationDays}</span>
@@ -338,8 +873,8 @@ const Dashboard = () => {
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#d97706" strokeWidth="3"
-                          strokeDasharray={`${(statsData.affirmationDays / 7) * 100} 100`} strokeLinecap="round"
-                          style={{ transition: "stroke-dasharray 0.8s ease" }} />
+                    strokeDasharray={`${(statsData.affirmationDays / 7) * 100} 100`} strokeLinecap="round"
+                    style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span className="text-lg font-black text-[#22331b]">{statsData.affirmationDays}</span>
@@ -373,23 +908,23 @@ const Dashboard = () => {
             )}
 
             {weeklyData.map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative"
                 onMouseEnter={() => setHoveredBarIndex(index)}
                 onMouseLeave={() => setHoveredBarIndex(null)}
               >
                 <div className="absolute inset-x-0.5 top-0 bottom-0 bg-gray-100 rounded-md -z-10 group-hover:bg-gray-200/80 transition-colors" />
-                
-                <div 
+
+                <div
                   className="w-3 rounded-t-md transition-all"
-                  style={{ 
-                    height: `${item.percentage}%`, 
+                  style={{
+                    height: `${item.percentage}%`,
                     minHeight: item.count > 0 ? "10px" : "2px",
                     backgroundColor: item.count === 0 ? "#d1d5db" : item.count === 1 ? "#ef4444" : "#7d9667"
                   }}
                 />
-                
+
                 <span className="text-[10px] font-black text-gray-400 uppercase mt-2">{item.label}</span>
               </div>
             ))}
@@ -422,6 +957,12 @@ const Dashboard = () => {
         </div>
 
       </section>
+
+      {/* Streak Freeze Status Card (Image 2) */}
+      <StreakFreezeCard />
+
+      {/* Milestone Achievements Chart (Image 1) */}
+      <MilestoneAchievementsCard />
 
       <section className="rounded-[28px] bg-white border border-[#e8efe3] shadow-[0_10px_30px_rgba(80,105,67,0.06)] overflow-hidden">
         <div className="p-5 md:p-6 border-b border-[#e8efe3] bg-[#fbfdf8] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
