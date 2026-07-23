@@ -8,6 +8,7 @@ import {
   FiVolumeX,
   FiZap,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import {
   completeBreathingSession,
   getBreathingHistory,
@@ -181,6 +182,7 @@ const calculateCompletedCycles = (seconds, durationSeconds, cycleSeconds, totalC
 const isLocalSession = (id) => typeof id === "string" && id.startsWith("local-");
 
 const MeditationScreen = () => {
+  const navigate = useNavigate();
   const [selectedTechnique, setSelectedTechnique] = useState("triangle");
   const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState(180);
@@ -391,44 +393,181 @@ const MeditationScreen = () => {
   };
 
   if (isCompleted) {
+    let intentionsCount = 0;
+    try {
+      intentionsCount = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]").length;
+    } catch (e) {}
+
+    let playHistory = [];
+    try {
+      playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
+    } catch (e) {}
+
+    const medPlays = playHistory.filter(item => item.playlistType === "/meditation");
+    const affPlays = playHistory.filter(item => item.playlistType === "/affirmation");
+
+    const medMinutes = Math.round(medPlays.reduce((sum, item) => sum + (item.duration || 180), 0) / 60);
+    const totalPlayMinutes = Math.round(playHistory.reduce((sum, item) => sum + (item.duration || 120), 0) / 60);
+
+    const intentionStatus = intentionsCount > 0 ? `${intentionsCount} completed` : "Yet to experience";
+    const breathingStatus = `${Math.round(durationSeconds / 60) || 3} min completed`;
+    const meditationStatus1 = medMinutes > 0 ? `${medMinutes} min completed` : "Yet to experience";
+    const meditationStatus2 = totalPlayMinutes > 0 ? `${totalPlayMinutes} min completed` : "Yet to experience";
+    const affirmationStatus = affPlays.length > 0 ? `${affPlays.length} completed` : "Yet to experience";
+    const streakStatus = `${historyCount + 1} day${historyCount + 1 === 1 ? "" : "s"} in a row`;
+
+    const handleShare = () => {
+      if (navigator.share) {
+        navigator.share({
+          title: "Mental Swasthya",
+          text: "I completed a wellness breathing session on Mental Swasthya!",
+          url: window.location.origin,
+        }).catch(() => {});
+      } else {
+        try {
+          navigator.clipboard.writeText(window.location.origin);
+          alert("Mental Swasthya link copied to clipboard!");
+        } catch (e) {}
+      }
+    };
+
+    const handleDone = () => {
+      resetLocalSession();
+      navigate("/app");
+    };
+
     return (
-      <div className="min-h-[calc(100vh-130px)] flex items-center justify-center">
-        <div className="w-full max-w-xl rounded-[32px] bg-white p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.10)] border border-gray-100">
-          <div className="mx-auto w-24 h-24 rounded-[28px] bg-gradient-to-br from-[#eef6ea] to-[#e9f5fb] flex items-center justify-center text-4xl">
-            🎉
-          </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667] mt-7">
-            Session Completed
+      <div className="min-h-[calc(100vh-130px)] flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 rounded-[32px]">
+        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50">
+          
+          {/* Custom Meditating Tree Artwork SVG */}
+          <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
+            <circle cx="100" cy="90" r="45" fill="#eef6ea" opacity="0.4" />
+            <circle cx="100" cy="90" r="30" fill="#e9f5fb" opacity="0.6" />
+            
+            {/* Tree Leaves */}
+            <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
+            <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
+            <circle cx="100" cy="35" r="25" fill="#b9d7cd" opacity="0.8" />
+            <circle cx="60" cy="70" r="18" fill="#dceade" opacity="0.75" />
+            <circle cx="140" cy="70" r="18" fill="#dbe7e7" opacity="0.75" />
+            
+            {/* Tree Trunk */}
+            <path d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65" 
+                  stroke="#4b5563" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M96 95 L96 110 L104 110 L104 95 Z" fill="#4b5563" />
+            
+            {/* Meditating Figure */}
+            <circle cx="100" cy="95" r="18" stroke="#7d9667" strokeWidth="1" fill="#ffffff" strokeDasharray="3 3" />
+            <circle cx="100" cy="85" r="4.5" fill="#4b5563" />
+            <path d="M100 89.5 L100 99" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M88 103 C92 98 108 98 112 103" stroke="#4b5563" strokeWidth="3" strokeLinecap="round" fill="none" />
+            <path d="M94 92 C90 95 90 101 94 101 M106 92 C110 95 110 101 106 101" stroke="#4b5563" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          </svg>
+
+          <h2 className="text-3xl font-black text-gray-900 tracking-tight mt-6">Well-done!</h2>
+          <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto leading-relaxed">
+            You have successfully nurtured your mind today. Take a moment to feel the stillness you have created. It feels wonderful, doesn't it?
           </p>
-          <h1 className="text-3xl font-black text-gray-900 mt-2">Beautiful work</h1>
-          <p className="text-sm text-gray-500 mt-3">
-            You spent {formatTime(durationSeconds)} with {config.displayTechnique}.
-          </p>
-          <div className="grid grid-cols-2 gap-3 mt-7">
-            <div className="rounded-3xl bg-[#f5f8f2] p-4">
-              <p className="text-2xl font-black text-gray-900">{totalCycles}</p>
-              <p className="text-xs text-gray-400 mt-1">Cycles</p>
-            </div>
-            <div className="rounded-3xl bg-[#f1f8fb] p-4">
-              <p className="text-2xl font-black text-gray-900">{historyCount + 1}</p>
-              <p className="text-xs text-gray-400 mt-1">Streak Update</p>
+
+          {/* Circular Success Indicator */}
+          <div className="flex justify-center my-6">
+            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center shadow-[0_6px_18px_rgba(125,150,103,0.12)]">
+              <div className="w-10 h-10 rounded-full bg-[#e6f4e2] flex items-center justify-center text-[#4b9b3e] text-lg font-bold">
+                ✓
+              </div>
             </div>
           </div>
-          {apiMessage && <p className="text-xs text-[#7d9667] mt-5">{apiMessage}</p>}
-          <div className="flex flex-col sm:flex-row gap-3 mt-8">
+          <p className="text-xs font-extrabold text-[#66785c] -mt-2 mb-6">
+            Wellness session successfully completed
+          </p>
+
+          {/* Today's progress summary table */}
+          <div className="rounded-3xl bg-[#f5f8f3] border border-[#e1ebd9] p-5 mb-6 text-left">
+            <h4 className="text-sm font-bold text-center text-[#22331b] mb-4">
+              Today's progress summary.
+            </h4>
+
+            {/* Grid of 6 Columns */}
+            <div className="grid grid-cols-6 gap-1 divide-x divide-gray-200/60 text-center">
+              {/* Col 1: Intention */}
+              <div className="flex flex-col items-center justify-between min-h-[64px]">
+                <span className="text-xs">📄</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Intention</span>
+                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{intentionStatus}</span>
+              </div>
+
+              {/* Col 2: Breathing */}
+              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
+                <span className="text-xs">🌬️</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Breathing</span>
+                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{breathingStatus}</span>
+              </div>
+
+              {/* Col 3: Meditation */}
+              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
+                <span className="text-xs">🧘</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Meditation</span>
+                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{meditationStatus1}</span>
+              </div>
+
+              {/* Col 4: Meditation 2 */}
+              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
+                <span className="text-xs">🧘</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Meditation</span>
+                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{meditationStatus2}</span>
+              </div>
+
+              {/* Col 5: Affiliation / Affirmation */}
+              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
+                <span className="text-xs">✨</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Affiliation</span>
+                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{affirmationStatus}</span>
+              </div>
+
+              {/* Col 6: Streak */}
+              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
+                <span className="text-xs">🔥</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Streak</span>
+                <span className="text-[9px] font-bold text-amber-500 mt-1.5 leading-none">{streakStatus}</span>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-center text-[#66785c]/80 font-bold mt-5 leading-normal border-t border-gray-200/40 pt-4">
+              Thank you for prioritizing your wellness today. Great job for showing up for your self. You did wonderful.
+            </p>
+          </div>
+
+          {/* Share box banner */}
+          <div 
+            onClick={handleShare}
+            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-6 border border-gray-200/50"
+          >
+            <span className="text-xs font-semibold text-gray-600">
+              If you love mental Swasthya webapplication, please
+            </span>
+            <span className="text-xs font-black text-[#7d9667] flex items-center gap-1.5">
+              Share ➡️
+            </span>
+          </div>
+
+          {apiMessage && <p className="text-xs text-[#7d9667] mb-4">{apiMessage}</p>}
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               type="button"
-              onClick={() => resetLocalSession()}
-              className="flex-1 rounded-2xl bg-gray-100 px-5 py-3 text-sm font-bold text-gray-600 hover:bg-gray-200 transition-all"
+              onClick={handleDone}
+              className="flex-1 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-bold shadow-md shadow-[#7d9667]/15 transition-all"
             >
-              Done
+              Return to dashboard
             </button>
             <button
               type="button"
-              onClick={() => handleStart({ forceNew: true })}
-              className="flex-1 rounded-2xl bg-[#7d9667] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all"
+              onClick={handleDone}
+              className="flex-1 rounded-2xl border border-gray-200 hover:bg-gray-50 text-gray-600 px-5 py-3 text-sm font-bold transition-all"
             >
-              Start Again
+              I will be back tomorrow
             </button>
           </div>
         </div>

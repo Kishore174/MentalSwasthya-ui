@@ -137,7 +137,7 @@ const LoginPage = () => {
           <img 
             src={loginicon} 
             alt="logo" 
-            className="w-36 h-36 object-cover rounded-3xl border border-gray-150 shadow-md mb-6" 
+            className="w-56 h-56 object-cover rounded-3xl border border-gray-150 shadow-md mb-6" 
           />
 
           {/* Title Serif */}

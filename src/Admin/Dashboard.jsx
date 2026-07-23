@@ -1,22 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  FiActivity,
-  FiAward,
   FiCalendar,
-  FiCheckCircle,
-  FiClock,
   FiDroplet,
-  FiHeart,
-  FiMinus,
-  FiPlus,
   FiRefreshCcw,
-  FiShield,
-  FiTrendingUp,
-  FiWind,
-  FiZap,
 } from "react-icons/fi";
 import { FaFire } from "react-icons/fa";
-import { Link } from "react-router-dom";
 import { getBreathingHistory } from "../Api/breathingApi";
 
 const getHistoryPayload = (response) => {
@@ -84,7 +72,7 @@ const StreakFreezeCard = () => {
     return 3;
   });
 
-  const [cardTheme, setCardTheme] = useState("light");
+  const cardTheme = "light";
 
   const maxFreezes = 5;
   const availableCount = Math.max(0, maxFreezes - usedCount);
@@ -434,7 +422,7 @@ const MilestoneShieldBadge = ({ badgeType, achieved }) => {
 };
 
 const MilestoneAchievementsCard = () => {
-  const [cardTheme, setCardTheme] = useState("light");
+  const cardTheme = "light";
 
   const milestoneData = [
     { target: 15, badgeType: "bronze", level: 1, times: 12.0, color: "from-amber-500 via-amber-400 to-yellow-300", glow: "rgba(245, 158, 11, 0.4)", statusText: "ACHIEVED", countText: "12 TIMES", achieved: true },
@@ -795,13 +783,13 @@ const Dashboard = () => {
               Review your breathing practice, track completed sessions, and continue your calm routine.
             </p>
           </div>
-          <Link
+          {/* <Link
             to="/app/meditation"
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7d9667] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/20 hover:bg-[#6f865c] transition-all"
           >
             <FiWind />
             Start Meditation
-          </Link>
+          </Link> */}
         </div>
       </section>
 
