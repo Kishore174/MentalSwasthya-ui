@@ -8,7 +8,7 @@ const Mainfol = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isAboutPage = location.pathname === "/app/about";
-  
+
   if (isAboutPage) {
     return (
       <div className='w-full min-h-screen bg-[#f7f9f4]'>
@@ -16,18 +16,18 @@ const Mainfol = () => {
       </div>
     )
   }
-  
+
   return (
     <div className='flex flex-1 min-h-screen bg-[#f6f9f3]'>
-      <div className=' lg:w-64'>
-        <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
+      <div className='lg:w-64 shrink-0'>
+        <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       </div>
-      <div className=' flex lg:flex-1 w-full flex-col'>
-        <Header className='' isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
-        <div className='px-5 lg:px-10 pt-20 mx-auto w-full mb-5'>
+      <div className='flex lg:flex-1 w-full flex-col min-w-0'>
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+        <div className='px-4 lg:px-8 pt-6 mx-auto w-full mb-5 flex-1'>
           <Outlet />
         </div>
-        <Footer/>
+        <Footer />
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { isTokenExpired, refreshAccessToken } from "../Api/config";
 
 const AuthContext = createContext();
 
@@ -6,16 +7,45 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
 
-  if (token && user && user !== "undefined") {
-    setToken(token);
-    setUser(JSON.parse(user));
-  }
-  setLoading(false);
-}, []);
+  useEffect(() => {
+    const initAuth = async () => {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
+
+      if (storedToken && storedUser && storedUser !== "undefined") {
+        let activeToken = storedToken;
+        let parsedUser = null;
+        try {
+          parsedUser = JSON.parse(storedUser);
+        } catch (e) {
+          parsedUser = null;
+        }
+
+        if (isTokenExpired(storedToken)) {
+          try {
+            activeToken = await refreshAccessToken();
+            setToken(activeToken);
+            setUser(parsedUser);
+          } catch (refreshErr) {
+            localStorage.clear();
+            setToken(null);
+            setUser(null);
+          }
+        } else {
+          setToken(activeToken);
+          setUser(parsedUser);
+        }
+      } else {
+        localStorage.clear();
+        setToken(null);
+        setUser(null);
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+  }, []);
 
 const login = (token, user) => {
   if (!token || !user) return;

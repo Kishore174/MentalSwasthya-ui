@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { 
-  FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRepeat, FiShuffle, 
+import {
+  FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRepeat, FiShuffle,
   FiVolume2, FiVolumeX, FiPlus, FiTrash2, FiFolder, FiInfo, FiCheck
 } from 'react-icons/fi';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
@@ -60,15 +60,17 @@ const deleteAudioFile = async (id) => {
 /* ─── Audio URL Helper ──────────────────────────────────── */
 const getFullAudioUrl = (audioUrl) => {
   if (!audioUrl) return "";
-  if (audioUrl.startsWith("http") || audioUrl.startsWith("blob:") || audioUrl.startsWith("data:")) {
+  if (audioUrl.startsWith("http://") || audioUrl.startsWith("https://") || audioUrl.startsWith("blob:") || audioUrl.startsWith("data:")) {
     return audioUrl;
   }
   const apiBase = axiosInstance.defaults.baseURL || "http://localhost:8080/api";
-  const origin = apiBase.replace("/api", "");
-  return `${origin}${audioUrl}`;
+  const origin = apiBase.replace(/\/api\/?$/, "");
+  const cleanPath = audioUrl.startsWith("/") ? audioUrl : `/${audioUrl}`;
+  return `${origin}${cleanPath}`;
 };
 
 const detectLanguage = (track) => {
+  if (track.category?.toLowerCase() === "music" || track.language?.toLowerCase() === "music") return "music";
   if (track.language) return track.language.toLowerCase();
   // Check Devanagari range (Hindi letters)
   const isHindi = /[\u0900-\u097F]/.test(track.title) || /[\u0900-\u097F]/.test(track.artist || "");
@@ -82,16 +84,17 @@ const formatTime = (time) => {
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
 
-const AudioPlaylist = ({ 
-  title, 
-  subtitle, 
-  coverImage, 
-  apiEndpoint, 
+const AudioPlaylist = ({
+  title,
+  subtitle,
+  coverImage,
+  apiEndpoint,
   themeColor,
   bgGradient,
   buttonBg
 }) => {
   const [tracks, setTracks] = useState([]);
+  const [musicTracks, setMusicTracks] = useState([]);
   const [customTracks, setCustomTracks] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -100,13 +103,12 @@ const AudioPlaylist = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [languageFilter, setLanguageFilter] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("english");
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Custom Upload Inline Form State
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadArtist, setUploadArtist] = useState("");
-  const [uploadLanguage, setUploadLanguage] = useState("english");
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -137,9 +139,17 @@ const AudioPlaylist = ({
     try {
       const res = await axiosInstance.get(apiEndpoint);
       // Backend format handler (affirmations vs meditations)
-      const data = res.data?.data?.affirmations || res.data?.data?.meditations || res.data?.data || [];
+      const data = res.data?.data?.affirmations || res.data?.data?.meditations || res.data?.data?.music || res.data?.data || [];
       setTracks(data);
-      
+
+      try {
+        const musicRes = await axiosInstance.get('/music/my');
+        const musicData = musicRes.data?.data?.music || [];
+        setMusicTracks(musicData.map(m => ({ ...m, language: "music", isCustom: false })));
+      } catch (musicErr) {
+        console.warn("Failed to load music tracks from API:", musicErr);
+      }
+
       const favRes = await axiosInstance.get(`${apiEndpoint}/favorites`);
       const favs = favRes.data?.data?.affirmations || favRes.data?.data?.meditations || favRes.data?.data || [];
       setFavorites(favs.map(f => f._id || f));
@@ -148,7 +158,7 @@ const AudioPlaylist = ({
     }
   };
 
-  // Combine remote tracks and custom tracks
+  // Combine remote tracks, music tracks, and custom tracks
   const allCombinedTracks = useMemo(() => {
     const remoteWithLanguage = tracks.map(t => ({
       ...t,
@@ -156,18 +166,17 @@ const AudioPlaylist = ({
       isCustom: false
     }));
 
-    return [...remoteWithLanguage, ...customTracks];
-  }, [tracks, customTracks]);
+    return [...remoteWithLanguage, ...musicTracks, ...customTracks];
+  }, [tracks, musicTracks, customTracks]);
 
   // Filter combined tracks based on selected language and search query
   const filteredTracks = useMemo(() => {
     return allCombinedTracks.filter(track => {
-      const matchesLanguage = 
-        languageFilter === "all" ||
+      const matchesLanguage =
         (languageFilter === "custom" && track.isCustom) ||
         (languageFilter === track.language && !track.isCustom);
 
-      const matchesSearch = 
+      const matchesSearch =
         track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (track.artist || "").toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -179,26 +188,34 @@ const AudioPlaylist = ({
 
   // Handle setting audio source dynamically
   useEffect(() => {
+    let isSubscribed = true;
+
     const loadTrackAudio = async () => {
-      if (!currentTrack) return;
-      
-      setIsPlaying(false);
+      if (!currentTrack || !audioRef.current) return;
       setCurrentTime(0);
 
       try {
+        let audioSrc = "";
         if (currentTrack.isCustom) {
           const file = await getAudioFile(currentTrack._id);
-          if (file) {
-            const blobUrl = URL.createObjectURL(file);
-            if (audioRef.current) {
-              audioRef.current.src = blobUrl;
-            }
+          if (file && isSubscribed) {
+            audioSrc = URL.createObjectURL(file);
           } else {
             console.error("Audio file not found in local database.");
           }
         } else {
-          if (audioRef.current) {
-            audioRef.current.src = getFullAudioUrl(currentTrack.audioUrl);
+          audioSrc = getFullAudioUrl(currentTrack.audioUrl);
+        }
+
+        if (audioSrc && audioRef.current && isSubscribed) {
+          if (audioRef.current.src !== audioSrc) {
+            audioRef.current.src = audioSrc;
+          }
+          if (isPlaying) {
+            audioRef.current.play().catch(err => {
+              console.error("Playback play error:", err);
+              setIsPlaying(false);
+            });
           }
         }
       } catch (err) {
@@ -207,18 +224,25 @@ const AudioPlaylist = ({
     };
 
     loadTrackAudio();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [currentTrack]);
 
-  // Playback control functions
+  // Sync isPlaying state with audio element when toggled manually
   const handlePlayPause = () => {
-    if (!currentTrack) return;
+    if (!currentTrack || !audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
       audioRef.current.play().then(() => {
         setIsPlaying(true);
-      }).catch(err => console.error("Playback interrupted:", err));
+      }).catch(err => {
+        console.error("Playback interrupted:", err);
+        setIsPlaying(false);
+      });
     }
   };
 
@@ -227,9 +251,6 @@ const AudioPlaylist = ({
     const nextIndex = (currentTrackIndex + 1) % filteredTracks.length;
     setCurrentTrackIndex(nextIndex);
     setIsPlaying(true);
-    setTimeout(() => {
-      if (audioRef.current) audioRef.current.play().catch(() => {});
-    }, 150);
   };
 
   const handlePrev = () => {
@@ -237,9 +258,6 @@ const AudioPlaylist = ({
     const prevIndex = currentTrackIndex === 0 ? filteredTracks.length - 1 : currentTrackIndex - 1;
     setCurrentTrackIndex(prevIndex);
     setIsPlaying(true);
-    setTimeout(() => {
-      if (audioRef.current) audioRef.current.play().catch(() => {});
-    }, 150);
   };
 
   const toggleFavorite = async (id, isCustom) => {
@@ -354,17 +372,17 @@ const AudioPlaylist = ({
 
     try {
       const uniqueId = `custom-${apiEndpoint.replace(/\//g, "")}-${Date.now()}`;
-      
+
       const audioUrl = URL.createObjectURL(selectedFile);
       const tempAudio = new Audio(audioUrl);
-      
+
       tempAudio.addEventListener("loadedmetadata", async () => {
         const fileDuration = tempAudio.duration;
 
         const formData = new FormData();
         formData.append("title", uploadTitle);
         formData.append("artist", uploadArtist || "Self");
-        formData.append("language", uploadLanguage);
+        formData.append("language", "custom");
         formData.append("audio", selectedFile);
 
         let createdTrack = null;
@@ -375,11 +393,11 @@ const AudioPlaylist = ({
               "Content-Type": "multipart/form-data"
             }
           });
-          
+
           if (res.data?.data) {
             createdTrack = {
               ...res.data.data,
-              language: uploadLanguage,
+              language: "custom",
               isCustom: false
             };
           }
@@ -389,12 +407,12 @@ const AudioPlaylist = ({
 
         if (!createdTrack) {
           await saveAudioFile(uniqueId, selectedFile);
-          
+
           createdTrack = {
             _id: uniqueId,
             title: uploadTitle,
             artist: uploadArtist || "Self",
-            language: uploadLanguage,
+            language: "custom",
             duration: fileDuration,
             audioUrl: uniqueId,
             isCustom: true
@@ -410,7 +428,6 @@ const AudioPlaylist = ({
         // Reset fields & success state
         setUploadTitle("");
         setUploadArtist("");
-        setUploadLanguage("english");
         setSelectedFile(null);
         setIsUploading(false);
         setUploadSuccess("Audio successfully uploaded and added to library!");
@@ -432,23 +449,28 @@ const AudioPlaylist = ({
     }
   };
 
-  const handleTrackDelete = async (id, e) => {
-    e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this custom track?")) return;
+  const handleTrackDelete = async (id, isCustom, e) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this track?")) return;
 
     try {
-      await deleteAudioFile(id);
-      const updatedCustom = customTracks.filter(t => t._id !== id);
-      setCustomTracks(updatedCustom);
-      localStorage.setItem(localStorageKey, JSON.stringify(updatedCustom));
-      
+      if (isCustom || (typeof id === 'string' && id.startsWith("custom-"))) {
+        await deleteAudioFile(id);
+        const updatedCustom = customTracks.filter(t => t._id !== id);
+        setCustomTracks(updatedCustom);
+        localStorage.setItem(localStorageKey, JSON.stringify(updatedCustom));
+      } else {
+        await axiosInstance.delete(`${apiEndpoint}/${id}`);
+        await fetchTracksAndFavorites();
+      }
+
       if (currentTrack && currentTrack._id === id) {
         setIsPlaying(false);
         if (audioRef.current) audioRef.current.pause();
         setCurrentTrackIndex(0);
       }
     } catch (err) {
-      console.error("Failed to delete custom track:", err);
+      console.error("Failed to delete track:", err);
     }
   };
 
@@ -456,44 +478,44 @@ const AudioPlaylist = ({
     setCurrentTrackIndex(index);
     setIsPlaying(true);
     setTimeout(() => {
-      if (audioRef.current) audioRef.current.play().catch(() => {});
+      if (audioRef.current) audioRef.current.play().catch(() => { });
     }, 100);
   };
 
   return (
     <div className={`min-h-[calc(100vh-130px)] rounded-[32px] ${bgGradient} p-4 md:p-8 shadow-[0_18px_55px_rgba(30,48,25,0.08)]`}>
       <div className="flex flex-col xl:flex-row gap-8">
-        
+
         {/* ─── LEFT COLUMN: PREMIUM VINYL PLAYER CARD ─── */}
         <section className="flex-shrink-0 w-full xl:w-[380px] bg-white/80 backdrop-blur-md rounded-[32px] border border-white p-6 shadow-lg flex flex-col items-center">
-          
+
           {/* Vinyl player spinner */}
           <div className="relative w-64 h-64 md:w-72 md:h-72 mt-2 flex items-center justify-center">
-            
+
             {/* Spinning Vinyl Record */}
             <div className={`absolute inset-0 rounded-full bg-slate-900 border-[12px] border-slate-950 flex items-center justify-center shadow-2xl overflow-hidden ${isPlaying ? 'animate-vinyl-spin' : ''}`}>
-              
+
               {/* Grooves on vinyl */}
               <div className="absolute inset-4 rounded-full border border-white/5 pointer-events-none"></div>
               <div className="absolute inset-10 rounded-full border border-white/5 pointer-events-none"></div>
               <div className="absolute inset-16 rounded-full border border-white/5 pointer-events-none"></div>
-              
+
               {/* Album art image in center */}
               <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-slate-900 z-10">
-                <img 
-                  src={coverImage} 
-                  alt="Album Art" 
-                  className={`w-full h-full object-cover select-none`} 
+                <img
+                  src={coverImage}
+                  alt="Album Art"
+                  className={`w-full h-full object-cover select-none`}
                 />
               </div>
             </div>
 
             {/* Stylus arm overlay */}
             <div className="absolute -top-1 right-8 w-16 h-36 origin-top transition-transform duration-500 z-20 pointer-events-none"
-                 style={{ transform: isPlaying ? 'rotate(15deg)' : 'rotate(-12deg)' }}>
+              style={{ transform: isPlaying ? 'rotate(15deg)' : 'rotate(-12deg)' }}>
               {/* Stylus shape */}
               <div className="w-1.5 h-24 bg-gradient-to-b to-gray-400 rounded-full shadow mx-auto"
-                   style={{ backgroundColor: themeColor }}></div>
+                style={{ backgroundColor: themeColor }}></div>
               <div className="w-3.5 h-6 bg-slate-800 rounded-sm -mt-1 mx-auto flex items-center justify-center border border-slate-700">
                 <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
               </div>
@@ -510,7 +532,7 @@ const AudioPlaylist = ({
             </p>
             {currentTrack && (
               <span className="inline-block text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-0.5 mt-2 rounded"
-                    style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
+                style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
                 {currentTrack.isCustom ? 'Custom' : currentTrack.language}
               </span>
             )}
@@ -522,11 +544,11 @@ const AudioPlaylist = ({
               <span className="text-[10px] font-black text-gray-400 w-10 text-right">
                 {formatTime(currentTime)}
               </span>
-              <input 
-                type="range" 
-                min="0" 
-                max={duration || 100} 
-                value={currentTime} 
+              <input
+                type="range"
+                min="0"
+                max={duration || 100}
+                value={currentTime}
                 onChange={handleSeek}
                 className="flex-grow h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer"
                 style={{ accentColor: themeColor }}
@@ -539,7 +561,7 @@ const AudioPlaylist = ({
 
           {/* Primary playback control buttons */}
           <div className="flex items-center justify-center gap-5 mt-6 w-full">
-            <button 
+            <button
               onClick={handlePrev}
               disabled={filteredTracks.length <= 1}
               className="p-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-500 disabled:opacity-40"
@@ -547,7 +569,7 @@ const AudioPlaylist = ({
             >
               <FiSkipBack size={20} />
             </button>
-            <button 
+            <button
               onClick={handlePlayPause}
               disabled={!currentTrack}
               className={`w-16 h-16 flex items-center justify-center rounded-full ${buttonBg} text-white shadow-lg transition-all hover:scale-105`}
@@ -556,7 +578,7 @@ const AudioPlaylist = ({
             >
               {isPlaying ? <FiPause size={24} /> : <FiPlay size={24} className="ml-1" />}
             </button>
-            <button 
+            <button
               onClick={handleNext}
               disabled={filteredTracks.length <= 1}
               className="p-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-500 disabled:opacity-40"
@@ -569,17 +591,17 @@ const AudioPlaylist = ({
           {/* Volume slider & secondary toggles */}
           <div className="w-full mt-8 pt-6 border-t border-gray-100/60 flex items-center justify-between px-2">
             <div className="flex items-center gap-2 flex-grow max-w-[200px]">
-              <button 
-                onClick={toggleMute} 
+              <button
+                onClick={toggleMute}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
                 title={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted || volume === 0 ? <FiVolumeX size={18} /> : <FiVolume2 size={18} />}
               </button>
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
+              <input
+                type="range"
+                min="0"
+                max="1"
                 step="0.05"
                 value={volume}
                 onChange={handleVolumeChange}
@@ -590,14 +612,14 @@ const AudioPlaylist = ({
 
             <div className="flex items-center gap-3">
               {currentTrack && (
-                <button 
+                <button
                   onClick={() => toggleFavorite(currentTrack._id, currentTrack.isCustom)}
                   className="p-2 border border-gray-100 rounded-xl bg-white transition-colors text-gray-400 hover:bg-gray-50 shadow-sm"
                   style={{ borderColor: `${themeColor}12` }}
                   title="Favorite Track"
                 >
-                  {favorites.includes(currentTrack._id) 
-                    ? <FaHeart className="text-red-500 text-sm" /> 
+                  {favorites.includes(currentTrack._id)
+                    ? <FaHeart className="text-red-500 text-sm" />
                     : <FaRegHeart className="hover:text-red-500 text-sm" />}
                 </button>
               )}
@@ -608,12 +630,12 @@ const AudioPlaylist = ({
 
         {/* ─── RIGHT COLUMN: LIST, SEARCH, FILTERS ─── */}
         <section className="flex-grow flex flex-col min-w-0">
-          
+
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.16em]"
-                 style={{ color: themeColor }}>
+                style={{ color: themeColor }}>
                 guided recordings
               </p>
               <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
@@ -627,13 +649,13 @@ const AudioPlaylist = ({
 
           {/* Filters Bar: Search & Languages */}
           <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-4 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            
+
             {/* Language filter buttons */}
             <div className="flex flex-wrap gap-1.5">
               {[
-                { id: "all", label: "All Sounds" },
                 { id: "english", label: "🇺🇸 English" },
                 { id: "hindi", label: "🇮🇳 Hindi" },
+                { id: "music", label: "🎵 Music" },
                 { id: "custom", label: "📁 Personal Upload" }
               ].map(filter => {
                 const isActive = languageFilter === filter.id;
@@ -644,11 +666,10 @@ const AudioPlaylist = ({
                       setLanguageFilter(filter.id);
                       setCurrentTrackIndex(0);
                     }}
-                    className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${
-                      isActive
-                        ? "text-white shadow-md"
-                        : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
-                    }`}
+                    className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
+                      ? "text-white shadow-md"
+                      : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
+                      }`}
                     style={isActive ? { backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` } : {}}
                   >
                     {filter.label}
@@ -659,7 +680,7 @@ const AudioPlaylist = ({
 
             {/* Simple text search */}
             <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-2.5 focus-within:bg-white transition-all w-full md:max-w-[280px]"
-                 style={{ focusWithinBorderColor: themeColor }}>
+              style={{ focusWithinBorderColor: themeColor }}>
               <input
                 type="text"
                 placeholder="Search tracks..."
@@ -676,37 +697,36 @@ const AudioPlaylist = ({
           {/* INLINE PERSONAL UPLOAD FORM (Only rendered when "Personal Upload" tab is active) */}
           {languageFilter === "custom" && (
             <div className="bg-white/95 rounded-[28px] border p-5 md:p-6 shadow-md mb-6 animate-scale-up"
-                 style={{ borderColor: `${themeColor}22` }}>
+              style={{ borderColor: `${themeColor}22` }}>
               <h2 className="text-base font-black text-gray-800 mb-4 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: themeColor }}></span>
                 Upload Custom Track
               </h2>
-              
+
               <form onSubmit={handleUploadSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Drag and Drop Zone */}
-                <div 
+                <div
                   onDragEnter={handleDrag}
                   onDragOver={handleDrag}
                   onDragLeave={handleDrag}
                   onDrop={handleDrop}
                   onClick={() => fileInputRef.current.click()}
-                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all md:row-span-3 ${
-                    dragActive 
-                      ? 'bg-gray-50' 
-                      : selectedFile 
-                        ? 'border-green-400 bg-green-50/20' 
-                        : 'border-gray-200'
-                  }`}
+                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all md:row-span-3 ${dragActive
+                    ? 'bg-gray-50'
+                    : selectedFile
+                      ? 'border-green-400 bg-green-50/20'
+                      : 'border-gray-200'
+                    }`}
                   style={dragActive ? { borderColor: themeColor, backgroundColor: `${themeColor}08` } : {}}
                 >
-                  <input 
+                  <input
                     ref={fileInputRef}
-                    type="file" 
-                    accept="audio/*" 
+                    type="file"
+                    accept="audio/*"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
-                  
+
                   {selectedFile ? (
                     <>
                       <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500 mb-2">
@@ -718,7 +738,7 @@ const AudioPlaylist = ({
                   ) : (
                     <>
                       <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center mb-2"
-                           style={{ color: themeColor, backgroundColor: `${themeColor}12` }}>
+                        style={{ color: themeColor, backgroundColor: `${themeColor}12` }}>
                         <FiPlus size={18} />
                       </div>
                       <p className="text-xs font-black text-gray-700">Drag & drop audio here</p>
@@ -732,8 +752,8 @@ const AudioPlaylist = ({
                   <label className="block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5">
                     Track Title
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="e.g. My Custom Session"
@@ -748,8 +768,8 @@ const AudioPlaylist = ({
                   <label className="block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5">
                     Speaker / Artist
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={uploadArtist}
                     onChange={(e) => setUploadArtist(e.target.value)}
                     placeholder="e.g. Self (Optional)"
@@ -758,33 +778,8 @@ const AudioPlaylist = ({
                   />
                 </div>
 
-                {/* Language Selection & Submit Button */}
-                <div className="md:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">
-                      Language:
-                    </span>
-                    <div className="flex gap-1 bg-gray-100 p-0.5 rounded-xl border border-gray-100/50">
-                      {[
-                        { id: 'english', label: 'English' },
-                        { id: 'hindi', label: 'Hindi' }
-                      ].map(lang => {
-                        const isLangActive = uploadLanguage === lang.id;
-                        return (
-                          <button
-                            key={lang.id}
-                            type="button"
-                            onClick={() => setUploadLanguage(lang.id)}
-                            className="rounded-lg px-3 py-1 text-xs font-bold transition-all"
-                            style={isLangActive ? { backgroundColor: themeColor, color: '#ffffff' } : { color: '#666666' }}
-                          >
-                            {lang.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
+                {/* Submit Button */}
+                <div className="md:col-span-2 flex justify-end mt-2">
                   <button
                     type="submit"
                     disabled={isUploading}
@@ -827,8 +822,8 @@ const AudioPlaylist = ({
                     const isCurrent = currentTrack?._id === track._id;
                     const isFav = favorites.includes(track._id);
                     return (
-                      <tr 
-                        key={track._id} 
+                      <tr
+                        key={track._id}
                         onClick={() => playTrack(idx)}
                         className="group transition-all cursor-pointer hover:bg-white/50"
                         style={isCurrent ? { backgroundColor: `${themeColor}0c` } : {}}
@@ -844,7 +839,7 @@ const AudioPlaylist = ({
                           ) : (
                             <span className="group-hover:hidden">{idx + 1}</span>
                           )}
-                          
+
                           <div className={`hidden group-hover:flex items-center justify-center`}>
                             {isCurrent && isPlaying ? (
                               <FiPause style={{ color: themeColor, fontSize: 13 }} />
@@ -858,7 +853,7 @@ const AudioPlaylist = ({
                         <td className="py-4 px-5">
                           <div>
                             <p className="text-sm font-black transition-colors"
-                               style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
+                              style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
                               {track.title}
                             </p>
                             <p className="text-xs text-gray-400 font-bold mt-0.5">
@@ -869,13 +864,12 @@ const AudioPlaylist = ({
 
                         {/* Language Badge */}
                         <td className="py-4 px-5 text-center">
-                          <span className={`inline-block text-[10px] font-black uppercase tracking-[0.05em] px-2.5 py-1 rounded-full ${
-                            track.isCustom
-                              ? 'bg-purple-50 text-purple-600 border border-purple-100'
-                              : track.language === 'hindi'
-                                ? 'bg-orange-50 text-orange-600 border border-orange-100'
-                                : 'bg-blue-50 text-blue-600 border border-blue-100'
-                          }`}>
+                          <span className={`inline-block text-[10px] font-black uppercase tracking-[0.05em] px-2.5 py-1 rounded-full ${track.isCustom
+                            ? 'bg-purple-50 text-purple-600 border border-purple-100'
+                            : track.language === 'hindi'
+                              ? 'bg-orange-50 text-orange-600 border border-orange-100'
+                              : 'bg-blue-50 text-blue-600 border border-blue-100'
+                            }`}>
                             {track.isCustom ? 'Local' : track.language}
                           </span>
                         </td>
@@ -888,19 +882,19 @@ const AudioPlaylist = ({
                         {/* Action buttons */}
                         <td className="py-4 px-5 text-center" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-2">
-                            <button 
+                            <button
                               onClick={() => toggleFavorite(track._id, track.isCustom)}
                               className="p-2 border border-gray-100 rounded-xl bg-white shadow-sm transition-colors text-gray-400 hover:text-red-500"
                               title="Favorite"
                             >
                               {isFav ? <FaHeart className="text-red-500 text-sm" /> : <FaRegHeart className="text-sm" />}
                             </button>
-                            
+
                             {track.isCustom && (
-                              <button 
-                                onClick={(e) => handleTrackDelete(track._id, e)}
+                              <button
+                                onClick={(e) => handleTrackDelete(track._id, track.isCustom, e)}
                                 className="p-2 border border-gray-100 rounded-xl bg-white hover:bg-red-50 shadow-sm transition-all text-gray-400 hover:text-red-500"
-                                title="Delete Custom Track"
+                                title="Delete Track"
                               >
                                 <FiTrash2 size={13} />
                               </button>
@@ -917,8 +911,8 @@ const AudioPlaylist = ({
                   <FiFolder size={36} className="text-gray-300 mb-3" />
                   <p className="text-sm font-black">No tracks found</p>
                   <p className="text-xs text-gray-300 mt-1">
-                    {languageFilter === "custom" 
-                      ? "Use the form above to add your first custom recording!" 
+                    {languageFilter === "custom"
+                      ? "Use the form above to add your first custom recording!"
                       : "Try another filter or search term"}
                   </p>
                 </div>
@@ -930,8 +924,10 @@ const AudioPlaylist = ({
 
       {/* Invisible HTML Audio Element */}
       {currentTrack && (
-        <audio 
+        <audio
           ref={audioRef}
+          preload="auto"
+          crossOrigin="anonymous"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={() => {

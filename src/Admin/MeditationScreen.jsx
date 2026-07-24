@@ -181,6 +181,109 @@ const calculateCompletedCycles = (seconds, durationSeconds, cycleSeconds, totalC
 
 const isLocalSession = (id) => typeof id === "string" && id.startsWith("local-");
 
+const playBeep = (frequency = 440, duration = 0.15) => {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = frequency;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    // Ignore audio errors if restricted
+  }
+};
+
+const triggerVibrate = (pattern = 100) => {
+  try {
+    if ("vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  } catch (e) {
+    // Ignore vibration errors
+  }
+};
+
+const ProgressShape = ({
+  shape,
+  progress,
+  strokeWidth = 7,
+  trackColor = "#e4ecdf",
+  progressColor = "#7d9667",
+  className = "absolute inset-0 w-full h-full",
+}) => {
+  const pathRef = useRef(null);
+  const [totalLength, setTotalLength] = useState(0);
+
+  const getShapeConfig = () => {
+    switch (shape) {
+      case "box":
+        return {
+          d: "M 10 8 H 110 A 2 2 0 0 1 112 10 V 110 A 2 2 0 0 1 110 112 H 10 A 2 2 0 0 1 8 110 V 10 A 2 2 0 0 1 10 8 Z",
+          defaultLength: 412.5,
+        };
+      case "triangle":
+        return {
+          d: "M 60 8 L 111 104 A 2 2 0 0 1 109 107 H 11 A 2 2 0 0 1 9 104 Z",
+          defaultLength: 320.0,
+        };
+      case "circle":
+      default:
+        return {
+          d: "M 60 7 A 53 53 0 0 1 60 113 A 53 53 0 0 1 60 7 Z",
+          defaultLength: 333.0,
+        };
+    }
+  };
+
+  const currentShapeConfig = getShapeConfig();
+
+  useEffect(() => {
+    if (pathRef.current && typeof pathRef.current.getTotalLength === "function") {
+      const len = pathRef.current.getTotalLength();
+      if (len > 0) setTotalLength(len);
+    } else {
+      setTotalLength(currentShapeConfig.defaultLength);
+    }
+  }, [shape, currentShapeConfig.d, currentShapeConfig.defaultLength]);
+
+  const length = totalLength || currentShapeConfig.defaultLength;
+  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const dashOffset = length * (1 - clampedProgress / 100);
+
+  return (
+    <svg className={className} viewBox="0 0 120 120">
+      <path
+        d={currentShapeConfig.d}
+        fill="none"
+        stroke={trackColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        ref={pathRef}
+        d={currentShapeConfig.d}
+        fill="none"
+        stroke={progressColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray={length}
+        strokeDashoffset={dashOffset}
+        style={{ transition: dashOffset === length || clampedProgress === 0 ? "none" : "stroke-dashoffset 0.8s linear" }}
+      />
+    </svg>
+  );
+};
+
 const MeditationScreen = () => {
   const navigate = useNavigate();
   const [selectedTechnique, setSelectedTechnique] = useState("triangle");
@@ -194,6 +297,8 @@ const MeditationScreen = () => {
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
   const [sessionId, setSessionId] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdownValue, setCountdownValue] = useState(3);
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [vibrationOn, setVibrationOn] = useState(false);
@@ -216,19 +321,60 @@ const MeditationScreen = () => {
   const totalCycles = Math.max(1, Math.ceil(durationSeconds / cycleSeconds));
   const progress = durationSeconds ? Math.min(100, (elapsedSeconds / durationSeconds) * 100) : 0;
 
-  const currentPhase = useMemo(() => {
-    const cycleElapsed = elapsedSeconds % cycleSeconds;
-    let phaseStart = 0;
+  const { activePhaseIndex, currentPhase, phaseProgress, shapeCycleProgress } = useMemo(() => {
+    if (!cycleSeconds || cycleSeconds <= 0) {
+      return { activePhaseIndex: 0, currentPhase: config.phases[0], phaseProgress: 0, shapeCycleProgress: 0 };
+    }
 
-    return (
-      config.phases.find((phase) => {
-        const phaseEnd = phaseStart + phase.seconds;
-        const active = cycleElapsed >= phaseStart && cycleElapsed < phaseEnd;
-        phaseStart = phaseEnd;
-        return active;
-      }) || config.phases[0]
-    );
-  }, [config.phases, cycleSeconds, elapsedSeconds]);
+    const cycleElapsed = elapsedSeconds % cycleSeconds;
+    let accumulated = 0;
+    let phaseIdx = 0;
+    let pElapsed = 0;
+    let pSec = config.phases[0].seconds;
+
+    for (let i = 0; i < config.phases.length; i++) {
+      const sec = config.phases[i].seconds;
+      if (cycleElapsed >= accumulated && cycleElapsed < accumulated + sec) {
+        phaseIdx = i;
+        pElapsed = cycleElapsed - accumulated;
+        pSec = sec;
+        break;
+      }
+      accumulated += sec;
+    }
+
+    const phaseFrac = pSec > 0 ? Math.min(1, pElapsed / pSec) : 0;
+    const numPhases = config.phases.length;
+    const totalFrac = numPhases > 0 ? (phaseIdx + phaseFrac) / numPhases : 0;
+    const cycleProgressVal = isRunning || elapsedSeconds > 0 ? Math.min(100, Math.max(0, totalFrac * 100)) : 0;
+
+    return {
+      activePhaseIndex: phaseIdx,
+      currentPhase: config.phases[phaseIdx] || config.phases[0],
+      phaseProgress: phaseFrac,
+      shapeCycleProgress: cycleProgressVal,
+    };
+  }, [config.phases, cycleSeconds, elapsedSeconds, isRunning]);
+
+  const breathScaleStyle = useMemo(() => {
+    if (!isRunning) return { transform: "scale(1)" };
+    const pName = (currentPhase?.name || "").toLowerCase();
+    let scale = 1.0;
+    if (pName.includes("inhale")) {
+      scale = 0.85 + 0.3 * phaseProgress;
+    } else if (pName.includes("exhale")) {
+      scale = 1.15 - 0.3 * phaseProgress;
+    } else if (pName.includes("hold")) {
+      const isAfterInhale =
+        activePhaseIndex > 0 &&
+        (config.phases[activePhaseIndex - 1]?.name || "").toLowerCase().includes("inhale");
+      scale = isAfterInhale ? 1.15 : 0.85;
+    }
+    return {
+      transform: `scale(${scale.toFixed(3)})`,
+      transition: "transform 1s linear",
+    };
+  }, [isRunning, currentPhase, phaseProgress, activePhaseIndex, config.phases]);
 
   useEffect(() => {
     getBreathingHistory()
@@ -272,10 +418,41 @@ const MeditationScreen = () => {
 
     completeBreathingSession(sessionId, {
       cyclesCompleted: calculateCompletedCycles(durationSeconds, durationSeconds, cycleSeconds, totalCycles),
+      completedSeconds: elapsedSeconds || durationSeconds,
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
   }, [cycleSeconds, durationSeconds, elapsedSeconds, sessionId, totalCycles]);
+
+  useEffect(() => {
+    if (!isCountingDown) return undefined;
+
+    if (soundOn) {
+      if (countdownValue > 0) {
+        playBeep(520, 0.12);
+      } else {
+        playBeep(880, 0.25);
+      }
+    }
+
+    if (vibrationOn) {
+      triggerVibrate(countdownValue > 0 ? 80 : [100, 50, 100]);
+    }
+
+    if (countdownValue > 0) {
+      const timer = setTimeout(() => {
+        setCountdownValue((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    const startTimer = setTimeout(() => {
+      setIsCountingDown(false);
+      setIsRunning(true);
+    }, 600);
+
+    return () => clearTimeout(startTimer);
+  }, [isCountingDown, countdownValue, soundOn, vibrationOn]);
 
   const resetLocalSession = (nextDuration = durationSeconds) => {
     completedRef.current = false;
@@ -284,6 +461,8 @@ const MeditationScreen = () => {
     setCyclesCompleted(0);
     setSessionId(null);
     setIsRunning(false);
+    setIsCountingDown(false);
+    setCountdownValue(3);
     setIsCompleted(false);
     setApiMessage("");
   };
@@ -355,21 +534,25 @@ const MeditationScreen = () => {
 
     if (isCompleted || forceNew) {
       resetLocalSession();
-    } else if (sessionId) {
-      setIsRunning(true);
+    } else if (sessionId && !isCompleted) {
+      setCountdownValue(3);
+      setIsCountingDown(true);
       return;
     }
 
-    try {
-      const response = await startSessionWithTechniqueFallback(config, durationSeconds);
-      setSessionId(getSessionId(response) || `local-${Date.now()}`);
-      setApiMessage("Session started.");
-    } catch (error) {
-      setSessionId(`local-${Date.now()}`);
-      setApiMessage("API unavailable. Running session locally.");
+    if (!sessionId) {
+      try {
+        const response = await startSessionWithTechniqueFallback(config, durationSeconds);
+        setSessionId(getSessionId(response) || `local-${Date.now()}`);
+        setApiMessage("Session started.");
+      } catch (error) {
+        setSessionId(`local-${Date.now()}`);
+        setApiMessage("API unavailable. Running session locally.");
+      }
     }
 
-    setIsRunning(true);
+    setCountdownValue(3);
+    setIsCountingDown(true);
   };
 
   const handleStop = async () => {
@@ -383,7 +566,10 @@ const MeditationScreen = () => {
 
     if (shouldCompleteSession) {
       try {
-        await completeBreathingSession(sessionId, { cyclesCompleted: currentCyclesCompleted });
+        await completeBreathingSession(sessionId, {
+          cyclesCompleted: currentCyclesCompleted,
+          completedSeconds: elapsedSeconds,
+        });
       } catch (error) {
         setApiMessage("Stopped locally. Please check API connection.");
       }
@@ -396,12 +582,12 @@ const MeditationScreen = () => {
     let intentionsCount = 0;
     try {
       intentionsCount = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]").length;
-    } catch (e) {}
+    } catch (e) { }
 
     let playHistory = [];
     try {
       playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
-    } catch (e) {}
+    } catch (e) { }
 
     const medPlays = playHistory.filter(item => item.playlistType === "/meditation");
     const affPlays = playHistory.filter(item => item.playlistType === "/affirmation");
@@ -422,41 +608,41 @@ const MeditationScreen = () => {
           title: "Mental Swasthya",
           text: "I completed a wellness breathing session on Mental Swasthya!",
           url: window.location.origin,
-        }).catch(() => {});
+        }).catch(() => { });
       } else {
         try {
           navigator.clipboard.writeText(window.location.origin);
           alert("Mental Swasthya link copied to clipboard!");
-        } catch (e) {}
+        } catch (e) { }
       }
     };
 
     const handleDone = () => {
       resetLocalSession();
-      navigate("/app");
+      navigate("/");
     };
 
     return (
       <div className="min-h-[calc(100vh-130px)] flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 rounded-[32px]">
         <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50">
-          
+
           {/* Custom Meditating Tree Artwork SVG */}
           <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
             <circle cx="100" cy="90" r="45" fill="#eef6ea" opacity="0.4" />
             <circle cx="100" cy="90" r="30" fill="#e9f5fb" opacity="0.6" />
-            
+
             {/* Tree Leaves */}
             <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
             <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
             <circle cx="100" cy="35" r="25" fill="#b9d7cd" opacity="0.8" />
             <circle cx="60" cy="70" r="18" fill="#dceade" opacity="0.75" />
             <circle cx="140" cy="70" r="18" fill="#dbe7e7" opacity="0.75" />
-            
+
             {/* Tree Trunk */}
-            <path d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65" 
-                  stroke="#4b5563" strokeWidth="2" strokeLinecap="round" fill="none" />
+            <path d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65"
+              stroke="#4b5563" strokeWidth="2" strokeLinecap="round" fill="none" />
             <path d="M96 95 L96 110 L104 110 L104 95 Z" fill="#4b5563" />
-            
+
             {/* Meditating Figure */}
             <circle cx="100" cy="95" r="18" stroke="#7d9667" strokeWidth="1" fill="#ffffff" strokeDasharray="3 3" />
             <circle cx="100" cy="85" r="4.5" fill="#4b5563" />
@@ -539,7 +725,7 @@ const MeditationScreen = () => {
           </div>
 
           {/* Share box banner */}
-          <div 
+          <div
             onClick={handleShare}
             className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-6 border border-gray-200/50"
           >
@@ -575,6 +761,46 @@ const MeditationScreen = () => {
     );
   }
 
+  if (isCountingDown) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
+        {/* Ambient glowing aura */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[480px] md:h-[480px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
+
+        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+          <span className="text-sm md:text-base font-black uppercase tracking-[0.35em] text-[#a8c896] mb-8 animate-fade-in">
+            Get Ready
+          </span>
+
+          {/* Animated countdown circle with big number */}
+          <div
+            key={countdownValue}
+            className="w-48 h-48 md:w-56 md:h-56 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown"
+          >
+            <span className="text-7xl md:text-8xl font-black text-white tracking-tight drop-shadow-md">
+              {countdownValue > 0 ? countdownValue : "BEGIN"}
+            </span>
+          </div>
+
+          <p className="text-sm font-semibold text-white/60 mt-8 tracking-wide">
+            Take a deep breath and center yourself...
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsCountingDown(false);
+              setIsRunning(false);
+            }}
+            className="mt-8 px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white/60 hover:text-white transition-all border border-white/10"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isSessionActive = sessionId !== null;
 
   if (isSessionActive) {
@@ -582,7 +808,7 @@ const MeditationScreen = () => {
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
         {/* Glowing aura behind shape */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[450px] md:h-[450px] bg-[#7d9667]/15 rounded-full blur-[80px] pointer-events-none transition-transform duration-1000"
-             style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
+          style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top bar with minimal info and stop/exit button */}
         <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in">
@@ -607,25 +833,18 @@ const MeditationScreen = () => {
         {/* Center content: the breathing shape & active phase */}
         <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
           <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] flex items-center justify-center">
-            {/* Outer animated breathing circle progress indicator */}
-            <svg className="absolute inset-0 -rotate-90 w-full h-full" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
-              <circle
-                cx="60"
-                cy="60"
-                r="54"
-                fill="none"
-                stroke="#a8c896"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 54}`}
-                strokeDashoffset={`${2 * Math.PI * 54 * (1 - progress / 100)}`}
-                style={{ transition: "stroke-dashoffset 0.5s ease" }}
-              />
-            </svg>
+            {/* Outer animated breathing progress indicator matching shape */}
+            <ProgressShape
+              shape={config.shape}
+              progress={shapeCycleProgress}
+              strokeWidth={4}
+              trackColor="rgba(255,255,255,0.06)"
+              progressColor="#a8c896"
+              className="absolute inset-0 w-full h-full"
+            />
 
             {/* Breathing shape with animated scale */}
-            <div className={`breath-shape-full ${config.shape} ${isRunning ? "is-running" : ""}`}>
+            <div className={`breath-shape-full ${config.shape}`} style={breathScaleStyle}>
               <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none">
                 {isRunning ? currentPhase.name : "Paused"}
               </span>
@@ -637,18 +856,32 @@ const MeditationScreen = () => {
             {formatTime(remainingSeconds)}
           </h2>
 
+          {/* Horizontal Session Progress Bar */}
+          <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
+              <span>{formatTime(elapsedSeconds)}</span>
+              <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
+              <span>{formatTime(durationSeconds)}</span>
+            </div>
+            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
+              <div
+                className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(168,200,150,0.6)]"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+          </div>
+
           {/* Detailed phase sequence tracker */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
             {config.phases.map((p, idx) => {
-              const isActive = isRunning && p.name === currentPhase.name;
+              const isActive = isRunning && idx === activePhaseIndex;
               return (
                 <React.Fragment key={idx}>
                   <span
-                    className={`px-3 py-1.5 rounded-xl transition-all ${
-                      isActive
-                        ? "bg-[#7d9667] text-white font-extrabold shadow-lg shadow-[#7d9667]/20 scale-105 border border-[#7d9667]/30"
-                        : "bg-white/5 text-white/50 border border-white/5"
-                    }`}
+                    className={`px-3 py-1.5 rounded-xl transition-all ${isActive
+                      ? "bg-[#7d9667] text-white font-extrabold shadow-lg shadow-[#7d9667]/20 scale-105 border border-[#7d9667]/30"
+                      : "bg-white/5 text-white/50 border border-white/5"
+                      }`}
                   >
                     {p.name} ({p.seconds}s)
                   </span>
@@ -734,23 +967,13 @@ const MeditationScreen = () => {
           }
 
           .breath-shape-full.box {
-            border-radius: 36px;
+            border-radius: 2px;
           }
 
           .breath-shape-full.triangle {
-            border-radius: 0;
-            clip-path: polygon(50% 0%, 100% 88%, 0% 88%);
-            padding-top: 45px;
-          }
-
-          .breath-shape-full.is-running {
-            animation: breatheScaleFull ${cycleSeconds}s ease-in-out infinite;
-          }
-
-          @keyframes breatheScaleFull {
-            0%, 100% { transform: scale(0.82); opacity: 0.9; }
-            42% { transform: scale(1.18); opacity: 1; box-shadow: 0 0 70px rgba(168, 200, 150, 0.5); }
-            68% { transform: scale(1.18); opacity: 1; box-shadow: 0 0 70px rgba(168, 200, 150, 0.5); }
+            border-radius: 2px;
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+            padding-top: 40px;
           }
         `}</style>
       </div>
@@ -779,11 +1002,10 @@ const MeditationScreen = () => {
                 key={key}
                 type="button"
                 onClick={() => handleTechniqueChange(key)}
-                className={`rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${
-                  selectedTechnique === key
-                    ? "bg-[#7d9667] text-white shadow-lg shadow-[#7d9667]/25"
-                    : "bg-white text-gray-400 hover:text-[#7d9667]"
-                }`}
+                className={`rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${selectedTechnique === key
+                  ? "bg-[#7d9667] text-white shadow-lg shadow-[#7d9667]/25"
+                  : "bg-white text-gray-400 hover:text-[#7d9667]"
+                  }`}
               >
                 {item.label}
               </button>
@@ -799,11 +1021,10 @@ const MeditationScreen = () => {
                   setSelectedPresetIndex(index);
                   resetLocalSession();
                 }}
-                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${
-                  selectedPresetIndex === index
-                    ? "bg-[#7d9667] text-white shadow-sm"
-                    : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
-                }`}
+                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${selectedPresetIndex === index
+                  ? "bg-[#7d9667] text-white shadow-sm"
+                  : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
+                  }`}
               >
                 {preset.label}
               </button>
@@ -816,24 +1037,17 @@ const MeditationScreen = () => {
         <section className="rounded-[30px] bg-white/80 border border-white p-5 md:p-8 shadow-sm">
           <div className="flex flex-col items-center justify-center min-h-[460px] text-center">
             <div className="relative w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
-              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 120 120">
-                <circle cx="60" cy="60" r="53" fill="none" stroke="#e4ecdf" strokeWidth="7" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="53"
-                  fill="none"
-                  stroke="#7d9667"
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 53}`}
-                  strokeDashoffset={`${2 * Math.PI * 53 * (1 - progress / 100)}`}
-                  style={{ transition: "stroke-dashoffset 0.5s ease" }}
-                />
-              </svg>
+              <ProgressShape
+                shape={config.shape}
+                progress={shapeCycleProgress}
+                strokeWidth={7}
+                trackColor="#e4ecdf"
+                progressColor="#7d9667"
+                className="absolute inset-0 w-full h-full"
+              />
 
-              <div className={`breath-shape ${config.shape} ${isRunning ? "is-running" : ""}`}>
-                <span>{currentPhase.name}</span>
+              <div className={`breath-shape ${config.shape}`} style={breathScaleStyle}>
+                <span>{isRunning ? currentPhase.name : "Paused"}</span>
               </div>
             </div>
 
@@ -849,15 +1063,14 @@ const MeditationScreen = () => {
 
             <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-gray-400 mt-4 font-semibold max-w-[90%]">
               {config.phases.map((p, idx) => {
-                const isActive = isRunning && p.name === currentPhase.name;
+                const isActive = isRunning && idx === activePhaseIndex;
                 return (
                   <React.Fragment key={idx}>
                     <span
-                      className={`px-2 py-1 rounded-lg transition-all ${
-                        isActive
-                          ? "bg-[#eef6ea] text-[#7d9667] font-extrabold border border-[#7d9667]/20 scale-105"
-                          : "bg-gray-50 text-gray-400"
-                      }`}
+                      className={`px-2 py-1 rounded-lg transition-all ${isActive
+                        ? "bg-[#eef6ea] text-[#7d9667] font-extrabold border border-[#7d9667]/20 scale-105"
+                        : "bg-gray-50 text-gray-400"
+                        }`}
                     >
                       {p.name} ({p.seconds}s)
                     </span>
@@ -878,14 +1091,14 @@ const MeditationScreen = () => {
                 {isRunning ? <FiPause /> : <FiPlay />}
                 {isRunning ? "Pause" : "Start"}
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={handleStop}
                 className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all"
               >
                 <FiSquare />
                 Stop
-              </button>
+              </button> */}
             </div>
           </div>
         </section>
@@ -901,11 +1114,10 @@ const MeditationScreen = () => {
                   key={duration.value}
                   type="button"
                   onClick={() => handleDurationChange(duration.value)}
-                  className={`rounded-2xl py-3 text-xs font-black transition-all ${
-                    durationSeconds === duration.value
-                      ? "bg-[#7d9667] text-white"
-                      : "bg-gray-50 text-gray-400 hover:text-[#7d9667]"
-                  }`}
+                  className={`rounded-2xl py-3 text-xs font-black transition-all ${durationSeconds === duration.value
+                    ? "bg-[#7d9667] text-white"
+                    : "bg-gray-50 text-gray-400 hover:text-[#7d9667]"
+                    }`}
                 >
                   {duration.label}
                 </button>
@@ -985,7 +1197,20 @@ const MeditationScreen = () => {
               Progress
             </p>
             <p className="text-4xl font-black text-white mt-4">{Math.round(progress)}%</p>
-            <p className="text-xs leading-6 text-white/50 mt-2">
+
+            {/* Visual Progress Bar */}
+            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mt-3 p-0.5 border border-white/10">
+              <div
+                className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,200,150,0.5)]"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-white/50 font-bold mt-1.5">
+              <span>{formatTime(elapsedSeconds)} elapsed</span>
+              <span>{formatTime(durationSeconds)} total</span>
+            </div>
+
+            <p className="text-xs leading-6 text-white/50 mt-3">
               {apiMessage || "Choose a technique and begin when you are ready."}
             </p>
             <button
@@ -1021,23 +1246,23 @@ const MeditationScreen = () => {
         }
 
         .breath-shape.box {
-          border-radius: 34px;
+          border-radius: 2px;
         }
 
         .breath-shape.triangle {
-          border-radius: 0;
-          clip-path: polygon(50% 0%, 100% 88%, 0% 88%);
-          padding-top: 42px;
+          border-radius: 2px;
+          clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+          padding-top: 40px;
         }
 
-        .breath-shape.is-running {
-          animation: breatheScale ${cycleSeconds}s ease-in-out infinite;
+        @keyframes countdownPulse {
+          0% { transform: scale(0.65); opacity: 0; }
+          50% { transform: scale(1.12); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
         }
 
-        @keyframes breatheScale {
-          0%, 100% { transform: scale(0.82); opacity: 0.9; }
-          42% { transform: scale(1.15); opacity: 1; }
-          68% { transform: scale(1.15); opacity: 1; }
+        .animate-countdown {
+          animation: countdownPulse 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
     </div>

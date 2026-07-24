@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   FiCalendar,
+  FiChevronDown,
+  FiCheck,
   FiDroplet,
   FiRefreshCcw,
 } from "react-icons/fi";
@@ -58,6 +60,139 @@ const getTechniqueLabel = (technique) => {
   };
 
   return labels[technique] || technique || "Breathing";
+};
+
+const PERIOD_OPTIONS = [
+  { id: "today", label: "Today" },
+  { id: "this_week", label: "This Week" },
+  { id: "last_week", label: "Last Week" },
+  { id: "this_month", label: "This Month" },
+  { id: "last_month", label: "Last Month" },
+  { id: "last_3_months", label: "Last 3 Months" },
+  { id: "this_year", label: "This Year" },
+  { id: "all", label: "All Time" },
+];
+
+const getPeriodDateRange = (period) => {
+  const now = new Date();
+  const start = new Date(now);
+  const end = new Date(now);
+
+  switch (period) {
+    case "today": {
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "this_week": {
+      const day = now.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1) - day;
+      start.setDate(now.getDate() + diffToMonday);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "last_week": {
+      const day = now.getDay();
+      const diffToLastMonday = ((day === 0 ? -6 : 1) - day) - 7;
+      start.setDate(now.getDate() + diffToLastMonday);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(start.getDate() + 6);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "this_month": {
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "last_month": {
+      start.setMonth(now.getMonth() - 1, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setDate(0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "last_3_months": {
+      start.setMonth(now.getMonth() - 3, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "this_year": {
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    case "all":
+    default:
+      return null;
+  }
+};
+
+const CustomPeriodDropdown = ({ selectedPeriod, onSelectPeriod }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const activeOption = PERIOD_OPTIONS.find((opt) => opt.id === selectedPeriod) || PERIOD_OPTIONS[0];
+
+  return (
+    <div className="relative inline-block text-left z-30" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center justify-between gap-3 rounded-xl bg-[#f4f8f1] border border-[#e1eadb] px-3.5 py-2 text-xs font-black text-[#22331b] shadow-sm hover:bg-[#eef6ea] transition-all cursor-pointer min-w-[145px]"
+      >
+        <span className="flex items-center gap-2">
+          <FiCalendar className="text-[#7d9667] text-sm" />
+          {activeOption.label}
+        </span>
+        <FiChevronDown
+          className={`text-[#7d9667] text-sm transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white border border-[#e8efe3] shadow-2xl shadow-[#7d9667]/30 z-[100] py-1.5 overflow-hidden">
+          {PERIOD_OPTIONS.map((opt) => {
+            const isSelected = selectedPeriod === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => {
+                  onSelectPeriod(opt.id);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors cursor-pointer ${
+                  isSelected
+                    ? "bg-[#f4f8f1] text-[#7d9667] font-black"
+                    : "text-[#3a4a31] hover:bg-[#fbfdf8]"
+                }`}
+              >
+                <span>{opt.label}</span>
+                {isSelected && <FiCheck className="text-[#7d9667] text-sm" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
 
 /* ==========================================
@@ -589,6 +724,7 @@ const MilestoneAchievementsCard = () => {
 
 const Dashboard = () => {
   const [history, setHistory] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState("today");
   const [selectedDate, setSelectedDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -616,25 +752,46 @@ const Dashboard = () => {
   );
 
   const filteredHistory = useMemo(() => {
-    if (!selectedDate) return completedHistory;
+    if (selectedDate) {
+      return completedHistory.filter((session) => {
+        const dateValue = session.completedAt || session.createdAt;
+        return toDateInputValue(dateValue) === selectedDate;
+      });
+    }
+
+    const range = getPeriodDateRange(selectedPeriod);
+    if (!range) return completedHistory;
 
     return completedHistory.filter((session) => {
       const dateValue = session.completedAt || session.createdAt;
-      return toDateInputValue(dateValue) === selectedDate;
+      if (!dateValue) return false;
+      const d = new Date(dateValue);
+      return d >= range.start && d <= range.end;
     });
-  }, [completedHistory, selectedDate]);
+  }, [completedHistory, selectedDate, selectedPeriod]);
 
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
 
   const statsData = useMemo(() => {
+    const range = getPeriodDateRange(selectedPeriod);
+
+    const isInRange = (dateValue) => {
+      if (!dateValue) return false;
+      if (selectedDate) return toDateInputValue(dateValue) === selectedDate;
+      if (!range) return true;
+      const d = new Date(dateValue);
+      return d >= range.start && d <= range.end;
+    };
+
     // 1. Intentions Stats
     let intentionsCount = 0;
     let totalIntentions = 0;
     try {
       const intentions = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]");
-      totalIntentions = intentions.length;
+      const filteredIntentions = intentions.filter(item => isInRange(item.date || item.timestamp));
+      totalIntentions = filteredIntentions.length;
       const uniqueIntentionDays = new Set(
-        intentions.map(item => {
+        filteredIntentions.map(item => {
           const d = new Date(item.date || item.timestamp || Date.now());
           return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
         })
@@ -646,14 +803,15 @@ const Dashboard = () => {
     const intentionsProgress = intentionsCount;
 
     // 2. Breathing Stats
-    const totalSeconds = completedHistory.reduce(
+    const filteredBreathing = completedHistory.filter(session => isInRange(session.completedAt || session.createdAt));
+    const totalSeconds = filteredBreathing.reduce(
       (total, session) => total + (session.durationSeconds || 0),
       0
     );
     const breathingDays = new Set(
-      completedHistory.map((session) => toDateInputValue(session.completedAt || session.createdAt))
+      filteredBreathing.map((session) => toDateInputValue(session.completedAt || session.createdAt))
     ).size;
-    const totalBreathingSessions = completedHistory.length;
+    const totalBreathingSessions = filteredBreathing.length;
 
     const hrs = Math.floor(totalSeconds / 3600);
     const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -668,8 +826,10 @@ const Dashboard = () => {
       console.error(e);
     }
 
+    const filteredPlayHistory = playHistory.filter(item => isInRange(item.timestamp));
+
     const getUniqueDaysForType = (type) => {
-      const filtered = playHistory.filter(item => item.type === type);
+      const filtered = filteredPlayHistory.filter(item => item.type === type);
       const uniqueDays = new Set(
         filtered.map(item => {
           const d = new Date(item.timestamp || Date.now());
@@ -680,15 +840,12 @@ const Dashboard = () => {
     };
 
     let meditationDays = getUniqueDaysForType("meditation");
-    if (meditationDays === 0) meditationDays = 2; // Default fallback as requested
-
     let affirmationDays = getUniqueDaysForType("affirmation");
-    if (affirmationDays === 0) affirmationDays = 2; // Default fallback as requested
 
-    const totalAudioSessions = playHistory.length || 6; // Default mockup size
+    const totalAudioSessions = filteredPlayHistory.length;
 
-    const displayIntentions = totalIntentions || 3;
-    const displayBreathing = totalBreathingSessions || 8;
+    const displayIntentions = totalIntentions;
+    const displayBreathing = totalBreathingSessions;
     const displayAudio = totalAudioSessions;
     const totalPractices = displayIntentions + displayBreathing + displayAudio;
 
@@ -705,17 +862,27 @@ const Dashboard = () => {
       totalAudioSessions: displayAudio,
       totalPractices
     };
-  }, [completedHistory]);
+  }, [completedHistory, selectedPeriod, selectedDate]);
 
   const weeklyData = useMemo(() => {
     const counts = [0, 0, 0, 0, 0, 0, 0];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const shortDays = ["S", "M", "T", "W", "T", "F", "S"];
 
+    const range = getPeriodDateRange(selectedPeriod);
+
+    const isInRange = (dateValue) => {
+      if (!dateValue) return false;
+      if (selectedDate) return toDateInputValue(dateValue) === selectedDate;
+      if (!range) return true;
+      const d = new Date(dateValue);
+      return d >= range.start && d <= range.end;
+    };
+
     // 1. Parse breathing
     completedHistory.forEach((session) => {
       const dateValue = session.completedAt || session.createdAt;
-      if (dateValue) {
+      if (isInRange(dateValue)) {
         const day = new Date(dateValue).getDay();
         counts[day] += 1;
       }
@@ -725,7 +892,7 @@ const Dashboard = () => {
     try {
       const playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
       playHistory.forEach((session) => {
-        if (session.timestamp) {
+        if (isInRange(session.timestamp)) {
           const day = new Date(session.timestamp).getDay();
           counts[day] += 1;
         }
@@ -737,24 +904,12 @@ const Dashboard = () => {
       const intentions = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]");
       intentions.forEach((item) => {
         const dateValue = item.date || item.timestamp;
-        if (dateValue) {
+        if (isInRange(dateValue)) {
           const day = new Date(dateValue).getDay();
           counts[day] += 1;
         }
       });
     } catch (e) { }
-
-    // Add dummy values to populate weeks if completely empty to show realistic chart mockups
-    const sum = counts.reduce((a, b) => a + b, 0);
-    if (sum === 0) {
-      counts[0] = 1;
-      counts[1] = 3;
-      counts[2] = 2;
-      counts[3] = 4;
-      counts[4] = 1;
-      counts[5] = 5;
-      counts[6] = 2;
-    }
 
     const maxVal = Math.max(...counts, 1);
 
@@ -762,34 +917,42 @@ const Dashboard = () => {
       label,
       fullDay: dayNames[index],
       count: counts[index],
-      percentage: (counts[index] / maxVal) * 100
+      percentage: counts[index] > 0 ? (counts[index] / maxVal) * 100 : 0
     }));
-  }, [completedHistory]);
+  }, [completedHistory, selectedPeriod, selectedDate]);
 
   return (
     <div className="space-y-6 text-[#22331b]">
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
-        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
-        <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-sky-200/20" />
+      <section className="relative rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 z-20">
+        <div className="absolute inset-0 rounded-[28px] overflow-hidden pointer-events-none">
+          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
+          <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-sky-200/20" />
+        </div>
         <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
           MentalSwasthya
         </p>
-        <div className="relative mt-3 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+        <div className="relative mt-3 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
           <div>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#22331b]">
               Your wellness dashboard
             </h1>
-            <p className="text-sm text-[#66785c] mt-3 max-w-2xl leading-6">
-              Review your breathing practice, track completed sessions, and continue your calm routine.
+            <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
+              Review your breathing practice, track completed sessions, and filter statistics by period.
             </p>
           </div>
-          {/* <Link
-            to="/app/meditation"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7d9667] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/20 hover:bg-[#6f865c] transition-all"
-          >
-            <FiWind />
-            Start Meditation
-          </Link> */}
+
+          {/* Global Period Filter Custom Dropdown */}
+          <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2.5 rounded-2xl border border-[#e1eadb] shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#7d9667]">Period:</span>
+              <CustomPeriodDropdown
+                selectedPeriod={selectedPeriod}
+                onSelectPeriod={(periodId) => {
+                  setSelectedPeriod(periodId);
+                }}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -916,31 +1079,6 @@ const Dashboard = () => {
                 <span className="text-[10px] font-black text-gray-400 uppercase mt-2">{item.label}</span>
               </div>
             ))}
-          </div>
-
-          {/* Date-wise filter down the chart */}
-          <div className="mt-4 pt-4 border-t border-gray-100/60 flex items-center justify-between gap-4">
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filter by Date</span>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 rounded-xl bg-[#f4f8f1] border border-[#e1eadb] px-2.5 py-1 shadow-sm text-[11px] font-bold text-[#66785c] cursor-pointer">
-                <FiCalendar className="text-[#7d9667]" />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(event) => setSelectedDate(event.target.value)}
-                  className="bg-transparent outline-none cursor-pointer"
-                />
-              </label>
-              {selectedDate && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedDate("")}
-                  className="text-[10px] font-bold text-red-600 hover:text-red-800 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
