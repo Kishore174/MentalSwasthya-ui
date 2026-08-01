@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight, FiGift } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
@@ -36,6 +36,38 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
 
+  const [showReferralView, setShowReferralView] = useState(false);
+  const [referralTemp, setReferralTemp] = useState("");
+
+  const [croppedLogo, setCroppedLogo] = useState(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = loginicon;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = Math.min(img.width, img.height);
+      const sSize = size * 0.45;
+      canvas.width = sSize;
+      canvas.height = sSize;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(
+          img,
+          img.width * 0.275,
+          img.height * 0.15,
+          sSize,
+          sSize,
+          0,
+          0,
+          sSize,
+          sSize
+        );
+        setCroppedLogo(canvas.toDataURL("image/jpeg"));
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) navigate("/app");
@@ -47,6 +79,8 @@ const LoginPage = () => {
     setAuthMode(mode);
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setShowReferralView(false);
+    setReferralTemp("");
     setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
   };
 
@@ -135,7 +169,7 @@ const LoginPage = () => {
           
           {/* Actual branding logo image */}
           <img 
-            src={loginicon} 
+            src={croppedLogo || loginicon} 
             alt="logo" 
             className="w-56 h-56 object-cover rounded-3xl border border-gray-150 shadow-md mb-6" 
           />
@@ -171,11 +205,66 @@ const LoginPage = () => {
         {/* Right panel: Dark Green Form and Google OAuth button */}
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
           
-          <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
-            {isRegister ? "Sign Up" : "Sign In"}
-          </h2>
+          {showReferralView ? (
+            <div className="space-y-6 animate-fadeIn">
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+                  Apply Referral Code
+                </h2>
+                <p className="text-xs font-semibold text-[#8fb39c] tracking-wide">
+                  Enter your referral code to unlock exclusive premium benefits.
+                </p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g. CALM-2026"
+                    value={referralTemp}
+                    onChange={(e) => setReferralTemp(e.target.value)}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                  />
+                  <div className="absolute right-4 top-3.5 text-gray-400">
+                    <FiGift size={16} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const code = referralTemp.trim();
+                    setForm((f) => ({ ...f, referralCode: code }));
+                    if (code) {
+                      toast.success(`Referral code "${code}" applied!`);
+                    } else {
+                      toast.success("Referral code removed!");
+                    }
+                    setShowReferralView(false);
+                  }}
+                  className="w-full rounded-xl bg-[#7d9667] hover:bg-[#66785c] text-white font-bold py-3.5 text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                >
+                  Apply Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowReferralView(false)}
+                  className="w-full rounded-xl bg-transparent hover:bg-white/5 text-[#8fb39c] hover:text-white font-bold py-3 text-sm transition-all border border-[#144729]"
+                >
+                  Go Back
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
+                {isRegister ? "Sign Up" : "Sign In"}
+              </h2>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Full Name</label>
@@ -266,6 +355,25 @@ const LoginPage = () => {
               </div>
             )}
 
+            {isRegister && (
+              <div className="flex justify-end py-1">
+                <span
+                  onClick={() => {
+                    setReferralTemp(form.referralCode);
+                    setShowReferralView(true);
+                  }}
+                  className="text-xs font-bold text-[#8fb39c] hover:text-white cursor-pointer transition-all flex items-center gap-1.5"
+                >
+                  <FiGift size={14} className="text-[#7d9667]" />
+                  {form.referralCode ? (
+                    <>Referral applied: <span className="underline text-white font-black">{form.referralCode}</span> (Change)</>
+                  ) : (
+                    "Use referral code"
+                  )}
+                </span>
+              </div>
+            )}
+
             {/* Keep me signed in (only in Login) */}
             {!isRegister && (
               <div className="flex items-center gap-2 py-1">
@@ -331,6 +439,8 @@ const LoginPage = () => {
               Continue with Google
             </button>
           </div>
+          </>
+          )}
 
         </div>
       </div>

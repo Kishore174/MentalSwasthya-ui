@@ -24,9 +24,28 @@ import {
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
-import meditatingWoman from "../Assets/meditating_woman.jpg";
-import breathingIllustration from "../Assets/breathing_illustration.jpg";
-import walkingIllustration from "../Assets/walking_illustration.jpg";
+import hero1 from "../Assets/landing_hero_new/hero1.jpg";
+import hero2 from "../Assets/landing_hero_new/hero2.jpg";
+import hero3 from "../Assets/landing_hero_new/hero3.jpg";
+import hero4 from "../Assets/landing_hero_new/hero4.jpg";
+import hero5 from "../Assets/landing_hero_new/hero5.jpg";
+import hero6 from "../Assets/landing_hero_new/hero6.jpg";
+import hero7 from "../Assets/landing_hero_new/hero7.jpg";
+import hero8 from "../Assets/landing_hero_new/hero8.jpg";
+import hero9 from "../Assets/landing_hero_new/hero9.jpg";
+import hero10 from "../Assets/landing_hero_new/hero10.jpg";
+import hero11 from "../Assets/landing_hero_new/hero11.jpg";
+import hero12 from "../Assets/landing_hero_new/hero12.jpg";
+import hero13 from "../Assets/landing_hero_new/hero13.jpg";
+import hero14 from "../Assets/landing_hero_new/hero14.jpg";
+import hero15 from "../Assets/landing_hero_new/hero15.jpg";
+import hero16 from "../Assets/landing_hero_new/hero16.jpg";
+import hero17 from "../Assets/landing_hero_new/hero17.jpg";
+import hero18 from "../Assets/landing_hero_new/hero18.jpg";
+import hero19 from "../Assets/landing_hero_new/hero19.jpg";
+import hero20 from "../Assets/landing_hero_new/hero20.jpg";
+import hero21 from "../Assets/landing_hero_new/hero21.jpg";
+import hero22 from "../Assets/landing_hero_new/hero22.jpg";
 
 /* ─── Font injection ─────────────────────────────────────── */
 const fontLink = document.createElement("link");
@@ -129,7 +148,11 @@ const LandingPage = () => {
     }
   };
 
-  const slides = [meditatingWoman, breathingIllustration, walkingIllustration];
+  const slides = [
+    hero1, hero2, hero3, hero4, hero5, hero6, hero7, hero8, hero9, hero10,
+    hero11, hero12, hero13, hero14, hero15, hero16, hero17, hero18, hero19, hero20,
+    hero21, hero22
+  ];
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
