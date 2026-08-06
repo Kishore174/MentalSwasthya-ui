@@ -91,7 +91,8 @@ const AudioPlaylist = ({
   apiEndpoint,
   themeColor,
   bgGradient,
-  buttonBg
+  buttonBg,
+  showMusicTab = false
 }) => {
   const [tracks, setTracks] = useState([]);
   const [musicTracks, setMusicTracks] = useState([]);
@@ -142,12 +143,14 @@ const AudioPlaylist = ({
       const data = res.data?.data?.affirmations || res.data?.data?.meditations || res.data?.data?.music || res.data?.data || [];
       setTracks(data);
 
-      try {
-        const musicRes = await axiosInstance.get('/music/my');
-        const musicData = musicRes.data?.data?.music || [];
-        setMusicTracks(musicData.map(m => ({ ...m, language: "music", isCustom: false })));
-      } catch (musicErr) {
-        console.warn("Failed to load music tracks from API:", musicErr);
+      if (showMusicTab) {
+        try {
+          const musicRes = await axiosInstance.get('/music/my');
+          const musicData = musicRes.data?.data?.music || [];
+          setMusicTracks(musicData.map(m => ({ ...m, language: "music", isCustom: false })));
+        } catch (musicErr) {
+          console.warn("Failed to load music tracks from API:", musicErr);
+        }
       }
 
       const favRes = await axiosInstance.get(`${apiEndpoint}/favorites`);
@@ -166,8 +169,9 @@ const AudioPlaylist = ({
       isCustom: false
     }));
 
-    return [...remoteWithLanguage, ...musicTracks, ...customTracks];
-  }, [tracks, musicTracks, customTracks]);
+    const extraTracks = showMusicTab ? musicTracks : [];
+    return [...remoteWithLanguage, ...extraTracks, ...customTracks];
+  }, [tracks, musicTracks, customTracks, showMusicTab]);
 
   // Filter combined tracks based on selected language and search query
   const filteredTracks = useMemo(() => {
@@ -430,7 +434,7 @@ const AudioPlaylist = ({
         setUploadArtist("");
         setSelectedFile(null);
         setIsUploading(false);
-        setUploadSuccess("Audio successfully uploaded and added to library!");
+        setUploadSuccess("Audio successfully uploaded and saved!");
 
         setTimeout(() => setUploadSuccess(""), 4000);
 
@@ -653,9 +657,9 @@ const AudioPlaylist = ({
             {/* Language filter buttons */}
             <div className="flex flex-wrap gap-1.5">
               {[
-                { id: "english", label: "🇺🇸 English" },
-                { id: "hindi", label: "🇮🇳 Hindi" },
-                { id: "music", label: "🎵 Music" },
+                { id: "english", label: "English" },
+                { id: "hindi", label: "Hindi" },
+                ...(showMusicTab ? [{ id: "music", label: "🎵 Music" }] : []),
                 { id: "custom", label: "📁 Personal Upload" }
               ].map(filter => {
                 const isActive = languageFilter === filter.id;
@@ -786,7 +790,7 @@ const AudioPlaylist = ({
                     className="rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]"
                     style={{ backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` }}
                   >
-                    {isUploading ? "Processing..." : "Add to Library"}
+                    {isUploading ? "Processing..." : "Save"}
                   </button>
                 </div>
               </form>

@@ -8,9 +8,8 @@ const GiftCardsScreen = () => {
     recipient: "",
     email: "",
     sender: "",
-    amount: "50",
-    message: "",
-    theme: "sage" // "sage", "gold", "midnight"
+    duration: "3 months", // "3 months", "6 months", "1 Year"
+    message: ""
   });
 
   // Redeem Gift Card State
@@ -19,6 +18,27 @@ const GiftCardsScreen = () => {
     localStorage.getItem("mentalswasthya_gift_card_redeemed") === "true"
   );
   const [buying, setBuying] = useState(false);
+
+  const durations = {
+    "3 months": {
+      name: "3 Months Calm",
+      price: "24",
+      theme: "sage",
+      badgeText: "3 Months Premium"
+    },
+    "6 months": {
+      name: "6 Months Calm",
+      price: "45",
+      theme: "gold",
+      badgeText: "6 Months Premium"
+    },
+    "1 Year": {
+      name: "1 Year Calm",
+      price: "80",
+      theme: "midnight",
+      badgeText: "1 Year Premium"
+    }
+  };
 
   const cardThemes = {
     sage: {
@@ -57,9 +77,8 @@ const GiftCardsScreen = () => {
         recipient: "",
         email: "",
         sender: "",
-        amount: "50",
-        message: "",
-        theme: "sage"
+        duration: "3 months",
+        message: ""
       });
       setBuying(false);
     }, 1200);
@@ -81,6 +100,9 @@ const GiftCardsScreen = () => {
       toast.error("Invalid or expired gift code. Try 'CALM-2026' to test.");
     }
   };
+
+  const activeDuration = durations[giftData.duration] || durations["3 months"];
+  const activeTheme = cardThemes[activeDuration.theme];
 
   return (
     <div className="space-y-6 text-[#22331b]">
@@ -108,42 +130,21 @@ const GiftCardsScreen = () => {
           <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
             <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
 
-            {/* Price Selection */}
+            {/* Duration Selection (replaced select card style & select amount) */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[#66785c]">Select Amount</label>
-              <div className="grid grid-cols-4 gap-3">
-                {["25", "50", "100", "150"].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setGiftData({ ...giftData, amount: val })}
-                    className={`py-3.5 rounded-2xl text-sm font-bold border transition-all ${
-                      giftData.amount === val
-                        ? "border-[#7d9667] bg-[#eef6ea]/60 text-[#22331b] font-black"
-                        : "border-gray-200 text-gray-500 hover:border-[#e2eadc] hover:bg-gray-50/50"
-                    }`}
-                  >
-                    ${val}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Theme Selector */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[#66785c]">Select Card Art Style</label>
+              <label className="text-xs font-bold text-[#66785c]">Select Gift Membership Duration</label>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { id: "sage", name: "Sage Forest" },
-                  { id: "gold", name: "Golden Aura" },
-                  { id: "midnight", name: "Midnight Oasis" }
+                  { id: "3 months", name: "3 Months" },
+                  { id: "6 months", name: "6 Months" },
+                  { id: "1 Year", name: "1 Year" }
                 ].map((th) => (
                   <button
                     key={th.id}
                     type="button"
-                    onClick={() => setGiftData({ ...giftData, theme: th.id })}
+                    onClick={() => setGiftData({ ...giftData, duration: th.id })}
                     className={`py-3.5 rounded-2xl text-sm font-bold border transition-all ${
-                      giftData.theme === th.id
+                      giftData.duration === th.id
                         ? "border-[#7d9667] bg-[#eef6ea]/60 text-[#22331b] font-black"
                         : "border-gray-200 text-gray-500 hover:border-[#e2eadc] hover:bg-gray-50/50"
                     }`}
@@ -212,7 +213,7 @@ const GiftCardsScreen = () => {
               className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white py-3.5 text-sm font-bold shadow-lg shadow-[#7d9667]/15 transition-all disabled:opacity-50 mt-2"
             >
               <FiGift />
-              {buying ? "Purchasing..." : `Buy Gift Card ($${giftData.amount})`}
+              {buying ? "Purchasing..." : `Buy Gift Card ($${activeDuration.price})`}
             </button>
           </form>
 
@@ -227,25 +228,22 @@ const GiftCardsScreen = () => {
             
             <div
               className="rounded-2xl aspect-[1.58/1] w-full p-6 flex flex-col justify-between relative overflow-hidden shadow-lg"
-              style={{ background: cardThemes[giftData.theme].bg }}
+              style={{ background: activeTheme.bg }}
             >
               {/* Graphic background circles */}
-              <div className="absolute right-0 top-0 w-32 h-32 rounded-full pointer-events-none" style={{ backgroundColor: cardThemes[giftData.theme].logo }} />
+              <div className="absolute right-0 top-0 w-32 h-32 rounded-full pointer-events-none" style={{ backgroundColor: activeTheme.logo }} />
               
-              <div className="flex items-center justify-between relative z-10">
-                <span className={`text-[10px] font-black uppercase tracking-widest border px-3 py-1 rounded-full ${cardThemes[giftData.theme].badge}`}>
-                  Wellness Gift
-                </span>
-                <span className={`text-2xl font-black ${cardThemes[giftData.theme].text}`}>
-                  ${giftData.amount || "0"}
+              <div className="flex items-center relative z-10">
+                <span className={`text-[10px] font-black uppercase tracking-widest border px-3 py-1 rounded-full ${activeTheme.badge}`}>
+                  {activeDuration.badgeText}
                 </span>
               </div>
 
               <div className="relative z-10">
-                <p className={`text-xs font-bold opacity-80 ${cardThemes[giftData.theme].text}`}>To: {giftData.recipient || "Recipient Name"}</p>
-                <p className={`text-xs font-bold opacity-80 mt-0.5 ${cardThemes[giftData.theme].text}`}>From: {giftData.sender || "Sender Name"}</p>
+                <p className={`text-xs font-bold opacity-80 ${activeTheme.text}`}>To: {giftData.recipient || "Recipient Name"}</p>
+                <p className={`text-xs font-bold opacity-80 mt-0.5 ${activeTheme.text}`}>From: {giftData.sender || "Sender Name"}</p>
                 {giftData.message && (
-                  <p className={`text-[10px] italic opacity-90 mt-2 line-clamp-1 border-t border-white/10 pt-2 ${cardThemes[giftData.theme].text}`}>
+                  <p className={`text-[10px] italic opacity-90 mt-2 line-clamp-1 border-t border-white/10 pt-2 ${activeTheme.text}`}>
                     "{giftData.message}"
                   </p>
                 )}

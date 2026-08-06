@@ -20,7 +20,12 @@ import {
   FiGift,
   FiCopy,
   FiShare2,
-  FiClock
+  FiClock,
+  FiMail,
+  FiPhone,
+  FiMapPin,
+  FiMenu,
+  FiX
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
@@ -121,6 +126,28 @@ const LandingPage = () => {
   const [activeTab, setActiveTab] = useState("home");
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredFeature, setHoveredFeature] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    setIsSubmitting(true);
+    setTimeout(() => {
+      toast.success("Thank you! Your message has been received.");
+      setContactName("");
+      setContactEmail("");
+      setContactMessage("");
+      setIsSubmitting(false);
+    }, 1000);
+  };
 
   const handleStart = () => {
     navigate("/login");
@@ -138,6 +165,7 @@ const LandingPage = () => {
     { label: "Features", id: "features" },
     { label: "Offer", id: "offer" },
     { label: "Community", id: "community" },
+    { label: "Contact", id: "contact" }
   ];
 
   const scrollToSection = (id) => {
@@ -277,15 +305,18 @@ const LandingPage = () => {
 
         {/* Nav bar */}
         <div style={{
-          position: "relative", zIndex: 10,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          padding: "32px 48px",
+          padding: "20px 48px",
           background: "rgba(10, 24, 13, 0.95)",
           backdropFilter: "blur(12px)",
           borderBottom: "1.5px solid rgba(168, 200, 150, 0.18)",
-          width: "100%",
-        }}>
+        }} className="navbar-container">
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }} onClick={() => navigate("/")}>
             <img src={loginicon} alt="logo" style={{
@@ -293,8 +324,8 @@ const LandingPage = () => {
               objectFit: "cover",
               border: "1.5px solid rgba(168,200,150,0.3)",
               boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
-            }} />
-            <div style={{ display: "flex", flexDirection: "column" }}>
+            }} className="navbar-logo" />
+            <div style={{ display: "flex", flexDirection: "column" }} className="brand-logo-text">
               <span style={{ 
                 fontSize: 18, 
                 fontWeight: 800, 
@@ -318,7 +349,7 @@ const LandingPage = () => {
           </div>
 
           {/* Links */}
-          <div style={{ display: "flex", gap: 28 }} className="hidden md:flex">
+          <div style={{ display: "flex", gap: 28 }} className="navbar-links">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -337,38 +368,121 @@ const LandingPage = () => {
             ))}
           </div>
 
-          {/* CTA */}
-          <button
-            onClick={handleStart}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "12px 24px", borderRadius: 99,
-              background: "#a8c896", color: "#0d1b0b",
-              border: "none", cursor: "pointer",
-              fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
-              fontFamily: "'DM Sans', sans-serif",
-              boxShadow: "0 8px 24px rgba(168,200,150,0.25)",
-              transition: "all 0.25s cubic-bezier(0.16,1,0.3,1)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#c2dcb2";
-              e.currentTarget.style.transform = "translateY(-1px)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#a8c896";
-              e.currentTarget.style.transform = "none";
-            }}
-          >
-            Get Started
-            <FiArrowRight size={14} />
-          </button>
+          {/* CTA & Mobile Menu Toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={handleStart}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 10,
+                padding: "12px 24px", borderRadius: 99,
+                background: "#a8c896", color: "#0d1b0b",
+                border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: 700, letterSpacing: "0.08em",
+                fontFamily: "'DM Sans', sans-serif",
+                boxShadow: "0 8px 24px rgba(168,200,150,0.25)",
+                transition: "all 0.25s cubic-bezier(0.16,1,0.3,1)",
+              }}
+              className="header-cta-btn"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#c2dcb2";
+                e.currentTarget.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#a8c896";
+                e.currentTarget.style.transform = "none";
+              }}
+            >
+              Get Started
+              <FiArrowRight size={14} />
+            </button>
+
+            {/* Mobile Hamburger toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 8,
+                color: "#e8f0e3"
+              }}
+              className="mobile-menu-btn"
+            >
+              {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+            </button>
+          </div>
+
+          {/* Mobile Overlay Menu */}
+          {mobileMenuOpen && (
+            <div style={{
+              position: "absolute",
+              top: "100%",
+              left: 0,
+              right: 0,
+              background: "rgba(10, 24, 13, 0.98)",
+              backdropFilter: "blur(20px)",
+              borderBottom: "1.5px solid rgba(168, 200, 150, 0.18)",
+              padding: "24px 32px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 18,
+              zIndex: 100
+            }}>
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    scrollToSection(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: item.id === activeTab ? "#a8c896" : "rgba(168,200,150,0.6)",
+                    textAlign: "left",
+                    padding: "8px 0"
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+              <button
+                onClick={() => {
+                  handleStart();
+                  setMobileMenuOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  borderRadius: 14,
+                  background: "#a8c896",
+                  color: "#0d1b0b",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  marginTop: 12
+                }}
+              >
+                Get Started
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Hero content */}
         <div style={{
           position: "relative", zIndex: 10,
           maxWidth: 1200, margin: "0 auto", width: "100%",
-          padding: "60px 48px 140px",
+          padding: "160px 48px 140px",
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
           gap: 48, alignItems: "center",
         }} className="hero-grid-stack">
@@ -513,7 +627,7 @@ const LandingPage = () => {
       <Marquee />
 
       {/* ══════════════════════════ BODY CONTENT ══════════════════════════ */}
-      <main style={{ padding: "60px 48px 0", maxWidth: 1200, margin: "0 auto" }}>
+      <main style={{ padding: "60px 48px 0", maxWidth: 1200, margin: "0 auto" }} className="main-container">
         
         {/* ─── 1. Importance of Mental Wellness in Today's World ─── */}
         <Reveal>
@@ -524,7 +638,7 @@ const LandingPage = () => {
             padding: "48px 40px",
             marginBottom: 60,
             boxShadow: "0 4px 20px rgba(22,35,20,0.02)"
-          }}>
+          }} className="section-card">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="hero-grid-stack">
               <div>
                 <p style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667", marginBottom: 12 }}>
@@ -732,7 +846,7 @@ const LandingPage = () => {
             boxShadow: "0 15px 45px rgba(211,106,61,0.08)",
             maxWidth: 820,
             margin: "0 auto 60px"
-          }}>
+          }} className="promo-section">
             
             {/* Promo Banner Top (Special Offer) */}
             <div style={{
@@ -743,7 +857,7 @@ const LandingPage = () => {
               gap: 28,
               alignItems: "center",
               borderBottom: "1.5px dashed #f0ccb9"
-            }} className="hero-grid-stack">
+            }} className="hero-grid-stack promo-banner-part">
               
               {/* Gift SVG Drawing */}
               <div style={{ display: "flex", justifyContent: "center" }}>
@@ -812,7 +926,7 @@ const LandingPage = () => {
               gridTemplateColumns: "1.2fr 1fr",
               gap: 40,
               alignItems: "center"
-            }} className="hero-grid-stack">
+            }} className="hero-grid-stack promo-banner-part">
               
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: "#3a2118", marginBottom: 8, letterSpacing: "0.02em" }}>
@@ -1007,7 +1121,7 @@ const LandingPage = () => {
                 boxShadow: "0 2px 12px rgba(22,35,20,0.04)",
                 height: "100%", display: "flex", flexDirection: "column",
                 justifyContent: "space-between"
-              }}>
+              }} className="community-card">
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                     <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#1a2416" }}>
@@ -1064,7 +1178,7 @@ const LandingPage = () => {
                 display: "flex", flexDirection: "column",
                 justifyContent: "space-between",
                 position: "relative", overflow: "hidden"
-              }}>
+              }} className="community-card">
                 {/* Dot decoration */}
                 <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
                   <rect width="100%" height="100%" fill="url(#agrid)" />
@@ -1103,10 +1217,179 @@ const LandingPage = () => {
           </div>
         </section>
 
+          {/* ══════════════════════════ CONTACT US ══════════════════════════ */}
+          <section id="contact" style={{
+            padding: "100px 48px",
+            background: "linear-gradient(180deg, #ffffff 0%, #f4faf0 100%)",
+            borderTop: "1px solid rgba(125,150,103,0.08)",
+            position: "relative"
+          }}>
+            <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }} className="contact-grid">
+                
+                {/* Left Column: Details */}
+                <Reveal direction="left">
+                  <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667" }}>
+                        Reach Out
+                      </span>
+                      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "3rem", fontWeight: 500, color: "#1c3217", marginTop: 12, lineHeight: 1.1 }}>
+                        We'd love to hear <br />from you.
+                      </h2>
+                      <p style={{ fontSize: 14.5, color: "#556b50", marginTop: 20, lineHeight: 1.7, fontWeight: 300 }}>
+                        Whether you have a question about features, subscriptions, or simply want to share your mindfulness journey, our friendly team is here to support you.
+                      </p>
+                    </div>
+
+                    {/* Contact details blocks */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                      
+                      {/* Call support */}
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                          <FiPhone size={18} style={{ margin: "auto" }} />
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Call Us</h4>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>+91 92235 50682</p>
+                        </div>
+                      </div>
+
+                      {/* Email Support */}
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                          <FiMail size={18} style={{ margin: "auto" }} />
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Email Support</h4>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>support@mentalswasthya.com</p>
+                        </div>
+                      </div>
+
+                      {/* Office Location */}
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                          <FiMapPin size={18} style={{ margin: "auto" }} />
+                        </div>
+                        <div>
+                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Office Location</h4>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>Mumbai, Maharashtra, India</p>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </Reveal>
+
+                {/* Right Column: Contact form */}
+                <Reveal direction="right" delay={0.1}>
+                  <div style={{ background: "#ffffff", padding: "36px", borderRadius: 28, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 20px 50px rgba(80,105,67,0.04)" }} className="form-card">
+                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: 600, color: "#1c3217", marginBottom: 8 }}>
+                      Send us a Message
+                    </h3>
+                    <p style={{ fontSize: 12.5, color: "#8a9a80", marginBottom: 28 }}>
+                      Fill out the form below and we will get back to you within 24 hours.
+                    </p>
+
+                    <form onSubmit={handleContactSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                      
+                      {/* Name Field */}
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                          Your Name
+                        </label>
+                        <input
+                          type="text"
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          placeholder="e.g. John Doe"
+                          required
+                          style={{
+                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            border: "1px solid rgba(125,150,103,0.2)", outline: "none",
+                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            fontFamily: "'DM Sans', sans-serif"
+                          }}
+                          onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(125,150,103,0.2)"; e.currentTarget.style.background = "#fbfdfa"; }}
+                        />
+                      </div>
+
+                      {/* Email Field */}
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          placeholder="e.g. john@example.com"
+                          required
+                          style={{
+                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            border: "1px solid rgba(125,150,103,0.2)", outline: "none",
+                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            fontFamily: "'DM Sans', sans-serif"
+                          }}
+                          onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(125,150,103,0.2)"; e.currentTarget.style.background = "#fbfdfa"; }}
+                        />
+                      </div>
+
+                      {/* Message Field */}
+                      <div>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                          Your Message
+                        </label>
+                        <textarea
+                          value={contactMessage}
+                          onChange={(e) => setContactMessage(e.target.value)}
+                          placeholder="Tell us what you need help with..."
+                          required
+                          rows={4}
+                          style={{
+                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            border: "1px solid rgba(125,150,103,0.2)", outline: "none",
+                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            resize: "none", fontFamily: "'DM Sans', sans-serif"
+                          }}
+                          onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(125,150,103,0.2)"; e.currentTarget.style.background = "#fbfdfa"; }}
+                        />
+                      </div>
+
+                      {/* Submit button */}
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        style={{
+                          width: "100%", padding: "16px 0", borderRadius: 14,
+                          background: "#7d9667", color: "#ffffff",
+                          border: "none", cursor: "pointer", fontSize: 13,
+                          fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                          boxShadow: "0 6px 20px rgba(125,150,103,0.18)",
+                          transition: "all 0.25s", marginTop: 8
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#6f865c"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "#7d9667"; }}
+                      >
+                        {isSubmitting ? "Sending message..." : "Send Message"}
+                      </button>
+
+                    </form>
+                  </div>
+                </Reveal>
+
+              </div>
+            </div>
+          </section>
+
       </main>
 
       {/* ══════════════════════════ FOOTER ══════════════════════════ */}
-      <footer style={{ background: "#0a1208", padding: "60px 48px", borderTop: "1px solid rgba(168,200,150,0.12)" }}>
+      <footer style={{ background: "#0a1208", padding: "60px 48px", borderTop: "1px solid rgba(168,200,150,0.12)" }} className="footer-container">
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 32, alignItems: "center" }} className="footer-layout">
           
           <div style={{ display: "flex", gap: 24 }} className="footer-links">
@@ -1115,7 +1398,7 @@ const LandingPage = () => {
             <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Resources</button>
             <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Community</button>
             <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Blog</button>
-            <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Contact</button>
+            <button onClick={() => scrollToSection("contact")} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Contact</button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }} className="footer-right">
@@ -1147,10 +1430,71 @@ const LandingPage = () => {
           50% { transform: translate(25px, -30px) scale(1.08); }
         }
         * { box-sizing: border-box; }
-        @media (max-width: 900px) {
+
+        /* Defaults */
+        .mobile-menu-btn {
+          display: none !important;
+        }
+        .navbar-links {
+          display: flex;
+          gap: 28px;
+        }
+
+        @media (max-width: 1024px) {
+          .main-container {
+            padding: 30px 16px 0 !important;
+          }
+          .navbar-container {
+            padding: 12px 18px !important;
+          }
+          .navbar-logo {
+            width: 42px !important;
+            height: 42px !important;
+            border-radius: 10px !important;
+          }
+          .brand-logo-text span:first-child {
+            font-size: 14px !important;
+            letter-spacing: 0.08em !important;
+          }
+          .brand-logo-text span:last-child {
+            font-size: 8px !important;
+          }
+          .navbar-links {
+            display: none !important;
+          }
+          .mobile-menu-btn {
+            display: flex !important;
+          }
+          .header-cta-btn {
+            display: none !important;
+          }
+          .section-card {
+            padding: 28px 20px !important;
+            border-radius: 24px !important;
+            margin-bottom: 40px !important;
+          }
+          .promo-section {
+            border-radius: 24px !important;
+            margin-bottom: 40px !important;
+          }
+          .promo-banner-part {
+            padding: 28px 20px !important;
+          }
+          .community-card {
+            padding: 20px !important;
+            border-radius: 20px !important;
+          }
+          .contact-section {
+            padding: 60px 20px !important;
+          }
+          .footer-container {
+            padding: 40px 20px !important;
+          }
           .hero-grid-stack {
             grid-template-columns: 1fr !important;
             text-align: center;
+            padding: 120px 20px 80px !important;
+            gap: 36px !important;
           }
           .hero-grid-stack div:first-child {
             display: flex;
@@ -1158,10 +1502,12 @@ const LandingPage = () => {
             align-items: center;
           }
           .hero-grid-stack div:first-child p {
-            max-w: 100% !important;
+            max-width: 100% !important;
           }
           .bottom-grid-stack {
             grid-template-columns: 1fr !important;
+            gap: 20px !important;
+            margin-bottom: 40px !important;
           }
           .footer-layout {
             flex-direction: column !important;
@@ -1178,6 +1524,23 @@ const LandingPage = () => {
           .article-stack {
             flex-direction: column !important;
             align-items: flex-start !important;
+          }
+          .contact-grid {
+            grid-template-columns: 1fr !important;
+            gap: 40px !important;
+          }
+          .form-card {
+            padding: 24px !important;
+          }
+        }
+
+        @media (max-width: 600px) {
+          .brand-logo-text span:first-child {
+            font-size: 13px !important;
+            letter-spacing: 0.06em !important;
+          }
+          .brand-logo-text span:last-child {
+            font-size: 8px !important;
           }
         }
       `}</style>

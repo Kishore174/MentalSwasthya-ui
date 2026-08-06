@@ -38,6 +38,12 @@ const menuItems = [
     roles: ["admin", "individual", "user"],
   },
   {
+    name: "Silent Meditation",
+    path: "/app/silent-meditation",
+    icon: MdSelfImprovement,
+    roles: ["admin", "individual", "user"],
+  },
+  {
     name: "Affirmations",
     path: "/app/affirmations",
     icon: MdQueueMusic,

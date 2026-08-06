@@ -34,7 +34,7 @@ const ContactScreen = () => {
   return (
     <div className="space-y-6 text-[#22331b]">
       {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
         <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
           Get In Touch
@@ -62,7 +62,7 @@ const ContactScreen = () => {
             },
             {
               title: "Call Us",
-              value: "+1 (800) 555-CALM",
+              value: "+91 92235 50682",
               sub: "Mon - Fri, 9:00 AM - 5:00 PM EST",
               icon: FiPhone,
               color: "text-sky-600 bg-sky-50"
@@ -75,20 +75,20 @@ const ContactScreen = () => {
               color: "text-amber-600 bg-amber-50"
             }
           ].map(({ title, value, sub, icon: Icon, color }) => (
-            <div key={title} className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] flex items-start gap-4">
+            <div key={title} className="rounded-3xl bg-white border border-[#e8efe3] p-5 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] flex items-start gap-3 sm:gap-4">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${color}`}>
                 <Icon size={22} />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</p>
-                <p className="text-base font-black text-[#22331b] mt-1">{value}</p>
+                <p className="text-sm sm:text-base font-black text-[#22331b] mt-1 break-all">{value}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{sub}</p>
               </div>
             </div>
           ))}
 
           {/* Quick Note Card */}
-          <div className="rounded-3xl bg-[#eef6ea]/50 border border-[#e2eadc] p-6 shadow-sm">
+          <div className="rounded-3xl bg-[#eef6ea]/50 border border-[#e2eadc] p-5 sm:p-6 shadow-sm">
             <h4 className="text-sm font-black text-[#22331b] flex items-center gap-2">
               <FiCheckCircle className="text-[#7d9667]" />
               Response Time Guarantee
@@ -101,7 +101,7 @@ const ContactScreen = () => {
 
         {/* Contact Form Column */}
         <div className="lg:col-span-3">
-          <form onSubmit={handleSubmit} className="rounded-3xl bg-white border border-[#e8efe3] p-6 md:p-8 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
+          <form onSubmit={handleSubmit} className="rounded-3xl bg-white border border-[#e8efe3] p-5 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
             <h3 className="text-xl font-black text-[#22331b]">Send a Message</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

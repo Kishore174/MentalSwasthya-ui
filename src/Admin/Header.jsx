@@ -38,6 +38,7 @@ const routeTitles = {
   '/app': { title: 'Dashboard', subtitle: 'Overview of your mental wellness journey' },
   '/app/about': { title: 'About Mental Swasthya', subtitle: 'Empowering holistic health and mindfulness' },
   '/app/meditation': { title: 'Breathing Exercises', subtitle: 'Find peace and center through guided breathwork' },
+  '/app/silent-meditation': { title: 'Silent Meditation', subtitle: 'Calm presence through steady silent breathing' },
   '/app/affirmations': { title: 'Positive Affirmations', subtitle: 'Daily uplifting thoughts for growth & peace' },
   '/app/meditation-playlist': { title: 'Meditation Playlist', subtitle: 'Calming audio tracks for inner tranquility' },
   '/app/achievements': { title: 'My Achievements', subtitle: 'Track your milestones and wellness rewards' },

@@ -14,6 +14,7 @@ const MeditationPlaylistScreen = () => {
       themeColor="#7d9667"
       bgGradient="bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb]"
       buttonBg="bg-[#7d9667]"
+      showMusicTab={true}
     />
   );
 };

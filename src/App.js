@@ -17,6 +17,7 @@ import ContactScreen from "./Admin/ContactScreen";
 import SubscriptionScreen from "./Admin/SubscriptionScreen";
 import GiftCardsScreen from "./Admin/GiftCardsScreen";
 import AchievementsScreen from "./Admin/AchievementsScreen";
+import SilentMeditationScreen from "./Admin/SilentMeditationScreen";
 import { Toaster } from "react-hot-toast";
 
 const HomeRoute = () => {
@@ -43,6 +44,7 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="about" element={<AboutMentalSwasthya />} />
               <Route path="meditation" element={<MeditationScreen />} />
+              <Route path="silent-meditation" element={<SilentMeditationScreen />} />
               <Route path="affirmations" element={<AffirmationsScreen />} />
               <Route path="meditation-playlist" element={<MeditationPlaylistScreen />} />
               <Route path="intentions" element={<IntentionsScreen />} />

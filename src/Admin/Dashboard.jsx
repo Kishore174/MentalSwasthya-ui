@@ -1090,7 +1090,7 @@ const Dashboard = () => {
       {/* Milestone Achievements Chart (Image 1) */}
       <MilestoneAchievementsCard />
 
-      <section className="rounded-[28px] bg-white border border-[#e8efe3] shadow-[0_10px_30px_rgba(80,105,67,0.06)] overflow-hidden">
+      {/* <section className="rounded-[28px] bg-white border border-[#e8efe3] shadow-[0_10px_30px_rgba(80,105,67,0.06)] overflow-hidden">
         <div className="p-5 md:p-6 border-b border-[#e8efe3] bg-[#fbfdf8] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#7d9667]">
@@ -1179,9 +1179,10 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };
 
 export default Dashboard;
+  
