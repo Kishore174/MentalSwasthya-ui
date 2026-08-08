@@ -744,6 +744,15 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchHistory();
+    
+    try {
+      const todayStr = new Date().toDateString();
+      const loginDays = JSON.parse(localStorage.getItem("mentalswasthya_login_days") || "[]");
+      if (!loginDays.includes(todayStr)) {
+        loginDays.push(todayStr);
+        localStorage.setItem("mentalswasthya_login_days", JSON.stringify(loginDays));
+      }
+    } catch (e) {}
   }, []);
 
   const completedHistory = useMemo(
@@ -866,6 +875,7 @@ const Dashboard = () => {
 
   const weeklyData = useMemo(() => {
     const counts = [0, 0, 0, 0, 0, 0, 0];
+    const loginCounts = [0, 0, 0, 0, 0, 0, 0];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const shortDays = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -884,7 +894,8 @@ const Dashboard = () => {
       const dateValue = session.completedAt || session.createdAt;
       if (isInRange(dateValue)) {
         const day = new Date(dateValue).getDay();
-        counts[day] += 1;
+        const durationSecs = session.completedSeconds || session.duration || 0;
+        counts[day] += durationSecs / 60;
       }
     });
 
@@ -894,12 +905,13 @@ const Dashboard = () => {
       playHistory.forEach((session) => {
         if (isInRange(session.timestamp)) {
           const day = new Date(session.timestamp).getDay();
-          counts[day] += 1;
+          const durationSecs = session.duration || 0;
+          counts[day] += durationSecs / 60;
         }
       });
     } catch (e) { }
 
-    // 3. Parse intentions
+    // 3. Parse intentions (count as 1 minute)
     try {
       const intentions = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]");
       intentions.forEach((item) => {
@@ -911,12 +923,24 @@ const Dashboard = () => {
       });
     } catch (e) { }
 
+    // 4. Parse logins
+    try {
+      const loginDays = JSON.parse(localStorage.getItem("mentalswasthya_login_days") || "[]");
+      loginDays.forEach((dateStr) => {
+        if (isInRange(dateStr)) {
+          const day = new Date(dateStr).getDay();
+          loginCounts[day] += 1;
+        }
+      });
+    } catch (e) {}
+
     const maxVal = Math.max(...counts, 1);
 
     return shortDays.map((label, index) => ({
       label,
       fullDay: dayNames[index],
-      count: counts[index],
+      count: Math.round(counts[index]),
+      didLogin: loginCounts[index] > 0,
       percentage: counts[index] > 0 ? (counts[index] / maxVal) * 100 : 0
     }));
   }, [completedHistory, selectedPeriod, selectedDate]);
@@ -1048,13 +1072,13 @@ const Dashboard = () => {
         <div className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-2 relative min-h-[300px]">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#7d9667]">Weekly Activity</p>
-            <h3 className="text-lg font-black text-[#22331b] mt-0.5">Completions / Day</h3>
+            <h3 className="text-lg font-black text-[#22331b] mt-0.5">Minutes / Day</h3>
           </div>
 
           <div className="relative h-36 flex items-end justify-between gap-2.5 px-2 mt-4 mb-2">
             {hoveredBarIndex !== null && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-bold shadow-xl border border-gray-800 z-20 backdrop-blur-sm pointer-events-none transition-all">
-                {weeklyData[hoveredBarIndex].fullDay}: <span className="text-[#a8c896]">{weeklyData[hoveredBarIndex].count} practices</span>
+                {weeklyData[hoveredBarIndex].fullDay}: <span className="text-[#a8c896]">{weeklyData[hoveredBarIndex].count} mins</span>
               </div>
             )}
 
@@ -1071,8 +1095,10 @@ const Dashboard = () => {
                   className="w-3 rounded-t-md transition-all"
                   style={{
                     height: `${item.percentage}%`,
-                    minHeight: item.count > 0 ? "10px" : "2px",
-                    backgroundColor: item.count === 0 ? "#d1d5db" : item.count === 1 ? "#ef4444" : "#7d9667"
+                    minHeight: item.count > 0 ? "10px" : (item.didLogin ? "10px" : "2px"),
+                    backgroundColor: item.count === 0 
+                      ? (item.didLogin ? "#ef4444" : "#d1d5db") 
+                      : "#7d9667"
                   }}
                 />
 

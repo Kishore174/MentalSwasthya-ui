@@ -77,11 +77,9 @@ const SubscriptionScreen = () => {
     }
   ];
 
-  // Billing cycle handler
   const handleCycleChange = (cycle) => {
     setBillingCycle(cycle);
     localStorage.setItem("mentalswasthya_subscription_cycle", cycle);
-    toast.success(`Switched to ${cycle === "annual" ? "Annual Billing (Save 20%)" : "Monthly Billing"}`);
   };
 
   // Upgrade handler

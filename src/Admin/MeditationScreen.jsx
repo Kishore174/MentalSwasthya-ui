@@ -170,7 +170,7 @@ const startSessionWithTechniqueFallback = async (config, durationSeconds) => {
 
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const secs = Math.max(0, seconds % 60).toString().padStart(2, "0");
+  const secs = Math.floor(Math.max(0, seconds % 60)).toString().padStart(2, "0");
   return `${minutes}:${secs}`;
 };
 
@@ -255,8 +255,9 @@ const ProgressShape = ({
   }, [shape, currentShapeConfig.d, currentShapeConfig.defaultLength]);
 
   const length = totalLength || currentShapeConfig.defaultLength;
-  const clampedProgress = Math.min(100, Math.max(0, progress));
-  const dashOffset = length * (1 - clampedProgress / 100);
+
+  // Use continuous progress for alternating draw/erase snake effect
+  const dashOffset = length * (1 - progress / 100);
 
   return (
     <svg className={className} viewBox="0 0 120 120">
@@ -278,7 +279,7 @@ const ProgressShape = ({
         strokeLinejoin="round"
         strokeDasharray={length}
         strokeDashoffset={dashOffset}
-        style={{ transition: dashOffset === length || clampedProgress === 0 ? "none" : "stroke-dashoffset 0.8s linear" }}
+        style={{ transition: progress === 0 ? "none" : "stroke-dashoffset 0.1s linear" }}
       />
     </svg>
   );
@@ -346,7 +347,10 @@ const MeditationScreen = () => {
     const phaseFrac = pSec > 0 ? Math.min(1, pElapsed / pSec) : 0;
     const numPhases = config.phases.length;
     const totalFrac = numPhases > 0 ? (phaseIdx + phaseFrac) / numPhases : 0;
-    const cycleProgressVal = isRunning || elapsedSeconds > 0 ? Math.min(100, Math.max(0, totalFrac * 100)) : 0;
+
+    // Continuous progress for alternating draw/erase effect across cycles
+    const currentCycle = Math.floor(elapsedSeconds / cycleSeconds);
+    const cycleProgressVal = isRunning || elapsedSeconds > 0 ? (currentCycle + totalFrac) * 100 : 0;
 
     return {
       activePhaseIndex: phaseIdx,
@@ -389,13 +393,18 @@ const MeditationScreen = () => {
   useEffect(() => {
     if (!isRunning || isCompleted) return undefined;
 
+    let lastTick = Date.now();
     const interval = setInterval(() => {
+      const now = Date.now();
+      const delta = (now - lastTick) / 1000;
+      lastTick = now;
+
       setElapsedSeconds((current) => {
-        const nextElapsed = Math.min(current + 1, durationSeconds);
+        const nextElapsed = Math.min(current + delta, durationSeconds);
         setRemainingSeconds(Math.max(durationSeconds - nextElapsed, 0));
         return nextElapsed;
       });
-    }, 1000);
+    }, 50);
 
     return () => clearInterval(interval);
   }, [durationSeconds, isCompleted, isRunning]);
@@ -418,7 +427,7 @@ const MeditationScreen = () => {
 
     completeBreathingSession(sessionId, {
       cyclesCompleted: calculateCompletedCycles(durationSeconds, durationSeconds, cycleSeconds, totalCycles),
-      completedSeconds: elapsedSeconds || durationSeconds,
+      completedSeconds: Math.floor(elapsedSeconds || durationSeconds),
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
@@ -568,7 +577,7 @@ const MeditationScreen = () => {
       try {
         await completeBreathingSession(sessionId, {
           cyclesCompleted: currentCyclesCompleted,
-          completedSeconds: elapsedSeconds,
+          completedSeconds: Math.floor(elapsedSeconds),
         });
       } catch (error) {
         setApiMessage("Stopped locally. Please check API connection.");
@@ -576,6 +585,18 @@ const MeditationScreen = () => {
     }
 
     resetLocalSession();
+  };
+
+  const handleNextSection = (addedSeconds = 180) => {
+    const timeToAdd = typeof addedSeconds === "number" ? addedSeconds : 180;
+    let nextTech = "box";
+    if (selectedTechnique === "triangle") nextTech = "box";
+    if (selectedTechnique === "box") nextTech = "circle";
+    if (selectedTechnique === "circle") nextTech = "triangle";
+
+    setSelectedTechnique(nextTech);
+    setSelectedPresetIndex(0);
+    setDurationSeconds((prev) => prev + timeToAdd);
   };
 
   if (isCompleted) {
@@ -623,8 +644,8 @@ const MeditationScreen = () => {
     };
 
     return (
-      <div className="min-h-[calc(100vh-130px)] flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 rounded-[32px]">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
+        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50 my-auto">
 
           {/* Custom Meditating Tree Artwork SVG */}
           <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
@@ -871,8 +892,72 @@ const MeditationScreen = () => {
             </div>
           </div>
 
+          {/* Next Section Recommendation Bubble (YouTube End Screen Style) */}
+          {remainingSeconds > 0 && remainingSeconds <= 10 && (
+            <div className="absolute right-4 bottom-4 md:right-8 md:bottom-8 animate-fade-in z-50">
+              <div
+                onClick={handleNextSection}
+                className="group cursor-pointer flex flex-col w-[160px] md:w-[200px] rounded-[24px] bg-black/40 hover:bg-black/60 backdrop-blur-2xl border border-white/20 overflow-hidden shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(125,150,103,0.3)]"
+              >
+                {/* Simulated Thumbnail */}
+                <div className="h-[90px] md:h-[110px] w-full bg-gradient-to-br from-[#1e2d1c] to-[#0c160b] relative flex items-center justify-center border-b border-white/10">
+                  {/* Animated glow behind icon */}
+                  <div className="absolute inset-0 bg-[#7d9667]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+                  
+                  {/* Next Shape Icon (Visual indicator of next technique) */}
+                  <div className="relative z-10 transition-transform duration-500 group-hover:scale-110">
+                    {selectedTechnique === "triangle" ? (
+                      <div className="w-12 h-12 border-4 border-[#a8c896] rounded-md bg-[#7d9667]/20 shadow-[0_0_15px_rgba(168,200,150,0.3)]"></div> // Next is Box
+                    ) : selectedTechnique === "box" ? (
+                      <div className="w-12 h-12 border-4 border-[#a8c896] rounded-full bg-[#7d9667]/20 shadow-[0_0_15px_rgba(168,200,150,0.3)]"></div> // Next is Circle
+                    ) : (
+                      <div className="w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[40px] border-b-[#a8c896] drop-shadow-[0_0_15px_rgba(168,200,150,0.3)] opacity-80"></div> // Next is Triangle
+                    )}
+                  </div>
+                  
+                  {/* Overlay Play Icon on Hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xl">
+                      <FiPlay fill="currentColor" size={20} className="ml-1" />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Card Info */}
+                <div className="p-4 bg-gradient-to-b from-white/5 to-transparent flex flex-col">
+                  <p className="text-[10px] font-black text-[#a8c896] uppercase tracking-[0.2em] mb-1.5 opacity-80 group-hover:opacity-100 transition-opacity">Up Next</p>
+                  <p className="text-sm md:text-base font-bold text-white truncate drop-shadow-md mb-2">
+                    {selectedTechnique === "triangle" ? "Box Breathing" : selectedTechnique === "box" ? "Circle Breathing" : "Triangle Breathing"}
+                  </p>
+                  
+                  {/* Duration Options */}
+                  <div className="flex items-center gap-1.5 w-full">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleNextSection(60); }}
+                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
+                    >
+                      +1 min
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleNextSection(180); }}
+                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
+                    >
+                      +3 min
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleNextSection(300); }}
+                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
+                    >
+                      +5 min
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Detailed phase sequence tracker */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
+          {/* <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
             {config.phases.map((p, idx) => {
               const isActive = isRunning && idx === activePhaseIndex;
               return (
@@ -891,11 +976,11 @@ const MeditationScreen = () => {
                 </React.Fragment>
               );
             })}
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom bar with controls */}
-        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in">
+        {/* <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -944,7 +1029,7 @@ const MeditationScreen = () => {
               Stop
             </button>
           </div>
-        </div>
+        </div> */}
 
         <style>{`
           .breath-shape-full {
@@ -1190,37 +1275,6 @@ const MeditationScreen = () => {
                 <span className="text-[#7d9667]">{vibrationOn ? "ON" : "OFF"}</span>
               </button>
             </div>
-          </div>
-
-          <div className="rounded-[28px] bg-[#162314] p-5 shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#a8c896]">
-              Progress
-            </p>
-            <p className="text-4xl font-black text-white mt-4">{Math.round(progress)}%</p>
-
-            {/* Visual Progress Bar */}
-            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mt-3 p-0.5 border border-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,200,150,0.5)]"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-white/50 font-bold mt-1.5">
-              <span>{formatTime(elapsedSeconds)} elapsed</span>
-              <span>{formatTime(durationSeconds)} total</span>
-            </div>
-
-            <p className="text-xs leading-6 text-white/50 mt-3">
-              {apiMessage || "Choose a technique and begin when you are ready."}
-            </p>
-            <button
-              type="button"
-              onClick={() => resetLocalSession()}
-              className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#a8c896]"
-            >
-              <FiRefreshCcw />
-              Reset session
-            </button>
           </div>
         </aside>
       </div>

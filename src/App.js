@@ -23,7 +23,7 @@ import { Toaster } from "react-hot-toast";
 const HomeRoute = () => {
   const { token, loading } = useAuth();
   if (loading) return null;
-  return token ? <Navigate to="/app" replace /> : <LandingPage />;
+  return <LandingPage />;
 };
 
 function App() {

@@ -25,8 +25,8 @@ const ProgressShapeCircle = ({
 }) => {
   const pathRef = useRef(null);
   const defaultLength = 333.0; // Circumference for r=53 circle
-  const clampedProgress = Math.min(100, Math.max(0, progress));
-  const dashOffset = defaultLength * (1 - clampedProgress / 100);
+  // Use continuous progress for alternating draw/erase snake effect
+  const dashOffset = defaultLength * (1 - progress / 100);
 
   return (
     <svg className={className} viewBox="0 0 120 120">
@@ -49,7 +49,7 @@ const ProgressShapeCircle = ({
         strokeLinecap="round"
         strokeDasharray={defaultLength}
         strokeDashoffset={dashOffset}
-        className="transition-all duration-300"
+        style={{ transition: progress === 0 ? "none" : "stroke-dashoffset 0.1s linear" }}
         transform="rotate(-90 60 60)"
       />
     </svg>
@@ -118,29 +118,38 @@ const SilentMeditationScreen = () => {
   useEffect(() => {
     let timer;
     if (isRunning && sessionId) {
+      let lastTick = Date.now();
       timer = setInterval(() => {
+        const now = Date.now();
+        const delta = (now - lastTick) / 1000;
+        lastTick = now;
+
         setElapsedSeconds((prev) => {
-          const next = prev + 1;
+          const next = Math.min(prev + delta, durationSeconds);
+          setRemainingSeconds(Math.max(durationSeconds - next, 0));
           if (next >= durationSeconds) {
             clearInterval(timer);
-            triggerCompleteSession();
-            return durationSeconds;
+            setTimeout(triggerCompleteSession, 0);
           }
           return next;
         });
-        setRemainingSeconds((prev) => (prev > 0 ? prev - 1 : 0));
-        
-        // Play phase audio prompts if sound is active
-        // Coherent breathing: 5s Inhale, 5s Exhale
-        const subSec = (elapsedSeconds + 1) % 10;
-        if (soundOn) {
-          if (subSec === 0) playPromptTone(330); // Inhale tone (E note)
-          if (subSec === 5) playPromptTone(262); // Exhale tone (C note)
-        }
-      }, 1000);
+      }, 50);
     }
     return () => clearInterval(timer);
-  }, [isRunning, sessionId, elapsedSeconds, soundOn, durationSeconds]);
+  }, [isRunning, sessionId, durationSeconds]);
+
+  // Audio prompt effect based on full elapsed seconds
+  const prevSecRef = useRef(0);
+  useEffect(() => {
+    if (!isRunning || !soundOn) return;
+    const currentSec = Math.floor(elapsedSeconds);
+    if (currentSec > prevSecRef.current) {
+      const subSec = currentSec % 10;
+      if (subSec === 0) playPromptTone(330); // Inhale tone (E note)
+      if (subSec === 5) playPromptTone(262); // Exhale tone (C note)
+    }
+    prevSecRef.current = currentSec;
+  }, [elapsedSeconds, isRunning, soundOn]);
 
   // Helper to generate synthethic breathing tone (silent meditation has no complex tracks)
   const playPromptTone = (frequency = 262) => {
@@ -183,7 +192,7 @@ const SilentMeditationScreen = () => {
       });
       const data = res.data?.data || res.data || {};
       const newSessId = data.sessionId || data.id || data._id || data.session?._id || data.session?.id;
-      
+
       if (newSessId) {
         setSessionId(newSessId);
         setElapsedSeconds(0);
@@ -208,7 +217,7 @@ const SilentMeditationScreen = () => {
   const triggerCompleteSession = async () => {
     setIsRunning(false);
     const finalDuration = elapsedSeconds;
-    
+
     // Fetch stats for completion summary cards
     try {
       const intentionsRes = await axiosInstance.get("/intentions");
@@ -216,7 +225,7 @@ const SilentMeditationScreen = () => {
       const today = new Date().toDateString();
       const completedToday = list.filter((i) => new Date(i.createdAt).toDateString() === today).length;
       setIntentionStatus(`${completedToday} completed`);
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const breathingRes = await axiosInstance.get("/breathing/history");
@@ -237,20 +246,20 @@ const SilentMeditationScreen = () => {
       const list = playRes.data?.data || playRes.data || [];
       const playMins = Math.round(list.reduce((sum, p) => sum + (p.durationSeconds || 0), 0) / 60);
       setMedMinutes(playMins);
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const playRes = await axiosInstance.get("/music/history");
       const list = playRes.data?.data || playRes.data || [];
       const playMins = Math.round(list.reduce((sum, p) => sum + (p.durationSeconds || 0), 0) / 60);
       setTotalPlayMinutes(playMins);
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const affRes = await axiosInstance.get("/affirmation/history");
       const list = affRes.data?.data || affRes.data || [];
       setAffPlays(list);
-    } catch (e) {}
+    } catch (e) { }
 
     // Complete session call
     try {
@@ -288,19 +297,21 @@ const SilentMeditationScreen = () => {
   const isInhale = subSec < 5;
   const phaseSec = isInhale ? subSec : (10 - subSec);
   const scale = 1 + (phaseSec / 5) * 0.7; // Circle scales from 1.0 to 1.7
-  
+
   const breathScaleStyle = {
     transform: `scale(${scale})`,
-    transition: "transform 1s linear",
+    transition: "transform 0.1s linear",
   };
 
   const progress = durationSeconds > 0 ? (elapsedSeconds / durationSeconds) * 100 : 0;
-  const shapeCycleProgress = (subSec % 5) / 5 * 100;
+  const currentCycle = Math.floor(elapsedSeconds / 10);
+  const cycleFrac = subSec / 10;
+  const shapeCycleProgress = (currentCycle + cycleFrac) * 100;
 
   const formatTime = (secs) => {
-    const mins = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${mins}:${s < 10 ? "0" : ""}${s}`;
+    const minutes = Math.floor(secs / 60).toString().padStart(2, "0");
+    const seconds = Math.floor(Math.max(0, secs % 60)).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
   };
 
   // Custom Time Handlers
@@ -327,18 +338,18 @@ const SilentMeditationScreen = () => {
   const updateCustomDuration = (mins, secs) => {
     const m = parseInt(mins) || 0;
     const s = parseInt(secs) || 0;
-    
+
     if (m < 0 || s < 0 || s >= 60) {
       setCustomDurationError("Please enter valid minutes and seconds (0-59).");
       return;
     }
-    
+
     const total = m * 60 + s;
     if (total <= 0) {
       setCustomDurationError("Duration must be greater than 0.");
       return;
     }
-    
+
     setCustomDurationError("");
     setDurationSeconds(total);
     resetLocalSession();
@@ -367,8 +378,8 @@ const SilentMeditationScreen = () => {
     const streakStatus = `${historyCount + 1} day${historyCount + 1 === 1 ? "" : "s"}`;
 
     return (
-      <div className="min-h-[calc(100vh-130px)] flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 rounded-[32px]">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
+        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50 my-auto">
 
           {/* Custom Meditating Tree Artwork SVG */}
           <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
@@ -524,7 +535,7 @@ const SilentMeditationScreen = () => {
   if (sessionId) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
-        
+
         {/* Glow backdrop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-[#7d9667]/15 rounded-full blur-[80px] pointer-events-none transition-transform duration-1000"
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
@@ -551,7 +562,7 @@ const SilentMeditationScreen = () => {
         {/* Bubble Pacer */}
         <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
           <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] flex items-center justify-center">
-            
+
             {/* Outline Circular Progress */}
             <ProgressShapeCircle
               progress={progress}
@@ -590,7 +601,7 @@ const SilentMeditationScreen = () => {
         </div>
 
         {/* Bottom Control Bar */}
-        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6">
+        {/* <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -637,7 +648,7 @@ const SilentMeditationScreen = () => {
               Stop
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     );
   }
@@ -645,7 +656,7 @@ const SilentMeditationScreen = () => {
   // 4. Initial Configure Session Layout (Matches Breathing exercises UI)
   return (
     <div className="min-h-[calc(100vh-130px)] rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
-      
+
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div>
@@ -663,11 +674,11 @@ const SilentMeditationScreen = () => {
 
       {/* Main Split Panel Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 mt-7">
-        
+
         {/* Left main: The breathing bubble circle container */}
         <section className="rounded-[30px] bg-white/80 border border-white p-5 md:p-8 shadow-sm">
           <div className="flex flex-col items-center justify-center min-h-[460px] text-center">
-            
+
             {/* Outline Circular Progress */}
             <div className="relative w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
               <ProgressShapeCircle
@@ -723,7 +734,7 @@ const SilentMeditationScreen = () => {
 
         {/* Right sidebar: Durations, Toggles, progress preview */}
         <aside className="space-y-4">
-          
+
           {/* Durations selector */}
           <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
@@ -818,37 +829,6 @@ const SilentMeditationScreen = () => {
                 <span className="text-[#7d9667]">{vibrationOn ? "ON" : "OFF"}</span>
               </button>
             </div>
-          </div>
-
-          {/* Mini progress visualization card */}
-          <div className="rounded-[28px] bg-[#162314] p-5 shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#a8c896]">
-              Session Progress
-            </p>
-            <p className="text-4xl font-black text-white mt-4">{Math.round(progress)}%</p>
-
-            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mt-3 p-0.5 border border-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(168,200,150,0.5)]"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-white/50 font-bold mt-1.5">
-              <span>{formatTime(elapsedSeconds)} elapsed</span>
-              <span>{formatTime(durationSeconds)} total</span>
-            </div>
-
-            <p className="text-xs leading-5 text-white/40 mt-4">
-              {apiMessage || "Configure duration and start your quiet session above."}
-            </p>
-            <button
-              type="button"
-              onClick={resetLocalSession}
-              className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#a8c896] hover:text-[#bceaa5] transition-colors"
-            >
-              <FiRefreshCcw />
-              Reset session
-            </button>
           </div>
         </aside>
       </div>
