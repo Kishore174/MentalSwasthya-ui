@@ -1,15 +1,29 @@
-import React, { useState } from "react";
-import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle, FiChevronDown } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
 
 const ContactScreen = () => {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: user?.name || "",
+    email: user?.email || "",
     subject: "general",
     message: ""
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Automatically sync name & email when user data is available
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name || user.name || "",
+        email: prev.email || user.email || ""
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -26,7 +40,12 @@ const ContactScreen = () => {
       localStorage.setItem("mentalswasthya_contact_messages", JSON.stringify(existing));
 
       toast.success("Thank you! Your message has been received.");
-      setFormData({ name: "", email: "", subject: "general", message: "" });
+      setFormData({
+        name: user?.name || "",
+        email: user?.email || "",
+        subject: "general",
+        message: ""
+      });
       setSubmitting(false);
     }, 1000);
   };
@@ -130,16 +149,19 @@ const ContactScreen = () => {
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[#66785c]">Subject</label>
-              <select
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm font-bold outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b] appearance-none"
-              >
-                <option value="general">General Inquiry</option>
-                <option value="support">Technical Support</option>
-                <option value="feedback">Product Feedback</option>
-                <option value="billing">Billing & Subscriptions</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 pr-10 text-sm font-bold outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b] appearance-none cursor-pointer"
+                >
+                  <option value="general">General Inquiry</option>
+                  <option value="support">Technical Support</option>
+                  <option value="feedback">Product Feedback</option>
+                  <option value="billing">Billing & Subscriptions</option>
+                </select>
+                <FiChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7d9667] pointer-events-none" size={18} />
+              </div>
             </div>
 
             <div className="space-y-1.5">

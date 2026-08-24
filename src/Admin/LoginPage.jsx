@@ -36,9 +36,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
 
-  const [showReferralView, setShowReferralView] = useState(false);
-  const [referralTemp, setReferralTemp] = useState("");
-
   const [croppedLogo, setCroppedLogo] = useState(null);
 
   useEffect(() => {
@@ -79,8 +76,6 @@ const LoginPage = () => {
     setAuthMode(mode);
     setShowPassword(false);
     setShowConfirmPassword(false);
-    setShowReferralView(false);
-    setReferralTemp("");
     setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
   };
 
@@ -205,61 +200,6 @@ const LoginPage = () => {
         {/* Right panel: Dark Green Form and Google OAuth button */}
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
           
-          {showReferralView ? (
-            <div className="space-y-6 animate-fadeIn">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
-                  Apply Referral Code
-                </h2>
-                <p className="text-xs font-semibold text-[#8fb39c] tracking-wide">
-                  Enter your referral code to unlock exclusive premium benefits.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="e.g. CALM-2026"
-                    value={referralTemp}
-                    onChange={(e) => setReferralTemp(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
-                  />
-                  <div className="absolute right-4 top-3.5 text-gray-400">
-                    <FiGift size={16} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const code = referralTemp.trim();
-                    setForm((f) => ({ ...f, referralCode: code }));
-                    if (code) {
-                      toast.success(`Referral code "${code}" applied!`);
-                    } else {
-                      toast.success("Referral code removed!");
-                    }
-                    setShowReferralView(false);
-                  }}
-                  className="w-full rounded-xl bg-[#7d9667] hover:bg-[#66785c] text-white font-bold py-3.5 text-sm transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                  Apply Code
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowReferralView(false)}
-                  className="w-full rounded-xl bg-transparent hover:bg-white/5 text-[#8fb39c] hover:text-white font-bold py-3 text-sm transition-all border border-[#144729]"
-                >
-                  Go Back
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
                 {isRegister ? "Sign Up" : "Sign In"}
               </h2>
@@ -356,21 +296,47 @@ const LoginPage = () => {
             )}
 
             {isRegister && (
-              <div className="flex justify-end py-1">
-                <span
-                  onClick={() => {
-                    setReferralTemp(form.referralCode);
-                    setShowReferralView(true);
-                  }}
-                  className="text-xs font-bold text-[#8fb39c] hover:text-white cursor-pointer transition-all flex items-center gap-1.5"
-                >
-                  <FiGift size={14} className="text-[#7d9667]" />
-                  {form.referralCode ? (
-                    <>Referral applied: <span className="underline text-white font-black">{form.referralCode}</span> (Change)</>
-                  ) : (
-                    "Use referral code"
-                  )}
-                </span>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code (Optional)</label>
+                <div className="relative">
+                  <FiGift className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <input
+                    type="text"
+                    name="referralCode"
+                    placeholder="Enter referral code"
+                    value={form.referralCode}
+                    onChange={handleChange}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Terms & Privacy Agreement (only in Sign Up) */}
+            {isRegister && (
+              <div className="flex items-start gap-2.5 py-1">
+                <input
+                  type="checkbox"
+                  id="termsAgreement"
+                  required
+                  className="w-4 h-4 rounded border-emerald-900 bg-[#062413] accent-[#7d9667] text-white cursor-pointer mt-0.5 flex-shrink-0"
+                />
+                <label htmlFor="termsAgreement" className="text-xs font-semibold text-[#8fb39c] select-none leading-relaxed">
+                  I agree to Mental Swasthya's{" "}
+                  <span 
+                    onClick={(e) => { e.preventDefault(); toast("Terms & Conditions"); }}
+                    className="underline text-white font-bold cursor-pointer hover:text-[#8fb39c]"
+                  >
+                    Terms & Conditions
+                  </span>{" "}
+                  and acknowledge the{" "}
+                  <span 
+                    onClick={(e) => { e.preventDefault(); toast("Privacy Policy"); }}
+                    className="underline text-white font-bold cursor-pointer hover:text-[#8fb39c]"
+                  >
+                    Privacy Policy
+                  </span>.
+                </label>
               </div>
             )}
 
@@ -409,9 +375,6 @@ const LoginPage = () => {
               {isRegister ? "Sign in" : "Sign up"}
             </span>
           </p>
-
-          </>
-          )}
 
         </div>
       </div>

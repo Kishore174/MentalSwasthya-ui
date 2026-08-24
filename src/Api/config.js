@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "https://api.mentalswasthya.com/api";
+  // process.env.REACT_APP_API_BASE_URL || "https://api.mentalswasthya.com/api";
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api";
 
 const API_KEY =
   process.env.REACT_APP_API_KEY ||
@@ -16,7 +17,7 @@ export const axiosInstance = axios.create({
 });
 
 export const isTokenExpired = (token) => {
-  if (!token) return true;
+  if (!token) return true;  
   try {
     const base64Url = token.split(".")[1];
     if (!base64Url) return false;

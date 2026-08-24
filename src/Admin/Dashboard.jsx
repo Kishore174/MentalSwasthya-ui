@@ -322,7 +322,7 @@ const StreakFreezeCard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-6">
 
         {/* Left Dragon Emblem / Status */}
-        <div className={`lg:col-span-3 flex flex-col items-center justify-center text-center p-5 rounded-2xl border ${isDark
+        <div className={`lg:col-span-4 flex flex-col items-center justify-center text-center p-5 rounded-2xl border ${isDark
             ? "bg-slate-900/60 border-slate-800/80"
             : "bg-[#fbfdf8] border-[#e8efe3]"
           }`}>
@@ -340,7 +340,7 @@ const StreakFreezeCard = () => {
         </div>
 
         {/* Center Arc Gauge */}
-        <div className="lg:col-span-6 flex flex-col items-center justify-center">
+        <div className="lg:col-span-8 flex flex-col items-center justify-center">
           <div className="relative w-full max-w-[340px] aspect-[2/1] flex items-center justify-center">
             <svg viewBox="0 0 320 160" className="w-full h-full overflow-visible">
               <defs>
@@ -425,47 +425,6 @@ const StreakFreezeCard = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
               💧 Available (Ice: {availableCount})
             </span>
-          </div>
-        </div>
-
-        {/* Right Info & Actions */}
-        <div className={`lg:col-span-3 flex flex-col justify-between h-full rounded-2xl border p-5 space-y-4 ${isDark
-            ? "bg-slate-900/60 border-slate-800/80"
-            : "bg-[#fbfdf8] border-[#e8efe3]"
-          }`}>
-          <div className="space-y-2">
-            <div className={`flex justify-between items-center text-xs font-bold border-b pb-2 ${isDark ? "border-slate-800" : "border-gray-200/80"
-              }`}>
-              <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Max Freezes:</span>
-              <span className={`font-extrabold ${isDark ? "text-white" : "text-[#22331b]"}`}>{maxFreezes} Freezes</span>
-            </div>
-            <div className="flex justify-between items-center text-xs font-bold">
-              <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Total:</span>
-              <span className={`font-extrabold ${isDark ? "text-white" : "text-[#22331b]"}`}>{maxFreezes}</span>
-            </div>
-          </div>
-
-          <div className={`pt-3 border-t space-y-2 ${isDark ? "border-slate-800" : "border-gray-200/80"}`}>
-            <span className={`text-[10px] font-black uppercase tracking-wider block ${isDark ? "text-slate-400" : "text-[#7d9667]"
-              }`}>Token Actions</span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleUseFreeze}
-                disabled={availableCount === 0}
-                className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 disabled:opacity-40 text-xs font-bold text-white shadow-sm transition-all flex items-center justify-center gap-1"
-              >
-                <FaFire size={14} /> Use
-              </button>
-              <button
-                type="button"
-                onClick={handleRestoreFreeze}
-                disabled={usedCount === 0}
-                className="px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 disabled:opacity-40 text-xs font-bold text-white shadow-sm transition-all flex items-center justify-center gap-1"
-              >
-                <FiDroplet size={14} /> Restore
-              </button>
-            </div>
           </div>
         </div>
 

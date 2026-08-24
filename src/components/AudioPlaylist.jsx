@@ -125,7 +125,7 @@ const AudioPlaylist = ({
     return `mentalswasthya_custom_tracks_${cleanEndpoint}`;
   }, [apiEndpoint]);
 
-  // Load tracks and custom tracks on mount or endpoint change
+  // Load tracks, custom tracks, and local favorites fallback
   useEffect(() => {
     fetchTracksAndFavorites();
     const storedCustom = localStorage.getItem(localStorageKey);
@@ -133,6 +133,14 @@ const AudioPlaylist = ({
       setCustomTracks(JSON.parse(storedCustom));
     } else {
       setCustomTracks([]);
+    }
+
+    const storedFavs = localStorage.getItem(`mentalswasthya_favs_${apiEndpoint}`);
+    if (storedFavs) {
+      try {
+        const parsedFavs = JSON.parse(storedFavs);
+        setFavorites((prev) => Array.from(new Set([...prev, ...parsedFavs])));
+      } catch (e) {}
     }
   }, [apiEndpoint, localStorageKey]);
 
@@ -153,9 +161,18 @@ const AudioPlaylist = ({
         }
       }
 
-      const favRes = await axiosInstance.get(`${apiEndpoint}/favorites`);
-      const favs = favRes.data?.data?.affirmations || favRes.data?.data?.meditations || favRes.data?.data || [];
-      setFavorites(favs.map(f => f._id || f));
+      try {
+        const favRes = await axiosInstance.get(`${apiEndpoint}/favorites`);
+        const favs = favRes.data?.data?.affirmations || favRes.data?.data?.meditations || favRes.data?.data || [];
+        const fetchedFavIds = favs.map(f => f._id || f);
+        setFavorites((prev) => {
+          const combined = Array.from(new Set([...prev, ...fetchedFavIds]));
+          localStorage.setItem(`mentalswasthya_favs_${apiEndpoint}`, JSON.stringify(combined));
+          return combined;
+        });
+      } catch (favErr) {
+        console.warn("Remote favorites fetch failed, keeping local favorites:", favErr);
+      }
     } catch (err) {
       console.error("Failed to load backend playlist tracks:", err);
     }
@@ -173,10 +190,12 @@ const AudioPlaylist = ({
     return [...remoteWithLanguage, ...extraTracks, ...customTracks];
   }, [tracks, musicTracks, customTracks, showMusicTab]);
 
-  // Filter combined tracks based on selected language and search query
+  // Filter combined tracks and keep favorited tracks at the TOP of the list
   const filteredTracks = useMemo(() => {
-    return allCombinedTracks.filter(track => {
+    const matched = allCombinedTracks.filter(track => {
+      const isFav = favorites.includes(track._id);
       const matchesLanguage =
+        (languageFilter === "favorites" && isFav) ||
         (languageFilter === "custom" && track.isCustom) ||
         (languageFilter === track.language && !track.isCustom);
 
@@ -186,7 +205,14 @@ const AudioPlaylist = ({
 
       return matchesLanguage && matchesSearch;
     });
-  }, [allCombinedTracks, languageFilter, searchQuery]);
+
+    // Pin favorited tracks to top of playlist
+    return [...matched].sort((a, b) => {
+      const aFav = favorites.includes(a._id) ? 1 : 0;
+      const bFav = favorites.includes(b._id) ? 1 : 0;
+      return bFav - aFav;
+    });
+  }, [allCombinedTracks, languageFilter, searchQuery, favorites]);
 
   const currentTrack = filteredTracks[currentTrackIndex] || null;
 
@@ -265,24 +291,29 @@ const AudioPlaylist = ({
   };
 
   const toggleFavorite = async (id, isCustom) => {
-    if (isCustom) {
-      const updatedFavorites = favorites.includes(id)
-        ? favorites.filter(favId => favId !== id)
-        : [...favorites, id];
-      setFavorites(updatedFavorites);
-      return;
+    let updated = [];
+    if (favorites.includes(id)) {
+      updated = favorites.filter(favId => favId !== id);
+    } else {
+      updated = [...favorites, id];
     }
+    setFavorites(updated);
+    localStorage.setItem(`mentalswasthya_favs_${apiEndpoint}`, JSON.stringify(updated));
 
-    try {
-      const res = await axiosInstance.post(`${apiEndpoint}/${id}/favorite`);
-      const { isFavorited } = res.data?.data || {};
-      if (isFavorited) {
-        setFavorites([...favorites, id]);
-      } else {
-        setFavorites(favorites.filter(favId => favId !== id));
+    if (!isCustom && typeof id === 'string' && !id.startsWith("custom-")) {
+      try {
+        const res = await axiosInstance.post(`${apiEndpoint}/${id}/favorite`);
+        const { isFavorited } = res.data?.data || {};
+        if (typeof isFavorited === 'boolean') {
+          const synced = isFavorited
+            ? Array.from(new Set([...updated, id]))
+            : updated.filter(favId => favId !== id);
+          setFavorites(synced);
+          localStorage.setItem(`mentalswasthya_favs_${apiEndpoint}`, JSON.stringify(synced));
+        }
+      } catch (err) {
+        console.warn("API favorite sync warning:", err);
       }
-    } catch (err) {
-      console.error("Failed to toggle favorite:", err);
     }
   };
 
@@ -660,7 +691,8 @@ const AudioPlaylist = ({
                 { id: "english", label: "English" },
                 { id: "hindi", label: "Hindi" },
                 ...(showMusicTab ? [{ id: "music", label: "🎵 Music" }] : []),
-                { id: "custom", label: "📁 Personal Upload" }
+                { id: "custom", label: "📁 Personal Upload" },
+                { id: "favorites", label: `❤️ Favorites (${favorites.length})` }
               ].map(filter => {
                 const isActive = languageFilter === filter.id;
                 return (
@@ -856,10 +888,17 @@ const AudioPlaylist = ({
                         {/* Title & Artist */}
                         <td className="py-4 px-5">
                           <div>
-                            <p className="text-sm font-black transition-colors"
-                              style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
-                              {track.title}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-black transition-colors"
+                                style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
+                                {track.title}
+                              </p>
+                              {isFav && (
+                                <span className="inline-flex items-center gap-1 text-[9.5px] font-extrabold text-red-500 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
+                                  <FaHeart className="text-[9px]" /> Favorited
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-400 font-bold mt-0.5">
                               {track.artist || 'Unknown'}
                             </p>

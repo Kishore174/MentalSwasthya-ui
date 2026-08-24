@@ -3,11 +3,13 @@ import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import Footer from './Footer'
+import FeedbackWidget from '../components/FeedbackWidget'
 
 const Mainfol = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isAboutPage = location.pathname === "/app/about";
+  const isDashboard = location.pathname === "/app" || location.pathname === "/app/";
 
   if (isAboutPage) {
     return (
@@ -18,7 +20,7 @@ const Mainfol = () => {
   }
 
   return (
-    <div className='flex flex-1 min-h-screen bg-[#f6f9f3]'>
+    <div className='flex flex-1 min-h-screen bg-[#f6f9f3] relative'>
       <div className='lg:w-64 shrink-0'>
         <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       </div>
@@ -29,6 +31,7 @@ const Mainfol = () => {
         </div>
         <Footer />
       </div>
+      {isDashboard && <FeedbackWidget />}
     </div>
   )
 }

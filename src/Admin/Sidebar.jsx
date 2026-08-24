@@ -7,7 +7,7 @@ import {
   MdQueueMusic,
   MdBook
 } from "react-icons/md";
-import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward } from "react-icons/fi";
+import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward, FiBookOpen } from "react-icons/fi";
 import logo from "../Assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
 
@@ -23,6 +23,12 @@ const menuItems = [
     name: "Dashboard",
     path: "/app",
     icon: MdOutlineDashboard,
+    roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "Daily Intention",
+    path: "/app/intentions",
+    icon: FiBookOpen,
     roles: ["admin", "individual", "user"],
   },
   {
