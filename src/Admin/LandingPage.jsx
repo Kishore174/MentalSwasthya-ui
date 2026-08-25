@@ -133,6 +133,55 @@ const LandingPage = () => {
   const [contactMessage, setContactMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Customer Reviews Carousel state for Our Community
+  const communityReviews = [
+    {
+      id: 1,
+      name: "Aarav Sharma",
+      role: "Product Designer & Mindfulness Advocate",
+      rating: 5,
+      image: hero1,
+      review: "MentalSwasthya completely changed my daily routine. The 4-7-8 breathing pacer and daily intention journal give me immense clarity before starting work!",
+      date: "August 2026"
+    },
+    {
+      id: 2,
+      name: "Sarah Jenkins",
+      role: "Wellness Coach",
+      rating: 5,
+      image: hero3,
+      review: "The curated soundscapes and gift card options are wonderful. I gifted a 6-month Bloom card to my sister and she loves it!",
+      date: "August 2026"
+    },
+    {
+      id: 3,
+      name: "Vikram Patel",
+      role: "Software Engineer",
+      rating: 5,
+      image: hero5,
+      review: "Tracking my streak with the Dragon Guard shield keeps me disciplined every morning. Best mental health investment.",
+      date: "July 2026"
+    },
+    {
+      id: 4,
+      name: "Maya Lin",
+      role: "Executive Lead",
+      rating: 5,
+      image: hero7,
+      review: "The silent meditation bubble is so peaceful. It's my go-to tool whenever I feel overwhelmed during busy workdays.",
+      date: "July 2026"
+    }
+  ];
+
+  const [reviewIndex, setReviewIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setReviewIndex((prev) => (prev + 1) % communityReviews.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [communityReviews.length]);
+
   const handleContactSubmit = (e) => {
     e.preventDefault();
     if (!contactName.trim() || !contactEmail.trim() || !contactMessage.trim()) {
@@ -1089,30 +1138,15 @@ const LandingPage = () => {
                   <span style={{ fontSize: 11, color: "#768c6e" }}>Session suggestion</span>
                 </div>
               </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "#ffffff", border: "1px solid #dde7d6",
-                  display: "flex", alignItems: "center",
-                  color: "#7d4a67", flexShrink: 0, justifyContent: "center"
-                }}>
-                  <FiHeart size={18} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Affirmation</p>
-                  <span style={{ fontSize: 11, color: "#768c6e" }}>(e.g., 'I am strong.')</span>
-                </div>
-              </div>
             </div>
           </div>
         </Reveal>
 
-        {/* ─── FEATURED ARTICLES & COMMUNITY ─── */}
+        {/* ─── CURATED ARTICLES & OUR COMMUNITY ─── */}
         <section id="community">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, marginBottom: 80 }} className="bottom-grid-stack">
             
-            {/* Featured Articles Card */}
+            {/* Curated Articles Card */}
             <Reveal>
               <div style={{
                 background: "#ffffff",
@@ -1125,7 +1159,7 @@ const LandingPage = () => {
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                     <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#1a2416" }}>
-                      Featured Articles
+                      Curated Articles
                     </h3>
                     <div style={{ display: "flex", gap: 8 }}>
                       <button style={{ width: 32, height: 32, borderRadius: "50%", background: "#ffffff", border: "1px solid #e8eee3", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiChevronLeft size={16} /></button>
@@ -1168,7 +1202,7 @@ const LandingPage = () => {
               </div>
             </Reveal>
 
-            {/* Community Support Card */}
+            {/* Our Community Card (Sliding picture & customer reviews carousel) */}
             <Reveal delay={0.08}>
               <div style={{
                 background: "linear-gradient(135deg, #162314 0%, #0d1b0b 100%)",
@@ -1184,33 +1218,110 @@ const LandingPage = () => {
                   <rect width="100%" height="100%" fill="url(#agrid)" />
                 </svg>
 
-                <div>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#e8f0e3", marginBottom: 12 }}>
-                    Community Support
-                  </h3>
-                  <p style={{ fontSize: 13, color: "rgba(232,240,227,0.58)", lineHeight: 1.6, fontWeight: 300 }}>
-                    Jensvitwan doler sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Join our wellness community.
+                <div style={{ position: "relative", zIndex: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                    <div>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: "#a8c896", textTransform: "uppercase", letterSpacing: "0.14em" }}>
+                        Member Stories
+                      </span>
+                      <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#e8f0e3", marginTop: 2 }}>
+                        Our Community
+                      </h3>
+                    </div>
+
+                    {/* Navigation Arrows for Review Slideshow */}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setReviewIndex((prev) => (prev === 0 ? communityReviews.length - 1 : prev - 1))}
+                        style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <FiChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setReviewIndex((prev) => (prev + 1) % communityReviews.length)}
+                        style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      >
+                        <FiChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sliding Picture Review Card */}
+                  <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 16 }} className="article-stack">
+                    <img
+                      src={communityReviews[reviewIndex].image}
+                      alt={communityReviews[reviewIndex].name}
+                      style={{
+                        width: 76, height: 76, borderRadius: 20,
+                        objectFit: "cover",
+                        border: "2px solid #a8c896",
+                        boxShadow: "0 6px 16px rgba(0,0,0,0.4)",
+                        flexShrink: 0,
+                        transition: "all 0.4s ease"
+                      }}
+                    />
+                    <div>
+                      <h4 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", marginBottom: 2 }}>
+                        {communityReviews[reviewIndex].name}
+                      </h4>
+                      <p style={{ fontSize: 11.5, color: "#a8c896", fontWeight: 600 }}>
+                        {communityReviews[reviewIndex].role}
+                      </p>
+                      <div style={{ display: "flex", gap: 2, marginTop: 4, color: "#fbbf24", fontSize: 13 }}>
+                        {"★".repeat(communityReviews[reviewIndex].rating)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: 13, color: "rgba(232,240,227,0.85)", lineHeight: 1.6, fontWeight: 300, fontStyle: "italic", minHeight: 62 }}>
+                    "{communityReviews[reviewIndex].review}"
                   </p>
                 </div>
 
-                <button
-                  onClick={handleStart}
-                  style={{
-                    width: "100%", padding: "14px 0",
-                    borderRadius: 14,
-                    background: "#a8c896", color: "#0d1b0b",
-                    border: "none", cursor: "pointer",
-                    fontSize: 12.5, fontWeight: 600,
-                    fontFamily: "'DM Sans', sans-serif",
-                    boxShadow: "0 4px 16px rgba(168,200,150,0.2)",
-                    transition: "all 0.25s",
-                    marginTop: 24,
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#c2dcb2"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "#a8c896"; }}
-                >
-                  Join the Oasis Community
-                </button>
+                {/* Review Slide Indicators & Action Button */}
+                <div style={{ position: "relative", zIndex: 10, marginTop: 20 }}>
+                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 16 }}>
+                    {communityReviews.map((_, idx) => (
+                      <span
+                        key={idx}
+                        onClick={() => setReviewIndex(idx)}
+                        style={{
+                          width: reviewIndex === idx ? 20 : 8,
+                          height: 8,
+                          borderRadius: 4,
+                          background: reviewIndex === idx ? "#a8c896" : "rgba(255,255,255,0.25)",
+                          cursor: "pointer",
+                          transition: "all 0.3s"
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleStart}
+                    style={{
+                      width: "100%", padding: "14px 0",
+                      borderRadius: 14,
+                      background: "#a8c896", color: "#0d1b0b",
+                      border: "none", cursor: "pointer",
+                      fontSize: 12.5, fontWeight: 700,
+                      fontFamily: "'DM Sans', sans-serif",
+                      boxShadow: "0 4px 16px rgba(168,200,150,0.2)",
+                      transition: "all 0.25s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#c2dcb2"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "#a8c896"; }}
+                  >
+                    💬 Share Your Feedback
+                    <FiArrowRight size={14} />
+                  </button>
+                </div>
               </div>
             </Reveal>
 

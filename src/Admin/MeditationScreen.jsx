@@ -640,7 +640,7 @@ const MeditationScreen = () => {
 
     const handleDone = () => {
       resetLocalSession();
-      navigate("/");
+      navigate("/app");
     };
 
     return (
@@ -1070,13 +1070,13 @@ const MeditationScreen = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
-            MentalSwasthya
+            Mental Swasthya - Wellness Platform
           </p>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
             Guided Breathing Session
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            Slow down, follow the shape, and let the rhythm guide your body.
+            Improve mental health with science backed wellness tools for individuals and organizations.
           </p>
         </div>
 

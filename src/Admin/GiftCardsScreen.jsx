@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiGift, FiCheckCircle, FiDownload, FiStar, FiCheck } from "react-icons/fi";
+import { FiGift, FiCheckCircle, FiDownload, FiStar, FiCheck, FiCopy, FiX, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
@@ -7,6 +7,9 @@ const DEFAULT_GIFT_MESSAGE = "Wishing you peace, balance, and joy on your mindfu
 
 const GiftCardsScreen = () => {
   const { user } = useAuth();
+
+  // Slide-over drawer state for gifted cards status
+  const [showStatusDrawer, setShowStatusDrawer] = useState(false);
 
   // Buy Gift Card State
   const [giftData, setGiftData] = useState({
@@ -34,6 +37,72 @@ const GiftCardsScreen = () => {
     localStorage.getItem("mentalswasthya_gift_card_redeemed") === "true"
   );
   const [buying, setBuying] = useState(false);
+
+  // Gifted Cards History & Status List
+  const [giftedCards, setGiftedCards] = useState(() => {
+    const stored = localStorage.getItem("mentalswasthya_gifted_cards");
+    if (stored) {
+      try { return JSON.parse(stored); } catch (e) {}
+    }
+    return [
+      {
+        id: "gc-101",
+        name: "Mental Swasthya Seed",
+        planLabel: "3M Premium VIP",
+        price: "$24.00",
+        recipient: "Sarah Johnson",
+        email: "sarah.j@example.com",
+        codeLast4: "7890",
+        fullCode: "MS-GIFT-7890",
+        status: "used",
+        usedAt: "2026-07-28 14:35:12 PST",
+        theme: "sage",
+        desc: "Mental Swasthya Seed Gift Card. Full access to guided meditations & soundscapes."
+      },
+      {
+        id: "gc-102",
+        name: "Mental Swasthya Bloom",
+        planLabel: "6M Premium VIP",
+        price: "$45.00",
+        recipient: "Michael Smith",
+        email: "m.smith@example.com",
+        codeLast4: "4321",
+        fullCode: "MS-GIFT-4321",
+        status: "used",
+        usedAt: "2026-08-01 10:11:00 PST",
+        theme: "gold",
+        desc: "Mental Swasthya Bloom Gift Card. 6 months unlimited VIP mindfulness access."
+      },
+      {
+        id: "gc-103",
+        name: "Mental Swasthya Flourish",
+        planLabel: "1Y Premium VIP",
+        price: "$80.00",
+        recipient: "Elena Rostova",
+        email: "elena@example.com",
+        codeLast4: "9876",
+        fullCode: "MS-GIFT-9876",
+        status: "active",
+        usedAt: null,
+        theme: "midnight",
+        desc: "Mental Swasthya Flourish Gift Card. 1 Year complete wellness access."
+      },
+      {
+        id: "gc-104",
+        name: "Mental Swasthya Seed",
+        planLabel: "3M Regular",
+        price: "$19.00",
+        recipient: "David Miller",
+        email: "david.m@example.com",
+        codeLast4: "5544",
+        fullCode: "MS-GIFT-5544",
+        status: "used",
+        usedAt: "2026-08-05 16:20:00 PST",
+        theme: "sage",
+        desc: "Mental Swasthya Seed Gift Card. Standard mindfulness tools access."
+      }
+    ];
+  });
 
   // Pricing & Tier Specifications for Regular vs Premium
   const plans = {
@@ -232,8 +301,29 @@ const GiftCardsScreen = () => {
 
     setBuying(true);
     setTimeout(() => {
-      const code = `GIFT-MS-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      toast.success(`Purchase successful! Code ${code} sent to ${giftData.email}`);
+      const codeNum = Math.floor(1000 + Math.random() * 9000).toString();
+      const code = `GIFT-MS-${codeNum}`;
+
+      const newGiftCard = {
+        id: `gc-${Date.now()}`,
+        name: activeDuration.name,
+        planLabel: activeDuration.badgeText,
+        price: activeDuration.price + ".00",
+        recipient: giftData.recipient,
+        email: giftData.email,
+        codeLast4: codeNum,
+        fullCode: code,
+        status: "active",
+        usedAt: null,
+        theme: activeDuration.theme,
+        desc: `${activeDuration.name} Gift Card. ${activeDuration.validity}`
+      };
+
+      const updatedList = [newGiftCard, ...giftedCards];
+      setGiftedCards(updatedList);
+      localStorage.setItem("mentalswasthya_gifted_cards", JSON.stringify(updatedList));
+
+      toast.success(`Purchase successful! Voucher ${code} gifted to ${giftData.recipient}`);
       handleDownloadCard();
       setGiftData({
         recipient: "",
@@ -244,6 +334,9 @@ const GiftCardsScreen = () => {
         message: DEFAULT_GIFT_MESSAGE
       });
       setBuying(false);
+      
+      // Auto-open drawer to view status
+      setShowStatusDrawer(true);
     }, 1000);
   };
 
@@ -264,20 +357,38 @@ const GiftCardsScreen = () => {
     }
   };
 
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    toast.success(`Copied code ${code} to clipboard!`);
+  };
+
   return (
-    <div className="space-y-6 text-[#22331b]">
-      {/* Header Banner */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
-        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
-        <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
-          MentalSwasthya Gift Cards
-        </p>
-        <h1 className="relative text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-3">
-          Gift the experience of calm
-        </h1>
-        <p className="text-sm text-[#66785c] mt-3 max-w-2xl leading-6">
-          Share peace of mind, custom meditations, and stress relief with your friends and family. Send a customizable digital gift card instantly.
-        </p>
+    <div className="space-y-8 text-[#22331b] pb-10 relative">
+      
+      {/* ─── Header Banner with Drawer Trigger Button ─── */}
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10 pointer-events-none" />
+        <div>
+          <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
+            MentalSwasthya Gift Cards
+          </p>
+          <h1 className="relative text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-2">
+            Gift the experience of calm
+          </h1>
+          <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
+            Share peace of mind, custom meditations, and stress relief with your friends and family. Send a customizable digital gift card instantly.
+          </p>
+        </div>
+
+        {/* ─── Button to open Gifted Cards & Status Drawer ─── */}
+        <button
+          type="button"
+          onClick={() => setShowStatusDrawer(true)}
+          className="relative z-10 px-5 py-3.5 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[#7d9667]/20 flex items-center justify-center gap-2.5 flex-shrink-0 group"
+        >
+          <FiGift size={17} className="group-hover:rotate-12 transition-transform" />
+          My Gifted Cards & Status ({giftedCards.length})
+        </button>
       </section>
 
       {/* Main Grid */}
@@ -288,7 +399,16 @@ const GiftCardsScreen = () => {
           
           {/* Purchase form */}
           <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
-            <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
+              <button
+                type="button"
+                onClick={() => setShowStatusDrawer(true)}
+                className="text-xs font-black text-[#7d9667] hover:underline flex items-center gap-1"
+              >
+                View History & Status →
+              </button>
+            </div>
 
             {/* 1. Plan Type Selector: Regular vs Premium */}
             <div className="space-y-2">
@@ -527,6 +647,142 @@ const GiftCardsScreen = () => {
         </div>
 
       </div>
+
+      {/* ─── SLIDE-OVER DRAWER DIALOG: MY GIFTED CARDS & USED STATUS ─── */}
+      {showStatusDrawer && (
+        <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
+          {/* Dark Backdrop */}
+          <div
+            onClick={() => setShowStatusDrawer(false)}
+            className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity"
+          />
+
+          {/* Slide Panel (Right to Left) */}
+          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+            <div className="w-screen max-w-2xl bg-gradient-to-b from-[#f9faf7] via-white to-[#edf4e8] border-l border-[#d8e5d3] shadow-2xl p-6 md:p-8 overflow-y-auto flex flex-col justify-between space-y-6">
+              
+              <div className="space-y-6">
+                {/* Drawer Header */}
+                <div className="flex items-start justify-between border-b border-gray-200/80 pb-5">
+                  <div>
+                    <span className="bg-[#eef6ea] text-[#7d9667] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-[#d2e2c8]">
+                      Gift Tracking & Status
+                    </span>
+                    <h2 className="text-2xl md:text-3xl font-black text-[#22331b] mt-2">
+                      My Gifted Wellness Cards
+                    </h2>
+                    <p className="text-xs text-[#66785c] mt-1 leading-relaxed">
+                      Here are the wellness gift cards you have gifted to your loved ones and their current usage status.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowStatusDrawer(false)}
+                    className="w-9 h-9 rounded-full bg-white border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-all shadow-sm flex-shrink-0"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
+
+                {/* Gift Cards Grid matching reference UI concept with MentalSwasthya theme */}
+                <div className="grid grid-cols-1 gap-5">
+                  {giftedCards.map((card) => {
+                    const isUsed = card.status === "used";
+                    return (
+                      <div
+                        key={card.id}
+                        className="relative rounded-[28px] bg-white border border-[#e4ede0] p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+                      >
+                        {/* ─── Top-Right Attached Metallic Status Pill (Matching Image Concept) ─── */}
+                        <div className="absolute top-4 right-4 z-20">
+                          {isUsed ? (
+                            <div className="bg-gradient-to-r from-[#2c4025] to-[#456439] text-[#e8f3e2] text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-[#a4c794]/40 shadow-md flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              <span>Used</span>
+                              <span className="opacity-50">|</span>
+                              <span className="font-mono text-[9.5px] opacity-90">{card.usedAt}</span>
+                            </div>
+                          ) : (
+                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-emerald-300/40 shadow-md flex items-center gap-1.5 ring-2 ring-emerald-400/20">
+                              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                              <span>Active</span>
+                              <span className="opacity-50">|</span>
+                              <span>Available</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Top Branding & Details */}
+                        <div className="space-y-4 relative z-10 pt-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-[#eef6ea] border border-[#d2e2c8] flex items-center justify-center text-[#7d9667] font-black text-xl shadow-inner">
+                              🌿
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-black text-[#22331b] leading-tight group-hover:text-[#7d9667] transition-colors">
+                                {card.name}
+                              </h3>
+                              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#7d9667] bg-[#eef6ea] px-2 py-0.5 rounded border border-[#d2e2c8] mt-1">
+                                {card.planLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Balance / Value */}
+                          <div className="flex items-baseline justify-between border-b border-gray-100 pb-3">
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gift Balance Value</p>
+                              <p className="text-3xl font-black text-[#22331b] tracking-tight">{card.price}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gifted To</p>
+                              <p className="text-xs font-black text-[#22331b]">{card.recipient}</p>
+                              <p className="text-[10px] text-gray-400 font-medium">{card.email}</p>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                            {card.desc}
+                          </p>
+                        </div>
+
+                        {/* Card Footer: Code last 4 digits badge */}
+                        <div className="mt-5 pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
+                            <span className="text-[11px] font-bold text-gray-500">Code (last 4 digits):</span>
+                            <span className="text-xs font-mono font-black text-[#22331b] tracking-widest">{card.codeLast4}</span>
+                          </div>
+
+                          <button
+                            onClick={() => copyCode(card.fullCode)}
+                            className="text-xs font-extrabold text-[#7d9667] hover:underline flex items-center gap-1 bg-[#eef6ea] px-3 py-1.5 rounded-xl border border-[#d2e2c8]"
+                          >
+                            <FiCopy size={12} /> {card.fullCode}
+                          </button>
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drawer Footer */}
+              <div className="pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowStatusDrawer(false)}
+                  className="w-full py-3.5 rounded-2xl bg-[#1e3019] hover:bg-[#152312] text-white font-extrabold text-xs uppercase tracking-widest transition-all text-center shadow-md"
+                >
+                  Close Dialog
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

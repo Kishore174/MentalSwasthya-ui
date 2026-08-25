@@ -574,7 +574,7 @@ const SilentMeditationScreen = () => {
             <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#7d9667] to-[#a8c896]/60 shadow-[0_0_50px_rgba(125,150,103,0.3)] animate-pulse-slow"
               style={breathScaleStyle}>
               <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                {isRunning ? (isInhale ? "Inhale" : "Exhale") : "Paused"}
+                {isRunning ? "" : "Paused"}
               </span>
             </div>
           </div>
@@ -661,13 +661,13 @@ const SilentMeditationScreen = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
-            MentalSwasthya
+            Mental Swasthya - Wellness Platform
           </p>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
             Silent Meditation
           </h1>
           <p className="text-sm text-gray-500 mt-2">
-            Quiet your thoughts. Follow the circle, and let the baseline coherent rhythm center your mind.
+            Improve mental health with science backed wellness tools for individuals and organizations.
           </p>
         </div>
       </div>
@@ -692,7 +692,7 @@ const SilentMeditationScreen = () => {
               {/* Central bubble shape */}
               <div className="breath-shape circle" style={breathScaleStyle}>
                 <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none text-white">
-                  {isRunning ? (isInhale ? "Inhale" : "Exhale") : "Paused"}
+                  {isRunning ? "" : "Paused"}
                 </span>
               </div>
             </div>
@@ -706,17 +706,6 @@ const SilentMeditationScreen = () => {
             <p className="text-sm text-gray-400 mt-2">
               Coherent 5-second Breathing Cycle
             </p>
-
-            {/* Inhale/Exhale phase tags */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-gray-400 mt-5 font-semibold max-w-[90%]">
-              <span className={`px-3 py-1.5 rounded-xl transition-all ${isRunning && isInhale ? "bg-[#eef6ea] text-[#7d9667] font-extrabold border border-[#7d9667]/20" : "bg-gray-50 text-gray-400"}`}>
-                Inhale (5s)
-              </span>
-              <span className="text-gray-300 mx-0.5">•</span>
-              <span className={`px-3 py-1.5 rounded-xl transition-all ${isRunning && !isInhale ? "bg-[#eef6ea] text-[#7d9667] font-extrabold border border-[#7d9667]/20" : "bg-gray-50 text-gray-400"}`}>
-                Exhale (5s)
-              </span>
-            </div>
 
             {/* Start Button */}
             <div className="flex justify-center mt-8">
