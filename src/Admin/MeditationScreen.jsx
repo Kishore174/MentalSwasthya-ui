@@ -7,8 +7,10 @@ import {
   FiVolume2,
   FiVolumeX,
   FiZap,
+  FiArrowLeft,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { playBell } from "../utils/audioUtils";
 import {
   completeBreathingSession,
   getBreathingHistory,
@@ -300,12 +302,15 @@ const MeditationScreen = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdownValue, setCountdownValue] = useState(3);
+  const [isWaitingForNext, setIsWaitingForNext] = useState(false);
+  const [waitCountdownValue, setWaitCountdownValue] = useState(3);
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [vibrationOn, setVibrationOn] = useState(false);
   const [apiMessage, setApiMessage] = useState("");
   const [historyCount, setHistoryCount] = useState(0);
   const completedRef = useRef(false);
+  const prevPhaseIndexRef = useRef(null);
 
   const activePreset = presets[selectedTechnique][selectedPresetIndex];
   const config = useMemo(() => {
@@ -381,6 +386,15 @@ const MeditationScreen = () => {
   }, [isRunning, currentPhase, phaseProgress, activePhaseIndex, config.phases]);
 
   useEffect(() => {
+    if (isRunning && soundOn && activePhaseIndex !== prevPhaseIndexRef.current) {
+      if (prevPhaseIndexRef.current !== null) {
+        playBell('intersect');
+      }
+      prevPhaseIndexRef.current = activePhaseIndex;
+    }
+  }, [activePhaseIndex, isRunning, soundOn]);
+
+  useEffect(() => {
     getBreathingHistory()
       .then((response) => {
         const payload = getResponsePayload(response);
@@ -391,7 +405,7 @@ const MeditationScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (!isRunning || isCompleted) return undefined;
+    if (!isRunning || isCompleted || isWaitingForNext) return undefined;
 
     let lastTick = Date.now();
     const interval = setInterval(() => {
@@ -416,9 +430,28 @@ const MeditationScreen = () => {
   useEffect(() => {
     if (elapsedSeconds < durationSeconds || !sessionId || completedRef.current) return;
 
+    if (!isWaitingForNext) {
+      setIsRunning(false);
+      setIsWaitingForNext(true);
+      setWaitCountdownValue(3);
+      return;
+    }
+  }, [elapsedSeconds, durationSeconds, sessionId, isWaitingForNext]);
+
+  useEffect(() => {
+    if (!isWaitingForNext) return;
+
+    if (waitCountdownValue > 0) {
+      const timer = setTimeout(() => {
+        setWaitCountdownValue((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    setIsWaitingForNext(false);
     completedRef.current = true;
-    setIsRunning(false);
     setIsCompleted(true);
+    if (soundOn) playBell('double'); // Final double bell
 
     if (isLocalSession(sessionId)) {
       setApiMessage("Session completed locally. Please check API connection.");
@@ -427,11 +460,11 @@ const MeditationScreen = () => {
 
     completeBreathingSession(sessionId, {
       cyclesCompleted: calculateCompletedCycles(durationSeconds, durationSeconds, cycleSeconds, totalCycles),
-      completedSeconds: Math.floor(elapsedSeconds || durationSeconds),
+      completedSeconds: Math.floor(durationSeconds),
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
-  }, [cycleSeconds, durationSeconds, elapsedSeconds, sessionId, totalCycles]);
+  }, [isWaitingForNext, waitCountdownValue, sessionId, durationSeconds, cycleSeconds, totalCycles, soundOn]);
 
   useEffect(() => {
     if (!isCountingDown) return undefined;
@@ -440,7 +473,7 @@ const MeditationScreen = () => {
       if (countdownValue > 0) {
         playBeep(520, 0.12);
       } else {
-        playBeep(880, 0.25);
+        playBell('single');
       }
     }
 
@@ -473,6 +506,9 @@ const MeditationScreen = () => {
     setIsCountingDown(false);
     setCountdownValue(3);
     setIsCompleted(false);
+    setIsWaitingForNext(false);
+    setWaitCountdownValue(3);
+    prevPhaseIndexRef.current = null;
     setApiMessage("");
   };
 
@@ -549,7 +585,7 @@ const MeditationScreen = () => {
       return;
     }
 
-    if (!sessionId) {
+    if (!sessionId || forceNew) {
       try {
         const response = await startSessionWithTechniqueFallback(config, durationSeconds);
         setSessionId(getSessionId(response) || `local-${Date.now()}`);
@@ -645,13 +681,10 @@ const MeditationScreen = () => {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50 my-auto">
+        <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 md:p-10 text-center shadow-sm border border-gray-100 my-auto">
 
           {/* Custom Meditating Tree Artwork SVG */}
           <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
-            <circle cx="100" cy="90" r="45" fill="#eef6ea" opacity="0.4" />
-            <circle cx="100" cy="90" r="30" fill="#e9f5fb" opacity="0.6" />
-
             {/* Tree Leaves */}
             <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
             <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
@@ -679,7 +712,7 @@ const MeditationScreen = () => {
 
           {/* Circular Success Indicator */}
           <div className="flex justify-center my-6">
-            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center shadow-[0_6px_18px_rgba(125,150,103,0.12)]">
+            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-[#e6f4e2] flex items-center justify-center text-[#4b9b3e] text-lg font-bold">
                 ✓
               </div>
@@ -748,7 +781,7 @@ const MeditationScreen = () => {
           {/* Share box banner */}
           <div
             onClick={handleShare}
-            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-6 border border-gray-200/50"
+            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-3 border border-gray-200/50"
           >
             <span className="text-xs font-semibold text-gray-600">
               If you love mental Swasthya webapplication, please
@@ -756,6 +789,17 @@ const MeditationScreen = () => {
             <span className="text-xs font-black text-[#7d9667] flex items-center gap-1.5">
               Share ➡️
             </span>
+          </div>
+
+          {/* Refer & Reward banner */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#eef6ea] to-[#e4ecdf] p-4 flex items-center justify-between cursor-pointer mb-6 border border-[#d2edd0] shadow-sm transform transition-all hover:scale-[1.02]">
+            <div className="text-left">
+              <span className="text-sm font-black text-[#4b9b3e] block">Refer & Reward 🎉</span>
+              <span className="text-xs font-semibold text-[#66785c]">Invite friends and get a 3 months subscription extension!</span>
+            </div>
+            <button className="bg-[#7d9667] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md">
+              Refer Now
+            </button>
           </div>
 
           {apiMessage && <p className="text-xs text-[#7d9667] mb-4">{apiMessage}</p>}
@@ -771,7 +815,10 @@ const MeditationScreen = () => {
             </button>
             <button
               type="button"
-              onClick={handleDone}
+              onClick={() => {
+                resetLocalSession();
+                navigate("/");
+              }}
               className="flex-1 rounded-2xl border border-gray-200 hover:bg-gray-50 text-gray-600 px-5 py-3 text-sm font-bold transition-all"
             >
               I will be back tomorrow
@@ -782,9 +829,68 @@ const MeditationScreen = () => {
     );
   }
 
+  if (isWaitingForNext) {
+    let nextTech = "box";
+    if (selectedTechnique === "triangle") nextTech = "box";
+    if (selectedTechnique === "box") nextTech = "circle";
+    if (selectedTechnique === "circle") nextTech = "triangle";
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
+        <div className="absolute top-6 left-6 z-50">
+          <button
+            type="button"
+            onClick={() => { setIsWaitingForNext(false); handleStop(); navigate(-1); }}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            title="Go Back"
+          >
+            <FiArrowLeft size={16} />
+          </button>
+        </div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[480px] md:h-[480px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+          <span className="text-sm md:text-base font-black uppercase tracking-[0.35em] text-[#a8c896] mb-8 animate-fade-in">
+            Up Next
+          </span>
+          <div className="w-48 h-48 md:w-56 md:h-56 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown">
+            <span className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md text-center p-4 leading-tight">
+              {nextTech}
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-white/60 mt-8 tracking-wide">
+            Starting in {waitCountdownValue}...
+          </p>
+          <div className="flex gap-4 mt-8">
+            <button
+              type="button"
+              onClick={() => {
+                setIsWaitingForNext(false);
+                handleNextSection(180);
+                setTimeout(() => handleStart({ forceNew: true }), 100);
+              }}
+              className="px-6 py-3 rounded-full bg-[#7d9667] text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all"
+            >
+              Start Now
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isCountingDown) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
+        <div className="absolute top-6 left-6 z-50">
+          <button
+            type="button"
+            onClick={() => { setIsCountingDown(false); setIsRunning(false); navigate(-1); }}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            title="Go Back"
+          >
+            <FiArrowLeft size={16} />
+          </button>
+        </div>
         {/* Ambient glowing aura */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[480px] md:h-[480px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
 
@@ -832,14 +938,24 @@ const MeditationScreen = () => {
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top bar with minimal info and stop/exit button */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in">
-          <div className="text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
-              {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
-            </span>
-            <h3 className="text-sm font-bold text-white/50">
-              Cycle {Math.min(cyclesCompleted + 1, totalCycles)} of {totalCycles}
-            </h3>
+        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in z-50">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => { handleStop(); navigate(-1); }}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+              title="Go Back"
+            >
+              <FiArrowLeft size={16} />
+            </button>
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
+                {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
+              </span>
+              <h3 className="text-sm font-bold text-white/50">
+                Cycle {Math.min(cyclesCompleted + 1, totalCycles)} of {totalCycles}
+              </h3>
+            </div>
           </div>
           <button
             type="button"
@@ -853,7 +969,7 @@ const MeditationScreen = () => {
 
         {/* Center content: the breathing shape & active phase */}
         <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
-          <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] flex items-center justify-center">
+          <div className="relative w-[320px] h-[320px] md:w-[420px] md:h-[420px] flex items-center justify-center">
             {/* Outer animated breathing progress indicator matching shape */}
             <ProgressShape
               shape={config.shape}
@@ -880,9 +996,9 @@ const MeditationScreen = () => {
           {/* Horizontal Session Progress Bar */}
           <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
             <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
-              <span>{formatTime(elapsedSeconds)}</span>
+              <span>0%</span>
               <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
-              <span>{formatTime(durationSeconds)}</span>
+              <span>100%</span>
             </div>
             <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
               <div
@@ -891,70 +1007,6 @@ const MeditationScreen = () => {
               ></div>
             </div>
           </div>
-
-          {/* Next Section Recommendation Bubble (YouTube End Screen Style) */}
-          {remainingSeconds > 0 && remainingSeconds <= 10 && (
-            <div className="absolute right-4 bottom-4 md:right-8 md:bottom-8 animate-fade-in z-50">
-              <div
-                onClick={handleNextSection}
-                className="group cursor-pointer flex flex-col w-[160px] md:w-[200px] rounded-[24px] bg-black/40 hover:bg-black/60 backdrop-blur-2xl border border-white/20 overflow-hidden shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(125,150,103,0.3)]"
-              >
-                {/* Simulated Thumbnail */}
-                <div className="h-[90px] md:h-[110px] w-full bg-gradient-to-br from-[#1e2d1c] to-[#0c160b] relative flex items-center justify-center border-b border-white/10">
-                  {/* Animated glow behind icon */}
-                  <div className="absolute inset-0 bg-[#7d9667]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
-                  
-                  {/* Next Shape Icon (Visual indicator of next technique) */}
-                  <div className="relative z-10 transition-transform duration-500 group-hover:scale-110">
-                    {selectedTechnique === "triangle" ? (
-                      <div className="w-12 h-12 border-4 border-[#a8c896] rounded-md bg-[#7d9667]/20 shadow-[0_0_15px_rgba(168,200,150,0.3)]"></div> // Next is Box
-                    ) : selectedTechnique === "box" ? (
-                      <div className="w-12 h-12 border-4 border-[#a8c896] rounded-full bg-[#7d9667]/20 shadow-[0_0_15px_rgba(168,200,150,0.3)]"></div> // Next is Circle
-                    ) : (
-                      <div className="w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[40px] border-b-[#a8c896] drop-shadow-[0_0_15px_rgba(168,200,150,0.3)] opacity-80"></div> // Next is Triangle
-                    )}
-                  </div>
-                  
-                  {/* Overlay Play Icon on Hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-12 h-12 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-xl">
-                      <FiPlay fill="currentColor" size={20} className="ml-1" />
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Card Info */}
-                <div className="p-4 bg-gradient-to-b from-white/5 to-transparent flex flex-col">
-                  <p className="text-[10px] font-black text-[#a8c896] uppercase tracking-[0.2em] mb-1.5 opacity-80 group-hover:opacity-100 transition-opacity">Up Next</p>
-                  <p className="text-sm md:text-base font-bold text-white truncate drop-shadow-md mb-2">
-                    {selectedTechnique === "triangle" ? "Box Breathing" : selectedTechnique === "box" ? "Circle Breathing" : "Triangle Breathing"}
-                  </p>
-                  
-                  {/* Duration Options */}
-                  <div className="flex items-center gap-1.5 w-full">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleNextSection(60); }}
-                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
-                    >
-                      +1 min
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleNextSection(180); }}
-                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
-                    >
-                      +3 min
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleNextSection(300); }}
-                      className="flex-1 py-1.5 text-[10px] font-bold text-white bg-white/10 hover:bg-[#7d9667] rounded-lg transition-colors border border-white/10"
-                    >
-                      +5 min
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Detailed phase sequence tracker */}
           {/* <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
@@ -1033,8 +1085,8 @@ const MeditationScreen = () => {
 
         <style>{`
           .breath-shape-full {
-            width: 180px;
-            height: 180px;
+            width: 240px;
+            height: 240px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1058,7 +1110,7 @@ const MeditationScreen = () => {
           .breath-shape-full.triangle {
             border-radius: 2px;
             clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            padding-top: 40px;
+            padding-top: 60px;
           }
         `}</style>
       </div>
@@ -1068,16 +1120,26 @@ const MeditationScreen = () => {
   return (
     <div className="min-h-[calc(100vh-130px)] rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
-            Mental Swasthya - Wellness Platform
-          </p>
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
-            Guided Breathing Session
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Improve mental health with science backed wellness tools for individuals and organizations.
-          </p>
+        <div className="flex items-start gap-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mt-1 flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
+            title="Go Back"
+          >
+            <FiArrowLeft size={18} />
+          </button>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
+              Mental Swasthya - Wellness Platform
+            </p>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
+              Guided Breathing Session
+            </h1>
+            <p className="text-sm text-gray-500 mt-2">
+              Improve mental health with science backed wellness tools for individuals and organizations.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-col items-end gap-2 w-full lg:w-auto">

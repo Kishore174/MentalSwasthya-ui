@@ -7,6 +7,7 @@ import {
   FiVolume2,
   FiVolumeX,
   FiZap,
+  FiArrowLeft,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,6 +15,7 @@ import {
   startBreathingSession,
 } from "../Api/breathingApi";
 import { axiosInstance } from "../Api/config";
+import { playBell } from "../utils/audioUtils";
 
 // Progress Circle Helper Component matching breathing UI
 const ProgressShapeCircle = ({
@@ -145,8 +147,8 @@ const SilentMeditationScreen = () => {
     const currentSec = Math.floor(elapsedSeconds);
     if (currentSec > prevSecRef.current) {
       const subSec = currentSec % 10;
-      if (subSec === 0) playPromptTone(330); // Inhale tone (E note)
-      if (subSec === 5) playPromptTone(262); // Exhale tone (C note)
+      if (subSec === 0) playBell('intersect'); // Inhale start
+      if (subSec === 5) playBell('intersect'); // Exhale start
     }
     prevSecRef.current = currentSec;
   }, [elapsedSeconds, isRunning, soundOn]);
@@ -184,6 +186,7 @@ const SilentMeditationScreen = () => {
   };
 
   const triggerStartSession = async () => {
+    if (soundOn) playBell('single');
     try {
       setApiMessage("");
       const res = await startBreathingSession({
@@ -216,6 +219,7 @@ const SilentMeditationScreen = () => {
 
   const triggerCompleteSession = async () => {
     setIsRunning(false);
+    if (soundOn) playBell('double');
     const finalDuration = elapsedSeconds;
 
     // Fetch stats for completion summary cards
@@ -379,13 +383,10 @@ const SilentMeditationScreen = () => {
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white/95 backdrop-blur-md p-8 md:p-10 text-center shadow-[0_24px_70px_rgba(30,48,25,0.06)] border border-gray-100/50 my-auto">
+        <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 md:p-10 text-center shadow-sm border border-gray-100 my-auto">
 
           {/* Custom Meditating Tree Artwork SVG */}
           <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
-            <circle cx="100" cy="90" r="45" fill="#eef6ea" opacity="0.4" />
-            <circle cx="100" cy="90" r="30" fill="#e9f5fb" opacity="0.6" />
-
             {/* Tree Leaves */}
             <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
             <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
@@ -412,7 +413,7 @@ const SilentMeditationScreen = () => {
           </p>
 
           <div className="flex justify-center my-6">
-            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center shadow-[0_6px_18px_rgba(125,150,103,0.12)]">
+            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-[#e6f4e2] flex items-center justify-center text-[#4b9b3e] text-lg font-bold">
                 ✓
               </div>
@@ -465,7 +466,7 @@ const SilentMeditationScreen = () => {
 
           <div
             onClick={handleShare}
-            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-6 border border-gray-200/50"
+            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-3 border border-gray-200/50"
           >
             <span className="text-xs font-semibold text-gray-600">
               Love this silent workspace experience?
@@ -473,6 +474,17 @@ const SilentMeditationScreen = () => {
             <span className="text-xs font-black text-[#7d9667] flex items-center gap-1.5">
               Share ➡️
             </span>
+          </div>
+
+          {/* Refer & Reward banner */}
+          <div className="rounded-2xl bg-gradient-to-r from-[#eef6ea] to-[#e4ecdf] p-4 flex items-center justify-between cursor-pointer mb-6 border border-[#d2edd0] shadow-sm transform transition-all hover:scale-[1.02]">
+            <div className="text-left">
+              <span className="text-sm font-black text-[#4b9b3e] block">Refer & Reward 🎉</span>
+              <span className="text-xs font-semibold text-[#66785c]">Invite friends and get a 3 months subscription extension!</span>
+            </div>
+            <button className="bg-[#7d9667] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md">
+              Refer Now
+            </button>
           </div>
 
           {apiMessage && <p className="text-xs text-[#7d9667] mb-4">{apiMessage}</p>}
@@ -502,6 +514,16 @@ const SilentMeditationScreen = () => {
   if (isCountingDown) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
+        <div className="absolute top-6 left-6 z-50">
+          <button
+            type="button"
+            onClick={() => { setIsCountingDown(false); setIsRunning(false); navigate(-1); }}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            title="Go Back"
+          >
+            <FiArrowLeft size={16} />
+          </button>
+        </div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
 
         <div className="relative z-10 flex flex-col items-center justify-center text-center">
@@ -541,14 +563,24 @@ const SilentMeditationScreen = () => {
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top Info Bar */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in">
-          <div className="text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
-              Silent Meditation Bubble
-            </span>
-            <h3 className="text-sm font-bold text-white/50">
-              Coherent 5s/5s Breathing Cycle
-            </h3>
+        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in z-50">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => { handleStop(); navigate(-1); }}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+              title="Go Back"
+            >
+              <FiArrowLeft size={16} />
+            </button>
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
+                Silent Meditation Bubble
+              </span>
+              <h3 className="text-sm font-bold text-white/50">
+                Coherent 5s/5s Breathing Cycle
+              </h3>
+            </div>
           </div>
           <button
             type="button"
@@ -587,9 +619,9 @@ const SilentMeditationScreen = () => {
           {/* Progress Bar */}
           <div className="w-full max-w-xs sm:max-w-sm mt-5">
             <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
-              <span>{formatTime(elapsedSeconds)}</span>
+              <span>0%</span>
               <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
-              <span>{formatTime(durationSeconds)}</span>
+              <span>100%</span>
             </div>
             <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10">
               <div
@@ -659,16 +691,26 @@ const SilentMeditationScreen = () => {
 
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
-            Mental Swasthya - Wellness Platform
-          </p>
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
-            Silent Meditation
-          </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Improve mental health with science backed wellness tools for individuals and organizations.
-          </p>
+        <div className="flex items-start gap-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mt-1 flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
+            title="Go Back"
+          >
+            <FiArrowLeft size={18} />
+          </button>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
+              Mental Swasthya - Wellness Platform
+            </p>
+            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
+              Silent Meditation
+            </h1>
+            <p className="text-sm text-gray-500 mt-2">
+              Improve mental health with science backed wellness tools for individuals and organizations.
+            </p>
+          </div>
         </div>
       </div>
 
