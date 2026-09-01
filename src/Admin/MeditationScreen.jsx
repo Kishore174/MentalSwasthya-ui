@@ -233,18 +233,18 @@ const ProgressShape = ({
     switch (shape) {
       case "box":
         return {
-          d: "M 10 8 H 110 A 2 2 0 0 1 112 10 V 110 A 2 2 0 0 1 110 112 H 10 A 2 2 0 0 1 8 110 V 10 A 2 2 0 0 1 10 8 Z",
+          d: "M 8 110 V 10 A 2 2 0 0 1 10 8 H 110 A 2 2 0 0 1 112 10 V 110 A 2 2 0 0 1 110 112 H 10 A 2 2 0 0 1 8 110 Z",
           defaultLength: 412.5,
         };
       case "triangle":
         return {
-          d: "M 60 8 L 111 104 A 2 2 0 0 1 109 107 H 11 A 2 2 0 0 1 9 104 Z",
+          d: "M 9 104 L 60 8 L 111 104 A 2 2 0 0 1 109 107 H 11 A 2 2 0 0 1 9 104 Z",
           defaultLength: 320.0,
         };
       case "circle":
       default:
         return {
-          d: "M 60 7 A 53 53 0 0 1 60 113 A 53 53 0 0 1 60 7 Z",
+          d: "M 7 60 A 53 53 0 0 1 113 60 A 53 53 0 0 1 7 60 Z",
           defaultLength: 333.0,
         };
     }
@@ -306,7 +306,7 @@ const MeditationScreen = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [isCountingDown, setIsCountingDown] = useState(false);
-  const [countdownValue, setCountdownValue] = useState(3);
+  const [countdownValue, setCountdownValue] = useState(5);
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [vibrationOn, setVibrationOn] = useState(false);
@@ -489,7 +489,7 @@ const MeditationScreen = () => {
     setSessionId(null);
     setIsRunning(false);
     setIsCountingDown(false);
-    setCountdownValue(3);
+    setCountdownValue(5);
     setIsCompleted(false);
     prevPhaseIndexRef.current = null;
     setApiMessage("");
@@ -563,7 +563,7 @@ const MeditationScreen = () => {
     if (isCompleted || forceNew) {
       resetLocalSession();
     } else if (sessionId && !isCompleted) {
-      setCountdownValue(3);
+      setCountdownValue(5);
       setIsCountingDown(true);
       return;
     }
@@ -579,7 +579,7 @@ const MeditationScreen = () => {
       }
     }
 
-    setCountdownValue(3);
+    setCountdownValue(5);
     setIsCountingDown(true);
   };
 
@@ -692,8 +692,8 @@ const MeditationScreen = () => {
             key={countdownValue}
             className="w-48 h-48 md:w-56 md:h-56 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown"
           >
-            <span className="text-7xl md:text-8xl font-black text-white tracking-tight drop-shadow-md">
-              {countdownValue > 0 ? countdownValue : "BEGIN"}
+            <span className={`font-black text-white tracking-tight drop-shadow-md ${countdownValue >= 4 ? 'text-5xl md:text-6xl' : 'text-7xl md:text-8xl'}`}>
+              {countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "BEGIN"}
             </span>
           </div>
 

@@ -78,6 +78,13 @@ export default function CompletionScreen({
   const handleDone = () => (onDone ? onDone() : flash("Returning to dashboard…"));
   const handleTomorrow = () => (onReset ? onReset() : flash("See you tomorrow."));
 
+  useEffect(() => {
+    const autoCloseTimer = setTimeout(() => {
+      if (onDone) onDone();
+    }, 5000);
+    return () => clearTimeout(autoCloseTimer);
+  }, [onDone]);
+
   const nextRewardAt = referralCount >= 3 ? null : referralCount + 1;
 
   return (
