@@ -8,8 +8,13 @@ import {
   FiVolumeX,
   FiZap,
   FiArrowLeft,
+  FiGift,
+  FiCopy,
+  FiShare2,
+  FiCheck,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import CompletionScreen from "../components/CompletionScreen";
 import {
   completeBreathingSession,
   startBreathingSession,
@@ -360,16 +365,17 @@ const SilentMeditationScreen = () => {
   };
 
   const handleShare = () => {
+    const shareMessage = `Hey, \nI came across the "Mental Swasthya" platform, that offers a variety of wellness tools which truly helps you to find peace of mind. \n\nIt is simple, helpful, and perfect for daily relaxation.\n\nI hope you enjoy using it!\n\nClick the below link to register\nhttps://mentalswasthya.com/`;
+
     if (navigator.share) {
       navigator.share({
         title: "Mental Swasthya",
-        text: "I completed a silent meditation session on Mental Swasthya!",
-        url: window.location.origin,
+        text: shareMessage,
       }).catch(() => { });
     } else {
       try {
-        navigator.clipboard.writeText(window.location.origin);
-        alert("Mental Swasthya link copied to clipboard!");
+        navigator.clipboard.writeText(shareMessage);
+        alert("Mental Swasthya invite message & link copied to clipboard!");
       } catch (e) { }
     }
   };
@@ -378,135 +384,36 @@ const SilentMeditationScreen = () => {
   if (medCompleted) {
     const med1Status = medMinutes > 0 ? `${medMinutes} min` : "0 min";
     const med2Status = totalPlayMinutes > 0 ? `${totalPlayMinutes} min` : "0 min";
-    const affirmationStatus = affPlays.length > 0 ? `${affPlays.length} completed` : "0 completed";
-    const streakStatus = `${historyCount + 1} day${historyCount + 1 === 1 ? "" : "s"}`;
+    const affirmationStatus = affPlays.length > 0 ? `${affPlays.length} done` : "0 done";
+
+    const stepStatus = {
+      intention: intentionStatus || "Done",
+      breathing: breathingStatus || "5 min",
+      meditation1: med1Status,
+      meditation2: med2Status,
+      affirmation: affirmationStatus,
+    };
+
+    const handleDone = () => {
+      resetLocalSession();
+      navigate("/app");
+    };
+
+    const handleReset = () => {
+      resetLocalSession();
+      navigate("/app");
+    };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 md:p-10 text-center shadow-sm border border-gray-100 my-auto">
-
-          {/* Custom Meditating Tree Artwork SVG */}
-          <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
-            {/* Tree Leaves */}
-            <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
-            <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
-            <circle cx="100" cy="35" r="25" fill="#b9d7cd" opacity="0.8" />
-            <circle cx="60" cy="70" r="18" fill="#dceade" opacity="0.75" />
-            <circle cx="140" cy="70" r="18" fill="#dbe7e7" opacity="0.75" />
-
-            {/* Tree Trunk */}
-            <path d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65"
-              stroke="#4b5563" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <path d="M96 95 L96 110 L104 110 L104 95 Z" fill="#4b5563" />
-
-            {/* Meditating Figure */}
-            <circle cx="100" cy="95" r="18" stroke="#7d9667" strokeWidth="1" fill="#ffffff" strokeDasharray="3 3" />
-            <circle cx="100" cy="85" r="4.5" fill="#4b5563" />
-            <path d="M100 89.5 L100 99" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M88 103 C92 98 108 98 112 103" stroke="#4b5563" strokeWidth="3" strokeLinecap="round" fill="none" />
-            <path d="M94 92 C90 95 90 101 94 101 M106 92 C110 95 110 101 106 101" stroke="#4b5563" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-          </svg>
-
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight mt-6">Peace is within you.</h2>
-          <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto leading-relaxed">
-            You completed a silent meditation session. Take a moment to feel the absolute baseline presence and calmness.
-          </p>
-
-          <div className="flex justify-center my-6">
-            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-[#e6f4e2] flex items-center justify-center text-[#4b9b3e] text-lg font-bold">
-                ✓
-              </div>
-            </div>
-          </div>
-          <p className="text-xs font-extrabold text-[#66785c] -mt-2 mb-6">
-            Silent meditation logged successfully
-          </p>
-
-          {/* Today's progress summary table */}
-          <div className="rounded-3xl bg-[#f5f8f3] border border-[#e1ebd9] p-5 mb-6 text-left">
-            <h4 className="text-sm font-bold text-center text-[#22331b] mb-4">
-              Your Session Achievements
-            </h4>
-
-            {/* Grid of 6 Columns */}
-            <div className="grid grid-cols-6 gap-1 divide-x divide-gray-200/60 text-center">
-              <div className="flex flex-col items-center justify-between min-h-[64px]">
-                <span className="text-xs">📄</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Intention</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{intentionStatus}</span>
-              </div>
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🌬️</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Breathing</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{breathingStatus}</span>
-              </div>
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🧘</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Meditation</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{med1Status}</span>
-              </div>
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🧘</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Audio</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{med2Status}</span>
-              </div>
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">✨</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Affiliation</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{affirmationStatus}</span>
-              </div>
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🔥</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Streak</span>
-                <span className="text-[9px] font-bold text-amber-500 mt-1.5 leading-none">{streakStatus}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            onClick={handleShare}
-            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-3 border border-gray-200/50"
-          >
-            <span className="text-xs font-semibold text-gray-600">
-              Love this silent workspace experience?
-            </span>
-            <span className="text-xs font-black text-[#7d9667] flex items-center gap-1.5">
-              Share ➡️
-            </span>
-          </div>
-
-          {/* Refer & Reward banner */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#eef6ea] to-[#e4ecdf] p-4 flex items-center justify-between cursor-pointer mb-6 border border-[#d2edd0] shadow-sm transform transition-all hover:scale-[1.02]">
-            <div className="text-left">
-              <span className="text-sm font-black text-[#4b9b3e] block">Refer & Reward 🎉</span>
-              <span className="text-xs font-semibold text-[#66785c]">Invite friends and get a 3 months subscription extension!</span>
-            </div>
-            <button className="bg-[#7d9667] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md">
-              Refer Now
-            </button>
-          </div>
-
-          {apiMessage && <p className="text-xs text-[#7d9667] mb-4">{apiMessage}</p>}
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={resetLocalSession}
-              className="flex-1 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-bold shadow-md transition-all"
-            >
-              Start New Session
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/app")}
-              className="flex-1 rounded-2xl border border-gray-200 hover:bg-gray-50 text-gray-600 px-5 py-3 text-sm font-bold transition-all"
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      </div>
+      <CompletionScreen
+        onDone={handleDone}
+        onReset={handleReset}
+        stepStatus={stepStatus}
+        streakDays={historyCount + 1}
+        referralCount={2}
+        refLink="mentalswasthya.com/ref/MS-REF2026"
+        apiMessage={apiMessage}
+      />
     );
   }
 

@@ -8,9 +8,6 @@ const DEFAULT_GIFT_MESSAGE = "Wishing you peace, balance, and joy on your mindfu
 const GiftCardsScreen = () => {
   const { user } = useAuth();
 
-  // Slide-over drawer state for gifted cards status
-  const [showStatusDrawer, setShowStatusDrawer] = useState(false);
-
   // Buy Gift Card State
   const [giftData, setGiftData] = useState({
     recipient: "",
@@ -334,9 +331,6 @@ const GiftCardsScreen = () => {
         message: DEFAULT_GIFT_MESSAGE
       });
       setBuying(false);
-      
-      // Auto-open drawer to view status
-      setShowStatusDrawer(true);
     }, 1000);
   };
 
@@ -365,8 +359,8 @@ const GiftCardsScreen = () => {
   return (
     <div className="space-y-8 text-[#22331b] pb-10 relative">
       
-      {/* ─── Header Banner with Drawer Trigger Button ─── */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* ─── Header Banner ─── */}
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10 pointer-events-none" />
         <div>
           <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
@@ -379,16 +373,6 @@ const GiftCardsScreen = () => {
             Share peace of mind, custom meditations, and stress relief with your friends and family. Send a customizable digital gift card instantly.
           </p>
         </div>
-
-        {/* ─── Button to open Gifted Cards & Status Drawer ─── */}
-        <button
-          type="button"
-          onClick={() => setShowStatusDrawer(true)}
-          className="relative z-10 px-5 py-3.5 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-[#7d9667]/20 flex items-center justify-center gap-2.5 flex-shrink-0 group"
-        >
-          <FiGift size={17} className="group-hover:rotate-12 transition-transform" />
-          My Gifted Cards & Status ({giftedCards.length})
-        </button>
       </section>
 
       {/* Main Grid */}
@@ -399,16 +383,7 @@ const GiftCardsScreen = () => {
           
           {/* Purchase form */}
           <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
-              <button
-                type="button"
-                onClick={() => setShowStatusDrawer(true)}
-                className="text-xs font-black text-[#7d9667] hover:underline flex items-center gap-1"
-              >
-                View History & Status →
-              </button>
-            </div>
+            <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
 
             {/* 1. Plan Type Selector: Regular vs Premium */}
             <div className="space-y-2">
@@ -648,140 +623,117 @@ const GiftCardsScreen = () => {
 
       </div>
 
-      {/* ─── SLIDE-OVER DRAWER DIALOG: MY GIFTED CARDS & USED STATUS ─── */}
-      {showStatusDrawer && (
-        <div className="fixed inset-0 z-50 overflow-hidden animate-fade-in">
-          {/* Dark Backdrop */}
-          <div
-            onClick={() => setShowStatusDrawer(false)}
-            className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm transition-opacity"
-          />
+      {/* ─── IN-PAGE SECTION DOWN AT BOTTOM: MY GIFTED CARDS & USED STATUS ─── */}
+      <section className="rounded-[32px] bg-white border border-[#e8efe3] p-6 md:p-8 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-5">
+          <div>
+            <span className="bg-[#eef6ea] text-[#7d9667] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-[#d2e2c8] inline-flex items-center gap-1.5">
+              <FiGift size={13} className="text-[#7d9667]" /> Gift Tracking & Usage History
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black text-[#22331b] mt-2">
+              My Gifted Wellness Cards & Status
+            </h2>
+            <p className="text-xs text-[#66785c] mt-1 leading-relaxed">
+              Here are the wellness gift cards you have gifted to your loved ones and their current usage status.
+            </p>
+          </div>
+          <div className="sm:text-right">
+            <span className="text-xs font-bold text-[#7d9667] bg-[#eef6ea] px-3.5 py-1.5 rounded-full border border-[#cbe2c1] inline-block">
+              Total Gifted Cards: {giftedCards.length}
+            </span>
+          </div>
+        </div>
 
-          {/* Slide Panel (Right to Left) */}
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-2xl bg-gradient-to-b from-[#f9faf7] via-white to-[#edf4e8] border-l border-[#d8e5d3] shadow-2xl p-6 md:p-8 overflow-y-auto flex flex-col justify-between space-y-6">
-              
-              <div className="space-y-6">
-                {/* Drawer Header */}
-                <div className="flex items-start justify-between border-b border-gray-200/80 pb-5">
-                  <div>
-                    <span className="bg-[#eef6ea] text-[#7d9667] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-[#d2e2c8]">
-                      Gift Tracking & Status
+        {/* Gift Cards Grid (Exact UI layout matching reference concept image) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {giftedCards.map((card) => {
+            const isUsed = card.status === "used";
+            const theme = cardThemes[card.theme] || cardThemes.sage;
+            return (
+              <div
+                key={card.id}
+                className="relative rounded-[28px] p-6 sm:p-7 flex flex-col justify-between overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl group min-h-[270px]"
+                style={{ background: theme.bg }}
+              >
+                {/* ─── Top-Right Large Soft Circle Overlay ─── */}
+                <div
+                  className="absolute -right-6 -top-6 w-48 h-48 rounded-full pointer-events-none transition-transform duration-500 group-hover:scale-110"
+                  style={{ backgroundColor: theme.logo }}
+                />
+
+                {/* ─── Top Header: Title, Plan Badge & Used/Active Status Pill ─── */}
+                <div className="relative z-10 flex items-start justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <h3 className={`text-xl sm:text-2xl font-black tracking-tight ${theme.text}`}>
+                      {card.name}
+                    </h3>
+                    <span className={`inline-block text-[10px] font-black uppercase tracking-widest border px-3 py-0.5 rounded-full ${theme.badge} ${theme.text}`}>
+                      {card.planLabel}
                     </span>
-                    <h2 className="text-2xl md:text-3xl font-black text-[#22331b] mt-2">
-                      My Gifted Wellness Cards
-                    </h2>
-                    <p className="text-xs text-[#66785c] mt-1 leading-relaxed">
-                      Here are the wellness gift cards you have gifted to your loved ones and their current usage status.
-                    </p>
+                  </div>
+
+                  {/* ─── Status Badge (Used / Active) Overlay ─── */}
+                  {isUsed ? (
+                    <div className="bg-slate-950/80 backdrop-blur-md text-amber-300 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-amber-400/30 shadow-md flex items-center gap-1.5 shrink-0">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span>Used</span>
+                      <span className="opacity-40">|</span>
+                      <span className="font-mono text-[9px] opacity-90">{card.usedAt}</span>
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-950/80 backdrop-blur-md text-emerald-300 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-emerald-400/40 shadow-md flex items-center gap-1.5 ring-2 ring-emerald-400/20 shrink-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span>Active</span>
+                      <span className="opacity-40">|</span>
+                      <span>Available</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── Body: Recipient, Sender & Italic Quote (Exact Image UI) ─── */}
+                <div className="relative z-10 my-4 space-y-1">
+                  <p className={`text-xs sm:text-sm font-bold opacity-95 ${theme.text}`}>
+                    To: <span className="font-black">{card.recipient}</span> <span className="text-[10px] opacity-80">({card.email})</span>
+                  </p>
+                  <p className={`text-xs sm:text-sm font-bold opacity-95 ${theme.text}`}>
+                    From: <span className="font-black">{giftData.sender || user?.name || "MentalSwasthya Member"}</span>
+                  </p>
+                  
+                  <p className={`text-xs italic opacity-90 border-t border-white/20 pt-2 mt-2 leading-relaxed ${theme.text}`}>
+                    "{DEFAULT_GIFT_MESSAGE}"
+                  </p>
+                </div>
+
+                {/* ─── Footer: Validity, Website Link & Code Pill ─── */}
+                <div className={`relative z-10 border-t border-white/25 pt-3 flex flex-wrap items-center justify-between gap-3 text-xs ${theme.text}`}>
+                  <div>
+                    <p className="opacity-95 font-semibold text-[11px]">{card.desc || "Valid for full subscription access"}</p>
+                    <a
+                      href="https://mentalswasthya.com"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold underline mt-0.5 inline-block opacity-90 hover:opacity-100"
+                    >
+                      mentalswasthya.com
+                    </a>
                   </div>
 
                   <button
-                    onClick={() => setShowStatusDrawer(false)}
-                    className="w-9 h-9 rounded-full bg-white border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-all shadow-sm flex-shrink-0"
+                    type="button"
+                    onClick={() => copyCode(card.fullCode)}
+                    className="font-mono font-black bg-white/25 hover:bg-white/35 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs sm:text-sm border border-white/30 transition-all flex items-center gap-1.5 shadow-sm"
+                    title="Click to copy code"
                   >
-                    <FiX size={18} />
+                    <FiCopy size={13} />
+                    {card.fullCode}
                   </button>
                 </div>
 
-                {/* Gift Cards Grid matching reference UI concept with MentalSwasthya theme */}
-                <div className="grid grid-cols-1 gap-5">
-                  {giftedCards.map((card) => {
-                    const isUsed = card.status === "used";
-                    return (
-                      <div
-                        key={card.id}
-                        className="relative rounded-[28px] bg-white border border-[#e4ede0] p-6 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
-                      >
-                        {/* ─── Top-Right Attached Metallic Status Pill (Matching Image Concept) ─── */}
-                        <div className="absolute top-4 right-4 z-20">
-                          {isUsed ? (
-                            <div className="bg-gradient-to-r from-[#2c4025] to-[#456439] text-[#e8f3e2] text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-[#a4c794]/40 shadow-md flex items-center gap-1.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              <span>Used</span>
-                              <span className="opacity-50">|</span>
-                              <span className="font-mono text-[9.5px] opacity-90">{card.usedAt}</span>
-                            </div>
-                          ) : (
-                            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-emerald-300/40 shadow-md flex items-center gap-1.5 ring-2 ring-emerald-400/20">
-                              <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                              <span>Active</span>
-                              <span className="opacity-50">|</span>
-                              <span>Available</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Card Top Branding & Details */}
-                        <div className="space-y-4 relative z-10 pt-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-[#eef6ea] border border-[#d2e2c8] flex items-center justify-center text-[#7d9667] font-black text-xl shadow-inner">
-                              🌿
-                            </div>
-                            <div>
-                              <h3 className="text-lg font-black text-[#22331b] leading-tight group-hover:text-[#7d9667] transition-colors">
-                                {card.name}
-                              </h3>
-                              <span className="inline-block text-[10px] font-black uppercase tracking-widest text-[#7d9667] bg-[#eef6ea] px-2 py-0.5 rounded border border-[#d2e2c8] mt-1">
-                                {card.planLabel}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Balance / Value */}
-                          <div className="flex items-baseline justify-between border-b border-gray-100 pb-3">
-                            <div>
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gift Balance Value</p>
-                              <p className="text-3xl font-black text-[#22331b] tracking-tight">{card.price}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gifted To</p>
-                              <p className="text-xs font-black text-[#22331b]">{card.recipient}</p>
-                              <p className="text-[10px] text-gray-400 font-medium">{card.email}</p>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                            {card.desc}
-                          </p>
-                        </div>
-
-                        {/* Card Footer: Code last 4 digits badge */}
-                        <div className="mt-5 pt-3 border-t border-dashed border-gray-200 flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl">
-                            <span className="text-[11px] font-bold text-gray-500">Code (last 4 digits):</span>
-                            <span className="text-xs font-mono font-black text-[#22331b] tracking-widest">{card.codeLast4}</span>
-                          </div>
-
-                          <button
-                            onClick={() => copyCode(card.fullCode)}
-                            className="text-xs font-extrabold text-[#7d9667] hover:underline flex items-center gap-1 bg-[#eef6ea] px-3 py-1.5 rounded-xl border border-[#d2e2c8]"
-                          >
-                            <FiCopy size={12} /> {card.fullCode}
-                          </button>
-                        </div>
-
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
-
-              {/* Drawer Footer */}
-              <div className="pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowStatusDrawer(false)}
-                  className="w-full py-3.5 rounded-2xl bg-[#1e3019] hover:bg-[#152312] text-white font-extrabold text-xs uppercase tracking-widest transition-all text-center shadow-md"
-                >
-                  Close Dialog
-                </button>
-              </div>
-
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+      </section>
 
     </div>
   );

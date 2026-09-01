@@ -270,14 +270,17 @@ const FeedbackWidget = () => {
                   })}
                 </div>
 
-                {/* ─── Remarks Input Pill ─── */}
-                <div className="w-full">
-                  <input
-                    type="text"
-                    placeholder="Enter your remarks here (optional)..."
+                {/* ─── Remarks Textarea Field (Like Message Field) ─── */}
+                <div className="w-full space-y-1.5 text-left">
+                  <label className="text-xs font-bold text-[#5c6e54] flex items-center gap-1.5">
+                    <FiMessageSquare size={13} className="text-[#7d9667]" /> Remarks & Comments
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder="Enter your detailed remarks, thoughts, or suggestions here..."
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    className="w-full rounded-2xl bg-white border border-[#d8e5d3] px-5 py-3.5 text-xs md:text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#7d9667] focus:ring-4 focus:ring-[#7d9667]/15 shadow-sm transition-all"
+                    className="w-full rounded-2xl bg-white border border-[#d8e5d3] p-4 text-xs md:text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#7d9667] focus:ring-4 focus:ring-[#7d9667]/15 shadow-sm transition-all resize-none leading-relaxed"
                   />
                 </div>
 

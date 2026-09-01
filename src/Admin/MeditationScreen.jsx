@@ -8,8 +8,13 @@ import {
   FiVolumeX,
   FiZap,
   FiArrowLeft,
+  FiGift,
+  FiCopy,
+  FiShare2,
+  FiCheck,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import CompletionScreen from "../components/CompletionScreen";
 import { playBell } from "../utils/audioUtils";
 import {
   completeBreathingSession,
@@ -302,8 +307,6 @@ const MeditationScreen = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdownValue, setCountdownValue] = useState(3);
-  const [isWaitingForNext, setIsWaitingForNext] = useState(false);
-  const [waitCountdownValue, setWaitCountdownValue] = useState(3);
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [vibrationOn, setVibrationOn] = useState(false);
@@ -405,7 +408,7 @@ const MeditationScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (!isRunning || isCompleted || isWaitingForNext) return undefined;
+    if (!isRunning || isCompleted) return undefined;
 
     let lastTick = Date.now();
     const interval = setInterval(() => {
@@ -430,26 +433,8 @@ const MeditationScreen = () => {
   useEffect(() => {
     if (elapsedSeconds < durationSeconds || !sessionId || completedRef.current) return;
 
-    if (!isWaitingForNext) {
-      setIsRunning(false);
-      setIsWaitingForNext(true);
-      setWaitCountdownValue(3);
-      return;
-    }
-  }, [elapsedSeconds, durationSeconds, sessionId, isWaitingForNext]);
-
-  useEffect(() => {
-    if (!isWaitingForNext) return;
-
-    if (waitCountdownValue > 0) {
-      const timer = setTimeout(() => {
-        setWaitCountdownValue((prev) => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    setIsWaitingForNext(false);
     completedRef.current = true;
+    setIsRunning(false);
     setIsCompleted(true);
     if (soundOn) playBell('double'); // Final double bell
 
@@ -464,7 +449,7 @@ const MeditationScreen = () => {
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
-  }, [isWaitingForNext, waitCountdownValue, sessionId, durationSeconds, cycleSeconds, totalCycles, soundOn]);
+  }, [elapsedSeconds, durationSeconds, sessionId, cycleSeconds, totalCycles, soundOn]);
 
   useEffect(() => {
     if (!isCountingDown) return undefined;
@@ -506,8 +491,6 @@ const MeditationScreen = () => {
     setIsCountingDown(false);
     setCountdownValue(3);
     setIsCompleted(false);
-    setIsWaitingForNext(false);
-    setWaitCountdownValue(3);
     prevPhaseIndexRef.current = null;
     setApiMessage("");
   };
@@ -652,26 +635,12 @@ const MeditationScreen = () => {
     const medMinutes = Math.round(medPlays.reduce((sum, item) => sum + (item.duration || 180), 0) / 60);
     const totalPlayMinutes = Math.round(playHistory.reduce((sum, item) => sum + (item.duration || 120), 0) / 60);
 
-    const intentionStatus = intentionsCount > 0 ? `${intentionsCount} completed` : "Yet to experience";
-    const breathingStatus = `${Math.round(durationSeconds / 60) || 3} min completed`;
-    const meditationStatus1 = medMinutes > 0 ? `${medMinutes} min completed` : "Yet to experience";
-    const meditationStatus2 = totalPlayMinutes > 0 ? `${totalPlayMinutes} min completed` : "Yet to experience";
-    const affirmationStatus = affPlays.length > 0 ? `${affPlays.length} completed` : "Yet to experience";
-    const streakStatus = `${historyCount + 1} day${historyCount + 1 === 1 ? "" : "s"} in a row`;
-
-    const handleShare = () => {
-      if (navigator.share) {
-        navigator.share({
-          title: "Mental Swasthya",
-          text: "I completed a wellness breathing session on Mental Swasthya!",
-          url: window.location.origin,
-        }).catch(() => { });
-      } else {
-        try {
-          navigator.clipboard.writeText(window.location.origin);
-          alert("Mental Swasthya link copied to clipboard!");
-        } catch (e) { }
-      }
+    const stepStatus = {
+      intention: intentionsCount > 0 ? `${intentionsCount} done` : "Done",
+      breathing: `${Math.round(durationSeconds / 60) || 4} min`,
+      meditation1: medMinutes > 0 ? `${medMinutes} min` : "10 min",
+      meditation2: totalPlayMinutes > 0 ? `${totalPlayMinutes} min` : "5 min",
+      affirmation: affPlays.length > 0 ? `${affPlays.length} done` : "Done",
     };
 
     const handleDone = () => {
@@ -679,202 +648,21 @@ const MeditationScreen = () => {
       navigate("/app");
     };
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 animate-fade-in overflow-y-auto">
-        <div className="w-full max-w-2xl rounded-[32px] bg-white p-8 md:p-10 text-center shadow-sm border border-gray-100 my-auto">
-
-          {/* Custom Meditating Tree Artwork SVG */}
-          <svg viewBox="0 0 200 160" className="mx-auto w-44 h-36 overflow-visible">
-            {/* Tree Leaves */}
-            <circle cx="75" cy="50" r="22" fill="#d0e6c4" opacity="0.8" />
-            <circle cx="125" cy="50" r="22" fill="#c3dec5" opacity="0.8" />
-            <circle cx="100" cy="35" r="25" fill="#b9d7cd" opacity="0.8" />
-            <circle cx="60" cy="70" r="18" fill="#dceade" opacity="0.75" />
-            <circle cx="140" cy="70" r="18" fill="#dbe7e7" opacity="0.75" />
-
-            {/* Tree Trunk */}
-            <path d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65"
-              stroke="#4b5563" strokeWidth="2" strokeLinecap="round" fill="none" />
-            <path d="M96 95 L96 110 L104 110 L104 95 Z" fill="#4b5563" />
-
-            {/* Meditating Figure */}
-            <circle cx="100" cy="95" r="18" stroke="#7d9667" strokeWidth="1" fill="#ffffff" strokeDasharray="3 3" />
-            <circle cx="100" cy="85" r="4.5" fill="#4b5563" />
-            <path d="M100 89.5 L100 99" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M88 103 C92 98 108 98 112 103" stroke="#4b5563" strokeWidth="3" strokeLinecap="round" fill="none" />
-            <path d="M94 92 C90 95 90 101 94 101 M106 92 C110 95 110 101 106 101" stroke="#4b5563" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-          </svg>
-
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight mt-6">Well-done!</h2>
-          <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto leading-relaxed">
-            You have successfully nurtured your mind today. Take a moment to feel the stillness you have created. It feels wonderful, doesn't it?
-          </p>
-
-          {/* Circular Success Indicator */}
-          <div className="flex justify-center my-6">
-            <div className="w-14 h-14 rounded-full bg-[#f4faf2] border border-[#d2edd0] flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-[#e6f4e2] flex items-center justify-center text-[#4b9b3e] text-lg font-bold">
-                ✓
-              </div>
-            </div>
-          </div>
-          <p className="text-xs font-extrabold text-[#66785c] -mt-2 mb-6">
-            Wellness session successfully completed
-          </p>
-
-          {/* Today's progress summary table */}
-          <div className="rounded-3xl bg-[#f5f8f3] border border-[#e1ebd9] p-5 mb-6 text-left">
-            <h4 className="text-sm font-bold text-center text-[#22331b] mb-4">
-              Today's progress summary.
-            </h4>
-
-            {/* Grid of 6 Columns */}
-            <div className="grid grid-cols-6 gap-1 divide-x divide-gray-200/60 text-center">
-              {/* Col 1: Intention */}
-              <div className="flex flex-col items-center justify-between min-h-[64px]">
-                <span className="text-xs">📄</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Intention</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{intentionStatus}</span>
-              </div>
-
-              {/* Col 2: Breathing */}
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🌬️</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Breathing</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{breathingStatus}</span>
-              </div>
-
-              {/* Col 3: Meditation */}
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🧘</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Meditation</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{meditationStatus1}</span>
-              </div>
-
-              {/* Col 4: Meditation 2 */}
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🧘</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Meditation</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{meditationStatus2}</span>
-              </div>
-
-              {/* Col 5: Affiliation / Affirmation */}
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">✨</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Affiliation</span>
-                <span className="text-[9px] font-bold text-[#7d9667] mt-1.5 leading-none">{affirmationStatus}</span>
-              </div>
-
-              {/* Col 6: Streak */}
-              <div className="flex flex-col items-center justify-between min-h-[64px] pl-1">
-                <span className="text-xs">🔥</span>
-                <span className="text-[10px] font-black text-gray-800 uppercase tracking-tighter mt-1">Streak</span>
-                <span className="text-[9px] font-bold text-amber-500 mt-1.5 leading-none">{streakStatus}</span>
-              </div>
-            </div>
-
-            <p className="text-[10px] text-center text-[#66785c]/80 font-bold mt-5 leading-normal border-t border-gray-200/40 pt-4">
-              Thank you for prioritizing your wellness today. Great job for showing up for your self. You did wonderful.
-            </p>
-          </div>
-
-          {/* Share box banner */}
-          <div
-            onClick={handleShare}
-            className="rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors p-3.5 flex items-center justify-between cursor-pointer mb-3 border border-gray-200/50"
-          >
-            <span className="text-xs font-semibold text-gray-600">
-              If you love mental Swasthya webapplication, please
-            </span>
-            <span className="text-xs font-black text-[#7d9667] flex items-center gap-1.5">
-              Share ➡️
-            </span>
-          </div>
-
-          {/* Refer & Reward banner */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#eef6ea] to-[#e4ecdf] p-4 flex items-center justify-between cursor-pointer mb-6 border border-[#d2edd0] shadow-sm transform transition-all hover:scale-[1.02]">
-            <div className="text-left">
-              <span className="text-sm font-black text-[#4b9b3e] block">Refer & Reward 🎉</span>
-              <span className="text-xs font-semibold text-[#66785c]">Invite friends and get a 3 months subscription extension!</span>
-            </div>
-            <button className="bg-[#7d9667] text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md">
-              Refer Now
-            </button>
-          </div>
-
-          {apiMessage && <p className="text-xs text-[#7d9667] mb-4">{apiMessage}</p>}
-
-          {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              type="button"
-              onClick={handleDone}
-              className="flex-1 rounded-2xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-bold shadow-md shadow-[#7d9667]/15 transition-all"
-            >
-              Return to dashboard
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                resetLocalSession();
-                navigate("/");
-              }}
-              className="flex-1 rounded-2xl border border-gray-200 hover:bg-gray-50 text-gray-600 px-5 py-3 text-sm font-bold transition-all"
-            >
-              I will be back tomorrow
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isWaitingForNext) {
-    let nextTech = "box";
-    if (selectedTechnique === "triangle") nextTech = "box";
-    if (selectedTechnique === "box") nextTech = "circle";
-    if (selectedTechnique === "circle") nextTech = "triangle";
+    const handleReset = () => {
+      resetLocalSession();
+      navigate("/app");
+    };
 
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
-        <div className="absolute top-6 left-6 z-50">
-          <button
-            type="button"
-            onClick={() => { setIsWaitingForNext(false); handleStop(); navigate(-1); }}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
-            title="Go Back"
-          >
-            <FiArrowLeft size={16} />
-          </button>
-        </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[480px] md:h-[480px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center text-center">
-          <span className="text-sm md:text-base font-black uppercase tracking-[0.35em] text-[#a8c896] mb-8 animate-fade-in">
-            Up Next
-          </span>
-          <div className="w-48 h-48 md:w-56 md:h-56 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown">
-            <span className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md text-center p-4 leading-tight">
-              {nextTech}
-            </span>
-          </div>
-          <p className="text-sm font-semibold text-white/60 mt-8 tracking-wide">
-            Starting in {waitCountdownValue}...
-          </p>
-          <div className="flex gap-4 mt-8">
-            <button
-              type="button"
-              onClick={() => {
-                setIsWaitingForNext(false);
-                handleNextSection(180);
-                setTimeout(() => handleStart({ forceNew: true }), 100);
-              }}
-              className="px-6 py-3 rounded-full bg-[#7d9667] text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all"
-            >
-              Start Now
-            </button>
-          </div>
-        </div>
-      </div>
+      <CompletionScreen
+        onDone={handleDone}
+        onReset={handleReset}
+        stepStatus={stepStatus}
+        streakDays={historyCount + 1}
+        referralCount={2}
+        refLink="mentalswasthya.com/ref/MS-REF2026"
+        apiMessage={apiMessage}
+      />
     );
   }
 

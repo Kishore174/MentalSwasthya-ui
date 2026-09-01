@@ -245,6 +245,7 @@ const SubscriptionScreen = () => {
       </div>
 
       {/* ─── SECTION 3: REFERRAL REWARDS (1st, 2nd, 3rd Referral Rewards) ─── */}
+      {/* 
       <div className="rounded-[32px] bg-gradient-to-br from-[#eef7fb] via-[#f5faf2] to-[#eef6ea] border border-[#d6e5cf] p-6 md:p-8 shadow-[0_15px_45px_rgba(80,105,67,0.06)] relative overflow-hidden">
         
         <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -260,7 +261,6 @@ const SubscriptionScreen = () => {
             Give your loved ones <strong>FREE</strong> access to premium mental health resources. For every friend who signs up using your link, you get <strong>1 month of Premium Membership for FREE!</strong> (Max 3 months total reward)
           </p>
 
-          {/* Unique Referral Link Box */}
           <div className="bg-white rounded-2xl border border-[#d2e2c8] p-4 shadow-md max-w-xl mx-auto mt-5">
             <p className="text-xs font-black text-[#22331b] mb-2 text-center uppercase tracking-wider">
               Your Unique Referral Link
@@ -291,7 +291,6 @@ const SubscriptionScreen = () => {
             </div>
           </div>
 
-          {/* Overall Summary Badge */}
           <div className="inline-flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full border border-[#cbe0c3] mt-3 shadow-sm">
             <span className="text-xs font-black text-[#22331b]">Your Rewards:</span>
             <span className="text-xs font-extrabold text-[#7d9667]">{referralCount}/3 Months Free Earned</span>
@@ -310,10 +309,8 @@ const SubscriptionScreen = () => {
 
         </div>
 
-        {/* 1st, 2nd, 3rd Referral Reward Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-7">
           
-          {/* 1st Referral Reward */}
           <div className="rounded-2xl bg-white border border-emerald-300 p-5 shadow-sm space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#7d9667] bg-[#eef6ea] px-2.5 py-1 rounded-md">
@@ -333,7 +330,6 @@ const SubscriptionScreen = () => {
             </div>
           </div>
 
-          {/* 2nd Referral Reward */}
           <div className="rounded-2xl bg-white border border-emerald-300 p-5 shadow-sm space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-[#7d9667] bg-[#eef6ea] px-2.5 py-1 rounded-md">
@@ -353,7 +349,6 @@ const SubscriptionScreen = () => {
             </div>
           </div>
 
-          {/* 3rd Referral Reward */}
           <div className="rounded-2xl bg-white border border-amber-300 p-5 shadow-sm space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md">
@@ -376,6 +371,7 @@ const SubscriptionScreen = () => {
         </div>
 
       </div>
+      */}
 
       {/* ─── SECTION 4: MONTHLY & YEARLY SUBSCRIPTION PLANS WITH RUNNING STATUS ─── */}
       <div className="space-y-6 pt-4">

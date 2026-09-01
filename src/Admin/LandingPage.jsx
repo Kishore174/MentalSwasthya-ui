@@ -173,7 +173,41 @@ const LandingPage = () => {
     }
   ];
 
+  const curatedArticles = [
+    {
+      id: 1,
+      category: "Mindfulness & Breathing",
+      readTime: "4 min read",
+      title: "The Science of Mindful Breathing & Daily Peace",
+      message: "Discover how regulating your breath for just 5 minutes daily calms the central nervous system, lowers anxiety, and creates immediate mental clarity.",
+      date: "September 2026",
+      tagColor: "#7d9667",
+      bgGradient: "linear-gradient(135deg, #2e4a27 0%, #152612 100%)"
+    },
+    {
+      id: 2,
+      category: "Restorative Sleep",
+      readTime: "5 min read",
+      title: "Soundscapes & Sleep: Restoring Natural Rest",
+      message: "Explore how acoustic frequencies and ambient soundscapes settle an overactive mind and prepare your body for deep, uninterrupted sleep.",
+      date: "September 2026",
+      tagColor: "#5478a3",
+      bgGradient: "linear-gradient(135deg, #1e334d 0%, #0d1a29 100%)"
+    },
+    {
+      id: 3,
+      category: "Emotional Resilience",
+      readTime: "3 min read",
+      title: "Building Sustainable Intentions & Self-Compassion",
+      message: "Small morning reflections cultivate long-term emotional stability. Aligning daily choices with core values leads to genuine peace of mind.",
+      date: "August 2026",
+      tagColor: "#b3823b",
+      bgGradient: "linear-gradient(135deg, #4d3617 0%, #241808 100%)"
+    }
+  ];
+
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [articleIndex, setArticleIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1123,174 +1157,285 @@ const LandingPage = () => {
                   <span style={{ fontSize: 11, color: "#768c6e" }}>Animation preview</span>
                 </div>
               </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 10,
-                  background: "#ffffff", border: "1px solid #dde7d6",
-                  display: "flex", alignItems: "center",
-                  color: "#7d6b3a", flexShrink: 0, justifyContent: "center"
-                }}>
-                  <FiSun size={18} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Meditation</p>
-                  <span style={{ fontSize: 11, color: "#768c6e" }}>Session suggestion</span>
-                </div>
-              </div>
             </div>
           </div>
         </Reveal>
 
-        {/* ─── CURATED ARTICLES & OUR COMMUNITY ─── */}
-        <section id="community">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, marginBottom: 80 }} className="bottom-grid-stack">
-            
-            {/* Curated Articles Card */}
-            <Reveal>
-              <div style={{
-                background: "#ffffff",
-                border: "1.5px solid #e8eee3",
-                padding: 32, borderRadius: 28,
-                boxShadow: "0 2px 12px rgba(22,35,20,0.04)",
-                height: "100%", display: "flex", flexDirection: "column",
-                justifyContent: "space-between"
-              }} className="community-card">
+        {/* ─── SECTION 1: CURATED ARTICLES ─── */}
+        <section id="articles" style={{ marginBottom: 60 }}>
+          <Reveal>
+            <div style={{
+              background: "#ffffff",
+              border: "1.5px solid #e8eee3",
+              padding: "36px 32px",
+              borderRadius: 32,
+              boxShadow: "0 4px 20px rgba(22,35,20,0.05)"
+            }}>
+              {/* Header with Navigation Controls */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#1a2416" }}>
-                      Curated Articles
-                    </h3>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button style={{ width: 32, height: 32, borderRadius: "50%", background: "#ffffff", border: "1px solid #e8eee3", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiChevronLeft size={16} /></button>
-                      <button style={{ width: 32, height: 32, borderRadius: "50%", background: "#ffffff", border: "1px solid #e8eee3", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><FiChevronRight size={16} /></button>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 20, alignItems: "center" }} className="article-stack">
-                    <div style={{
-                      width: 110, height: 110, borderRadius: 16,
-                      background: "linear-gradient(135deg, #4a7c59 0%, #1e3019 100%)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "rgba(255,255,255,0.7)", flexShrink: 0
-                    }}>
-                      <FiCompass size={32} />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "#7d9667", uppercase: "true", letterSpacing: "0.1em" }}>Blog Open Sans</span>
-                      <h4 style={{ fontSize: 15, fontWeight: 600, color: "#1a2416", marginTop: 4, cursor: "pointer" }} onClick={handleStart}>
-                        Stress, Sleep, and Mindfulness, Mindfulness
-                      </h4>
-                      <p style={{ fontSize: 12.5, color: "#7a8f72", marginTop: 6, lineHeight: 1.5 }}>
-                        Learn how quick mindfulness exercises improve nighttime relaxation and lower tension.
-                      </p>
-                    </div>
-                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#7d9667", textTransform: "uppercase", letterSpacing: "0.16em" }}>
+                    WELLNESS INSIGHTS
+                  </span>
+                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 700, color: "#1a2416", marginTop: 2 }}>
+                    Curated Articles
+                  </h3>
                 </div>
 
-                <button
-                  onClick={handleStart}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    background: "none", border: "none", cursor: "pointer",
-                    fontSize: 12, fontWeight: 600, color: "#4a7c59",
-                    marginTop: 20, padding: 0, alignSelf: "flex-start"
-                  }}
-                >
-                  Read Article <FiArrowRight size={12} />
-                </button>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <button
+                    type="button"
+                    onClick={() => setArticleIndex((prev) => (prev === 0 ? curatedArticles.length - 1 : prev - 1))}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                    title="Previous Article"
+                  >
+                    <FiChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArticleIndex((prev) => (prev + 1) % curatedArticles.length)}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                    title="Next Article"
+                  >
+                    <FiChevronRight size={18} />
+                  </button>
+                </div>
               </div>
-            </Reveal>
 
-            {/* Our Community Card (Sliding picture & customer reviews carousel) */}
-            <Reveal delay={0.08}>
+              {/* Active Curated Article Showcase */}
               <div style={{
-                background: "linear-gradient(135deg, #162314 0%, #0d1b0b 100%)",
-                padding: 32, borderRadius: 28,
-                boxShadow: "0 10px 30px rgba(22,35,20,0.15)",
-                color: "#e8f0e3", height: "100%",
-                display: "flex", flexDirection: "column",
-                justifyContent: "space-between",
-                position: "relative", overflow: "hidden"
-              }} className="community-card">
-                {/* Dot decoration */}
-                <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
+                background: curatedArticles[articleIndex].bgGradient,
+                borderRadius: 24,
+                padding: "32px 28px",
+                color: "#ffffff",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                position: "relative",
+                overflow: "hidden"
+              }}>
+                {/* Background SVG Grid pattern */}
+                <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05, pointerEvents: "none" }}>
                   <rect width="100%" height="100%" fill="url(#agrid)" />
                 </svg>
 
                 <div style={{ position: "relative", zIndex: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                    <div>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: "#a8c896", textTransform: "uppercase", letterSpacing: "0.14em" }}>
-                        Member Stories
-                      </span>
-                      <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 600, color: "#e8f0e3", marginTop: 2 }}>
-                        Our Community
-                      </h3>
-                    </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      background: "rgba(255,255,255,0.18)",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      color: "#ffffff",
+                      padding: "4px 12px",
+                      borderRadius: 99
+                    }}>
+                      {curatedArticles[articleIndex].category}
+                    </span>
 
-                    {/* Navigation Arrows for Review Slideshow */}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={() => setReviewIndex((prev) => (prev === 0 ? communityReviews.length - 1 : prev - 1))}
-                        style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <FiChevronLeft size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviewIndex((prev) => (prev + 1) % communityReviews.length)}
-                        style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                      >
-                        <FiChevronRight size={16} />
-                      </button>
-                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <FiClock size={13} /> {curatedArticles[articleIndex].readTime}
+                    </span>
                   </div>
 
-                  {/* Sliding Picture Review Card */}
-                  <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 16 }} className="article-stack">
-                    <img
-                      src={communityReviews[reviewIndex].image}
-                      alt={communityReviews[reviewIndex].name}
+                  <h4 style={{
+                    fontFamily: "'Cormorant Garamond', serif",
+                    fontSize: "1.85rem",
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    color: "#ffffff",
+                    marginBottom: 12,
+                    cursor: "pointer"
+                  }} onClick={handleStart}>
+                    {curatedArticles[articleIndex].title}
+                  </h4>
+
+                  <p style={{
+                    fontSize: "0.95rem",
+                    color: "rgba(255,255,255,0.9)",
+                    lineHeight: 1.6,
+                    maxWidth: "850px",
+                    marginBottom: 24
+                  }}>
+                    {curatedArticles[articleIndex].message}
+                  </p>
+
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: 20 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+                      Published: {curatedArticles[articleIndex].date}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleStart}
                       style={{
-                        width: 76, height: 76, borderRadius: 20,
-                        objectFit: "cover",
-                        border: "2px solid #a8c896",
-                        boxShadow: "0 6px 16px rgba(0,0,0,0.4)",
-                        flexShrink: 0,
-                        transition: "all 0.4s ease"
+                        padding: "10px 22px",
+                        borderRadius: 14,
+                        background: "#ffffff",
+                        color: "#1e3019",
+                        border: "none",
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+                        transition: "all 0.2s"
                       }}
-                    />
-                    <div>
-                      <h4 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", marginBottom: 2 }}>
-                        {communityReviews[reviewIndex].name}
-                      </h4>
-                      <p style={{ fontSize: 11.5, color: "#a8c896", fontWeight: 600 }}>
-                        {communityReviews[reviewIndex].role}
-                      </p>
-                      <div style={{ display: "flex", gap: 2, marginTop: 4, color: "#fbbf24", fontSize: 13 }}>
-                        {"★".repeat(communityReviews[reviewIndex].rating)}
+                    >
+                      Read Full Article <FiArrowRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Article Indicators */}
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 20 }}>
+                {curatedArticles.map((_, idx) => (
+                  <span
+                    key={idx}
+                    onClick={() => setArticleIndex(idx)}
+                    style={{
+                      width: articleIndex === idx ? 24 : 8,
+                      height: 8,
+                      borderRadius: 4,
+                      background: articleIndex === idx ? "#7d9667" : "#e2ebd9",
+                      cursor: "pointer",
+                      transition: "all 0.3s"
+                    }}
+                  />
+                ))}
+              </div>
+
+            </div>
+          </Reveal>
+        </section>
+
+        {/* ─── SECTION 2: OUR COMMUNITY (FULL-WIDTH DEDICATED BLOCK DOWN BELOW) ─── */}
+        <section id="community" style={{ marginBottom: 80 }}>
+          <Reveal delay={0.08}>
+            <div style={{
+              background: "linear-gradient(135deg, #162314 0%, #0d1b0b 100%)",
+              padding: "48px 36px",
+              borderRadius: 36,
+              boxShadow: "0 18px 45px rgba(22,35,20,0.2)",
+              color: "#e8f0e3",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              {/* Subtle Ambient Glow & Dot Grid */}
+              <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(168,200,150,0.08)", filter: "blur(60px)", pointerEvents: "none" }} />
+              <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
+                <rect width="100%" height="100%" fill="url(#agrid)" />
+              </svg>
+
+              <div style={{ position: "relative", zIndex: 10 }}>
+                {/* Header */}
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 20, marginBottom: 32, borderBottom: "1px solid rgba(255,255,255,0.12)", paddingBottom: 20 }}>
+                  <div>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#a8c896", textTransform: "uppercase", letterSpacing: "0.18em", background: "rgba(168,200,150,0.12)", border: "1px solid rgba(168,200,150,0.25)", padding: "4px 12px", borderRadius: 99 }}>
+                      MEMBER STORIES & REVIEWS
+                    </span>
+                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2.4rem", fontWeight: 700, color: "#e8f0e3", marginTop: 8 }}>
+                      Our Community
+                    </h3>
+                    <p style={{ fontSize: 13, color: "rgba(232,240,227,0.75)", marginTop: 4 }}>
+                      Real experiences from practitioners finding peace, focus, and clarity with MentalSwasthya.
+                    </p>
+                  </div>
+
+                  {/* Navigation Arrows for Community Review Carousel */}
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => setReviewIndex((prev) => (prev === 0 ? communityReviews.length - 1 : prev - 1))}
+                      style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                      title="Previous Review"
+                    >
+                      <FiChevronLeft size={20} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReviewIndex((prev) => (prev + 1) % communityReviews.length)}
+                      style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                      title="Next Review"
+                    >
+                      <FiChevronRight size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sliding Picture Review Card */}
+                <div style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: 28,
+                  padding: "32px 28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 20
+                }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
+                    
+                    {/* User Profile Avatar & Role */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                      <img
+                        src={communityReviews[reviewIndex].image}
+                        alt={communityReviews[reviewIndex].name}
+                        style={{
+                          width: 84, height: 84, borderRadius: 24,
+                          objectFit: "cover",
+                          border: "3px solid #a8c896",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                          flexShrink: 0,
+                          transition: "all 0.4s ease"
+                        }}
+                      />
+                      <div>
+                        <h4 style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", marginBottom: 2 }}>
+                          {communityReviews[reviewIndex].name}
+                        </h4>
+                        <p style={{ fontSize: 12.5, color: "#a8c896", fontWeight: 700 }}>
+                          {communityReviews[reviewIndex].role}
+                        </p>
+                        <div style={{ display: "flex", gap: 3, marginTop: 6, color: "#fbbf24", fontSize: 15 }}>
+                          {"★".repeat(communityReviews[reviewIndex].rating)}
+                        </div>
                       </div>
                     </div>
+
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.08)", padding: "6px 14px", borderRadius: 99 }}>
+                      {communityReviews[reviewIndex].date}
+                    </span>
                   </div>
 
-                  <p style={{ fontSize: 13, color: "rgba(232,240,227,0.85)", lineHeight: 1.6, fontWeight: 300, fontStyle: "italic", minHeight: 62 }}>
+                  {/* Review Quote Block */}
+                  <p style={{
+                    fontSize: "1.1rem",
+                    color: "rgba(232,240,227,0.92)",
+                    lineHeight: 1.6,
+                    fontWeight: 400,
+                    fontStyle: "italic",
+                    borderLeft: "3px solid #a8c896",
+                    paddingLeft: 16,
+                    margin: "8px 0"
+                  }}>
                     "{communityReviews[reviewIndex].review}"
                   </p>
                 </div>
 
-                {/* Review Slide Indicators & Action Button */}
-                <div style={{ position: "relative", zIndex: 10, marginTop: 20 }}>
-                  <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 16 }}>
+                {/* Bottom Bar: Indicators & Share Feedback Action Button */}
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 20, marginTop: 28 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {communityReviews.map((_, idx) => (
                       <span
                         key={idx}
                         onClick={() => setReviewIndex(idx)}
                         style={{
-                          width: reviewIndex === idx ? 20 : 8,
-                          height: 8,
-                          borderRadius: 4,
+                          width: reviewIndex === idx ? 28 : 10,
+                          height: 10,
+                          borderRadius: 5,
                           background: reviewIndex === idx ? "#a8c896" : "rgba(255,255,255,0.25)",
                           cursor: "pointer",
                           transition: "all 0.3s"
@@ -1300,15 +1445,19 @@ const LandingPage = () => {
                   </div>
 
                   <button
-                    onClick={handleStart}
+                    onClick={() => {
+                      const btn = document.querySelector('button[title="Share your experience"]');
+                      if (btn) btn.click();
+                      else handleStart();
+                    }}
                     style={{
-                      width: "100%", padding: "14px 0",
-                      borderRadius: 14,
+                      padding: "14px 28px",
+                      borderRadius: 16,
                       background: "#a8c896", color: "#0d1b0b",
                       border: "none", cursor: "pointer",
-                      fontSize: 12.5, fontWeight: 700,
+                      fontSize: 13, fontWeight: 800,
                       fontFamily: "'DM Sans', sans-serif",
-                      boxShadow: "0 4px 16px rgba(168,200,150,0.2)",
+                      boxShadow: "0 6px 20px rgba(168,200,150,0.25)",
                       transition: "all 0.25s",
                       display: "flex",
                       alignItems: "center",
@@ -1323,20 +1472,19 @@ const LandingPage = () => {
                   </button>
                 </div>
               </div>
-            </Reveal>
-
-          </div>
+            </div>
+          </Reveal>
         </section>
 
           {/* ══════════════════════════ CONTACT US ══════════════════════════ */}
           <section id="contact" style={{
-            padding: "100px 48px",
+            padding: "clamp(60px, 8vw, 100px) clamp(20px, 8vw, 48px)",
             background: "linear-gradient(180deg, #ffffff 0%, #f4faf0 100%)",
             borderTop: "1px solid rgba(125,150,103,0.08)",
             position: "relative"
           }}>
             <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "start" }} className="contact-grid">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "clamp(32px, 8vw, 64px)", alignItems: "start" }} className="contact-grid">
                 
                 {/* Left Column: Details */}
                 <Reveal direction="left">
@@ -1345,10 +1493,10 @@ const LandingPage = () => {
                       <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667" }}>
                         Reach Out
                       </span>
-                      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "3rem", fontWeight: 500, color: "#1c3217", marginTop: 12, lineHeight: 1.1 }}>
+                      <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.8rem, 5vw, 3rem)", fontWeight: 500, color: "#1c3217", marginTop: 12, lineHeight: 1.1 }}>
                         We'd love to hear <br />from you.
                       </h2>
-                      <p style={{ fontSize: 14.5, color: "#556b50", marginTop: 20, lineHeight: 1.7, fontWeight: 300 }}>
+                      <p style={{ fontSize: "clamp(13px, 2vw, 14.5px)", color: "#556b50", marginTop: 20, lineHeight: 1.7, fontWeight: 300 }}>
                         Whether you have a question about features, subscriptions, or simply want to share your mindfulness journey, our friendly team is here to support you.
                       </p>
                     </div>
@@ -1357,35 +1505,35 @@ const LandingPage = () => {
                     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                       
                       {/* Call support */}
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "clamp(12px, 4vw, 18px) clamp(14px, 4vw, 24px)", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiPhone size={18} style={{ margin: "auto" }} />
                         </div>
                         <div>
-                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Call Us</h4>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>+91 92235 50682</p>
+                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Call Us</h4>
+                          <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>+91 92235 50682</p>
                         </div>
                       </div>
 
                       {/* Email Support */}
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "clamp(12px, 4vw, 18px) clamp(14px, 4vw, 24px)", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiMail size={18} style={{ margin: "auto" }} />
                         </div>
                         <div>
-                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Email Support</h4>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>support@mentalswasthya.com</p>
+                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Email Support</h4>
+                          <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>support@mentalswasthya.com</p>
                         </div>
                       </div>
 
                       {/* Office Location */}
-                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "18px 24px", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justify: "center", color: "#7d9667", flexShrink: 0 }}>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center", background: "#ffffff", padding: "clamp(12px, 4vw, 18px) clamp(14px, 4vw, 24px)", borderRadius: 20, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 8px 25px rgba(80,105,67,0.02)" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiMapPin size={18} style={{ margin: "auto" }} />
                         </div>
                         <div>
-                          <h4 style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Office Location</h4>
-                          <p style={{ fontSize: 14, fontWeight: 600, color: "#22331b", marginTop: 2 }}>Mumbai, Maharashtra, India</p>
+                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Office Location</h4>
+                          <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>Mumbai, Maharashtra, India</p>
                         </div>
                       </div>
 
@@ -1395,11 +1543,11 @@ const LandingPage = () => {
 
                 {/* Right Column: Contact form */}
                 <Reveal direction="right" delay={0.1}>
-                  <div style={{ background: "#ffffff", padding: "36px", borderRadius: 28, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 20px 50px rgba(80,105,67,0.04)" }} className="form-card">
-                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.8rem", fontWeight: 600, color: "#1c3217", marginBottom: 8 }}>
+                  <div style={{ background: "#ffffff", padding: "clamp(20px, 6vw, 36px)", borderRadius: 28, border: "1px solid rgba(125,150,103,0.12)", boxShadow: "0 20px 50px rgba(80,105,67,0.04)" }} className="form-card">
+                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.3rem, 4vw, 1.8rem)", fontWeight: 600, color: "#1c3217", marginBottom: 8 }}>
                       Send us a Message
                     </h3>
-                    <p style={{ fontSize: 12.5, color: "#8a9a80", marginBottom: 28 }}>
+                    <p style={{ fontSize: "clamp(11px, 2vw, 12.5px)", color: "#8a9a80", marginBottom: 28 }}>
                       Fill out the form below and we will get back to you within 24 hours.
                     </p>
 
@@ -1407,7 +1555,7 @@ const LandingPage = () => {
                       
                       {/* Name Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
                           Your Name
                         </label>
                         <input
@@ -1417,9 +1565,9 @@ const LandingPage = () => {
                           placeholder="e.g. John Doe"
                           required
                           style={{
-                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
                             fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1429,7 +1577,7 @@ const LandingPage = () => {
 
                       {/* Email Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
                           Email Address
                         </label>
                         <input
@@ -1439,9 +1587,9 @@ const LandingPage = () => {
                           placeholder="e.g. john@example.com"
                           required
                           style={{
-                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
                             fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1451,7 +1599,7 @@ const LandingPage = () => {
 
                       {/* Message Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
                           Your Message
                         </label>
                         <textarea
@@ -1461,9 +1609,9 @@ const LandingPage = () => {
                           required
                           rows={4}
                           style={{
-                            width: "100%", padding: "14px 18px", borderRadius: 12,
+                            width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: 13, background: "#fbfdfa", transition: "all 0.25s",
+                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
                             resize: "none", fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1476,9 +1624,9 @@ const LandingPage = () => {
                         type="submit"
                         disabled={isSubmitting}
                         style={{
-                          width: "100%", padding: "16px 0", borderRadius: 14,
+                          width: "100%", padding: "clamp(14px, 3vw, 16px) 0", borderRadius: 14,
                           background: "#7d9667", color: "#ffffff",
-                          border: "none", cursor: "pointer", fontSize: 13,
+                          border: "none", cursor: "pointer", fontSize: "clamp(12px, 2.5vw, 13px)",
                           fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
                           boxShadow: "0 6px 20px rgba(125,150,103,0.18)",
                           transition: "all 0.25s", marginTop: 8
@@ -1514,9 +1662,9 @@ const LandingPage = () => {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }} className="footer-right">
             <div style={{ display: "flex", gap: 14 }}>
-              <a href="#" style={{ color: "rgba(168,200,150,0.45)" }}><FiFacebook size={16} /></a>
-              <a href="#" style={{ color: "rgba(168,200,150,0.45)" }}><FiTwitter size={16} /></a>
-              <a href="#" style={{ color: "rgba(168,200,150,0.45)" }}><FiInstagram size={16} /></a>
+              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Facebook"><FiFacebook size={16} /></button>
+              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Twitter"><FiTwitter size={16} /></button>
+              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Instagram"><FiInstagram size={16} /></button>
             </div>
             <p style={{ fontSize: 11, color: "rgba(168,200,150,0.3)", letterSpacing: "0.04em" }}>
               MentalSwasthya &copy; 2025. All Rights Reserved.
@@ -1638,10 +1786,10 @@ const LandingPage = () => {
           }
           .contact-grid {
             grid-template-columns: 1fr !important;
-            gap: 40px !important;
+            gap: 32px !important;
           }
           .form-card {
-            padding: 24px !important;
+            padding: 20px !important;
           }
         }
 

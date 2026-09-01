@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRepeat, FiShuffle,
-  FiVolume2, FiVolumeX, FiPlus, FiTrash2, FiFolder, FiInfo, FiCheck
+  FiVolume2, FiVolumeX, FiPlus, FiTrash2, FiFolder, FiInfo, FiCheck,
+  FiSearch, FiSliders, FiFilter, FiClock, FiX
 } from 'react-icons/fi';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { axiosInstance } from '../Api/config';
@@ -106,10 +107,14 @@ const AudioPlaylist = ({
   const [isMuted, setIsMuted] = useState(false);
   const [languageFilter, setLanguageFilter] = useState("english");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
+  const [selectedDurationFilter, setSelectedDurationFilter] = useState("all");
+  const [sortByFilter, setSortByFilter] = useState("favorites");
 
   // Custom Upload Inline Form State
   const [uploadTitle, setUploadTitle] = useState("");
   const [uploadArtist, setUploadArtist] = useState("");
+  const [uploadCategory, setUploadCategory] = useState("Meditation");
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -190,7 +195,24 @@ const AudioPlaylist = ({
     return [...remoteWithLanguage, ...extraTracks, ...customTracks];
   }, [tracks, musicTracks, customTracks, showMusicTab]);
 
-  // Filter combined tracks and keep favorited tracks at the TOP of the list
+  const hasActiveSearchFilters = useMemo(() => {
+    return (
+      searchQuery.trim() !== "" ||
+      selectedCategoryFilter !== "all" ||
+      selectedDurationFilter !== "all" ||
+      sortByFilter !== "favorites"
+    );
+  }, [searchQuery, selectedCategoryFilter, selectedDurationFilter, sortByFilter]);
+
+  const resetSearchFilters = () => {
+    setSearchQuery("");
+    setSelectedCategoryFilter("all");
+    setSelectedDurationFilter("all");
+    setSortByFilter("favorites");
+    setCurrentTrackIndex(0);
+  };
+
+  // Filter combined tracks and apply category, duration, search, and sort filters
   const filteredTracks = useMemo(() => {
     const matched = allCombinedTracks.filter(track => {
       const isFav = favorites.includes(track._id);
@@ -199,20 +221,48 @@ const AudioPlaylist = ({
         (languageFilter === "custom" && track.isCustom) ||
         (languageFilter === track.language && !track.isCustom);
 
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (track.artist || "").toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        track.title.toLowerCase().includes(q) ||
+        (track.artist || "").toLowerCase().includes(q) ||
+        (track.category || "").toLowerCase().includes(q) ||
+        (track.language || "").toLowerCase().includes(q);
 
-      return matchesLanguage && matchesSearch;
+      const trackCat = (track.category || (track.isCustom ? "Custom" : track.language || "")).toLowerCase();
+      const matchesCategory =
+        selectedCategoryFilter === "all" ||
+        trackCat.includes(selectedCategoryFilter.toLowerCase());
+
+      const durationSec = track.duration || 180;
+      let matchesDuration = true;
+      if (selectedDurationFilter === "short") {
+        matchesDuration = durationSec < 180;
+      } else if (selectedDurationFilter === "medium") {
+        matchesDuration = durationSec >= 180 && durationSec <= 600;
+      } else if (selectedDurationFilter === "long") {
+        matchesDuration = durationSec > 600;
+      }
+
+      return matchesLanguage && matchesSearch && matchesCategory && matchesDuration;
     });
 
-    // Pin favorited tracks to top of playlist
     return [...matched].sort((a, b) => {
+      if (sortByFilter === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortByFilter === "duration_asc") {
+        return (a.duration || 0) - (b.duration || 0);
+      }
+      if (sortByFilter === "duration_desc") {
+        return (b.duration || 0) - (a.duration || 0);
+      }
+
       const aFav = favorites.includes(a._id) ? 1 : 0;
       const bFav = favorites.includes(b._id) ? 1 : 0;
       return bFav - aFav;
     });
-  }, [allCombinedTracks, languageFilter, searchQuery, favorites]);
+  }, [allCombinedTracks, languageFilter, searchQuery, selectedCategoryFilter, selectedDurationFilter, sortByFilter, favorites]);
 
   const currentTrack = filteredTracks[currentTrackIndex] || null;
 
@@ -447,7 +497,8 @@ const AudioPlaylist = ({
             _id: uniqueId,
             title: uploadTitle,
             artist: uploadArtist || "Self",
-            language: "custom",
+            category: uploadCategory,
+            language: uploadCategory,
             duration: fileDuration,
             audioUrl: uniqueId,
             isCustom: true
@@ -463,6 +514,7 @@ const AudioPlaylist = ({
         // Reset fields & success state
         setUploadTitle("");
         setUploadArtist("");
+        setUploadCategory("Meditation");
         setSelectedFile(null);
         setIsUploading(false);
         setUploadSuccess("Audio successfully uploaded and saved!");
@@ -682,51 +734,127 @@ const AudioPlaylist = ({
             </div>
           </div>
 
-          {/* Filters Bar: Search & Languages */}
-          <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-4 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* ─── Search & Advanced Filter Controls Bar ─── */}
+          <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-4 shadow-sm mb-6 space-y-3">
+            
+            {/* Top Row: Language / Preset Filter Tabs */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-gray-100/60">
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: "english", label: "English" },
+                  { id: "hindi", label: "Hindi" },
+                  ...(showMusicTab ? [{ id: "music", label: "🎵 Music" }] : []),
+                  { id: "custom", label: "📁 Personal Upload" },
+                  { id: "favorites", label: `❤️ Favorites (${favorites.length})` }
+                ].map(filter => {
+                  const isActive = languageFilter === filter.id;
+                  return (
+                    <button
+                      key={filter.id}
+                      onClick={() => {
+                        setLanguageFilter(filter.id);
+                        setCurrentTrackIndex(0);
+                      }}
+                      className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
+                        ? "text-white shadow-md"
+                        : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
+                        }`}
+                      style={isActive ? { backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` } : {}}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Language filter buttons */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { id: "english", label: "English" },
-                { id: "hindi", label: "Hindi" },
-                ...(showMusicTab ? [{ id: "music", label: "🎵 Music" }] : []),
-                { id: "custom", label: "📁 Personal Upload" },
-                { id: "favorites", label: `❤️ Favorites (${favorites.length})` }
-              ].map(filter => {
-                const isActive = languageFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => {
-                      setLanguageFilter(filter.id);
-                      setCurrentTrackIndex(0);
-                    }}
-                    className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
-                      ? "text-white shadow-md"
-                      : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
-                      }`}
-                    style={isActive ? { backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` } : {}}
-                  >
-                    {filter.label}
-                  </button>
-                );
-              })}
+              {/* Clear All Filters indicator button */}
+              {hasActiveSearchFilters && (
+                <button
+                  onClick={resetSearchFilters}
+                  className="text-[11px] font-black uppercase tracking-wider text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1"
+                >
+                  <FiX size={12} /> Clear Filters
+                </button>
+              )}
             </div>
 
-            {/* Simple text search */}
-            <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-2.5 focus-within:bg-white transition-all w-full md:max-w-[280px]"
-              style={{ focusWithinBorderColor: themeColor }}>
-              <input
-                type="text"
-                placeholder="Search tracks..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentTrackIndex(0);
-                }}
-                className="w-full min-w-0 bg-transparent outline-none text-xs font-bold text-gray-700 placeholder:text-gray-300"
-              />
+            {/* Bottom Row: Search Box + Category Filter + Duration Filter + Sort By Filter */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+              
+              {/* 1. Search Box Input */}
+              <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2 focus-within:bg-white transition-all">
+                <FiSearch size={15} className="text-gray-400 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search title, artist, category..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentTrackIndex(0);
+                  }}
+                  className="w-full min-w-0 bg-transparent outline-none text-xs font-bold text-gray-700 placeholder:text-gray-400"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-gray-600">
+                    <FiX size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* 2. Category Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedCategoryFilter}
+                  onChange={(e) => {
+                    setSelectedCategoryFilter(e.target.value);
+                    setCurrentTrackIndex(0);
+                  }}
+                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                >
+                  <option value="all">Category: All</option>
+                  <option value="Meditation">Category: Meditation</option>
+                  <option value="Breathing">Category: Breathing</option>
+                  <option value="Affirmation">Category: Affirmation</option>
+                  <option value="Relaxation">Category: Relaxation</option>
+                  <option value="Music">Category: Music</option>
+                  <option value="Custom">Category: Custom/Personal</option>
+                </select>
+                <FiFilter className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+              </div>
+
+              {/* 3. Duration Filter Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedDurationFilter}
+                  onChange={(e) => {
+                    setSelectedDurationFilter(e.target.value);
+                    setCurrentTrackIndex(0);
+                  }}
+                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                >
+                  <option value="all">Duration: All</option>
+                  <option value="short">Short (&lt; 3 mins)</option>
+                  <option value="medium">Medium (3 - 10 mins)</option>
+                  <option value="long">Long (&gt; 10 mins)</option>
+                </select>
+                <FiClock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+              </div>
+
+              {/* 4. Sort By Dropdown */}
+              <div className="relative">
+                <select
+                  value={sortByFilter}
+                  onChange={(e) => setSortByFilter(e.target.value)}
+                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                >
+                  <option value="favorites">Sort: Favorites First</option>
+                  <option value="title">Sort: Title (A - Z)</option>
+                  <option value="duration_asc">Sort: Shortest First</option>
+                  <option value="duration_desc">Sort: Longest First</option>
+                </select>
+                <FiSliders className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+              </div>
+
             </div>
           </div>
 
@@ -799,19 +927,23 @@ const AudioPlaylist = ({
                   />
                 </div>
 
-                {/* Artist/Speaker Input */}
+                {/* Category Select Input */}
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-[0.12em] text-gray-400 mb-1.5">
-                    Speaker / Artist
+                    Category
                   </label>
-                  <input
-                    type="text"
-                    value={uploadArtist}
-                    onChange={(e) => setUploadArtist(e.target.value)}
-                    placeholder="e.g. Self (Optional)"
-                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all"
-                    style={{ focusBorderColor: themeColor }}
-                  />
+                  <select
+                    value={uploadCategory}
+                    onChange={(e) => setUploadCategory(e.target.value)}
+                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all cursor-pointer"
+                  >
+                    <option value="Meditation">Meditation</option>
+                    <option value="Breathing">Breathing</option>
+                    <option value="Affirmation">Affirmation</option>
+                    <option value="Relaxation">Relaxation</option>
+                    <option value="Music">Music</option>
+                    <option value="Custom">Custom / Personal</option>
+                  </select>
                 </div>
 
                 {/* Submit Button */}
@@ -822,7 +954,7 @@ const AudioPlaylist = ({
                     className="rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]"
                     style={{ backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` }}
                   >
-                    {isUploading ? "Processing..." : "Save"}
+                    {isUploading ? "Processing..." : "Save Track"}
                   </button>
                 </div>
               </form>
@@ -848,7 +980,7 @@ const AudioPlaylist = ({
                   <tr className="border-b border-gray-100">
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-14 text-center">#</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400">Track Info</th>
-                    <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-28 text-center">Language</th>
+                    <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-28 text-center">Category</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-24 text-center">Duration</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 text-center w-36">Actions</th>
                   </tr>
@@ -905,7 +1037,7 @@ const AudioPlaylist = ({
                           </div>
                         </td>
 
-                        {/* Language Badge */}
+                        {/* Category Badge */}
                         <td className="py-4 px-5 text-center">
                           <span className={`inline-block text-[10px] font-black uppercase tracking-[0.05em] px-2.5 py-1 rounded-full ${track.isCustom
                             ? 'bg-purple-50 text-purple-600 border border-purple-100'
@@ -913,7 +1045,7 @@ const AudioPlaylist = ({
                               ? 'bg-orange-50 text-orange-600 border border-orange-100'
                               : 'bg-blue-50 text-blue-600 border border-blue-100'
                             }`}>
-                            {track.isCustom ? 'Local' : track.language}
+                            {track.category || (track.isCustom ? 'Personal' : track.language)}
                           </span>
                         </td>
 
