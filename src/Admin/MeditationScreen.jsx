@@ -12,6 +12,7 @@ import {
   FiCopy,
   FiShare2,
   FiCheck,
+  FiX,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import CompletionScreen from "../components/CompletionScreen";
@@ -314,12 +315,63 @@ const MeditationScreen = () => {
   const [historyCount, setHistoryCount] = useState(0);
   const completedRef = useRef(false);
   const prevPhaseIndexRef = useRef(null);
+  const [isCustomBreathing, setIsCustomBreathing] = useState(false);
+  const [customInhale, setCustomInhale] = useState(4);
+  const [customHold1, setCustomHold1] = useState(4);
+  const [customExhale, setCustomExhale] = useState(4);
+  const [customHold2, setCustomHold2] = useState(4);
 
-  const activePreset = presets[selectedTechnique][selectedPresetIndex];
+  const customPreset = useMemo(() => {
+    const inh = Math.max(1, parseInt(customInhale) || 1);
+    const exh = Math.max(1, parseInt(customExhale) || 1);
+    const hld1 = Math.max(0, parseInt(customHold1) || 0);
+    const hld2 = Math.max(0, parseInt(customHold2) || 0);
+
+    let phases = [];
+    let lbl = "";
+
+    if (selectedTechnique === "box") {
+      // Box: 4 phases (Inhale, Hold, Exhale, Hold)
+      phases = [
+        { name: "Inhale", seconds: inh },
+        { name: "Hold", seconds: hld1 },
+        { name: "Exhale", seconds: exh },
+        { name: "Hold", seconds: hld2 },
+      ];
+      lbl = `${inh}-${hld1}-${exh}-${hld2}`;
+    } else if (selectedTechnique === "circle") {
+      // Circle: 2 phases (Inhale, Exhale)
+      phases = [
+        { name: "Inhale", seconds: inh },
+        { name: "Exhale", seconds: exh },
+      ];
+      lbl = `${inh}-${exh}`;
+    } else {
+      // Triangle: 3 phases (Inhale, Hold, Exhale)
+      phases = [
+        { name: "Inhale", seconds: inh },
+        { name: "Hold", seconds: hld1 },
+        { name: "Exhale", seconds: exh },
+      ];
+      lbl = `${inh}-${hld1}-${exh}`;
+    }
+
+    return {
+      label: `Custom (${lbl})`,
+      displayTechnique: `Custom ${lbl} ${techniques[selectedTechnique]?.label || "Breathing"}`,
+      apiTechniqueCandidates: [lbl, `${lbl} Breathing`, selectedTechnique, "triangle"],
+      phases,
+    };
+  }, [customInhale, customHold1, customExhale, customHold2, selectedTechnique]);
+
+  const activePreset = isCustomBreathing
+    ? customPreset
+    : (presets[selectedTechnique]?.[selectedPresetIndex] || presets[selectedTechnique]?.[0] || presets.triangle[0]);
+
   const config = useMemo(() => {
     return {
       shape: selectedTechnique,
-      label: techniques[selectedTechnique].label,
+      label: techniques[selectedTechnique]?.label || "Triangle",
       displayTechnique: activePreset.displayTechnique,
       apiTechniqueCandidates: activePreset.apiTechniqueCandidates,
       phases: activePreset.phases,
@@ -666,57 +718,8 @@ const MeditationScreen = () => {
     );
   }
 
-  if (isCountingDown) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
-        <div className="absolute top-6 left-6 z-50">
-          <button
-            type="button"
-            onClick={() => { setIsCountingDown(false); setIsRunning(false); navigate(-1); }}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
-            title="Go Back"
-          >
-            <FiArrowLeft size={16} />
-          </button>
-        </div>
-        {/* Ambient glowing aura */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] md:w-[480px] md:h-[480px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
-
-        <div className="relative z-10 flex flex-col items-center justify-center text-center">
-          <span className="text-sm md:text-base font-black uppercase tracking-[0.35em] text-[#a8c896] mb-8 animate-fade-in">
-            Get Ready
-          </span>
-
-          {/* Animated countdown circle with big number */}
-          <div
-            key={countdownValue}
-            className="w-48 h-48 md:w-56 md:h-56 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown"
-          >
-            <span className={`font-black text-white tracking-tight drop-shadow-md ${countdownValue >= 4 ? 'text-5xl md:text-6xl' : 'text-7xl md:text-8xl'}`}>
-              {countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "BEGIN"}
-            </span>
-          </div>
-
-          <p className="text-sm font-semibold text-white/60 mt-8 tracking-wide">
-            Take a deep breath and center yourself...
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              setIsCountingDown(false);
-              setIsRunning(false);
-            }}
-            className="mt-8 px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white/60 hover:text-white transition-all border border-white/10"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const isSessionActive = sessionId !== null;
+  // Full screen session view triggers ONLY after countdown timer completes and session is actively running
+  const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
 
   if (isSessionActive) {
     return (
@@ -777,9 +780,9 @@ const MeditationScreen = () => {
           </div>
 
           {/* Large timer */}
-          <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-8">
+          {/* <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-8">
             {formatTime(remainingSeconds)}
-          </h2>
+          </h2> */}
 
           {/* Horizontal Session Progress Bar */}
           <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
@@ -820,12 +823,12 @@ const MeditationScreen = () => {
         </div>
 
         {/* Bottom bar with controls */}
-        {/* <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in">
+        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in z-50">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setSoundOn(!soundOn)}
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-white/60 hover:text-white transition-colors cursor-pointer"
               title="Toggle Sound"
             >
               {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
@@ -833,7 +836,7 @@ const MeditationScreen = () => {
             <button
               type="button"
               onClick={() => setVibrationOn(!vibrationOn)}
-              className={`transition-colors ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
+              className={`transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
               title="Toggle Vibration"
             >
               <FiZap size={20} />
@@ -845,7 +848,7 @@ const MeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setIsRunning(false)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
               >
                 <FiPause />
                 Pause
@@ -854,7 +857,7 @@ const MeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setIsRunning(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
               >
                 <FiPlay />
                 Resume
@@ -863,13 +866,13 @@ const MeditationScreen = () => {
             <button
               type="button"
               onClick={handleStop}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all"
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
             >
               <FiSquare />
               Stop
             </button>
           </div>
-        </div> */}
+        </div>
 
         <style>{`
           .breath-shape-full {
@@ -953,10 +956,11 @@ const MeditationScreen = () => {
                 key={preset.label}
                 type="button"
                 onClick={() => {
+                  setIsCustomBreathing(false);
                   setSelectedPresetIndex(index);
                   resetLocalSession();
                 }}
-                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${selectedPresetIndex === index
+                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${!isCustomBreathing && selectedPresetIndex === index
                   ? "bg-[#7d9667] text-white shadow-sm"
                   : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
                   }`}
@@ -964,6 +968,19 @@ const MeditationScreen = () => {
                 {preset.label}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIsCustomBreathing(true);
+                resetLocalSession();
+              }}
+              className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${isCustomBreathing
+                ? "bg-[#7d9667] text-white shadow-sm"
+                : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
+                }`}
+            >
+              Custom
+            </button>
           </div>
         </div>
       </div>
@@ -982,19 +999,41 @@ const MeditationScreen = () => {
               />
 
               <div className={`breath-shape ${config.shape}`} style={breathScaleStyle}>
-                <span>{isRunning ? currentPhase.name : "Paused"}</span>
+                <span className={isCountingDown ? "text-xl md:text-2xl font-black uppercase tracking-wider text-white" : ""}>
+                  {isCountingDown
+                    ? (countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin")
+                    : isRunning
+                      ? currentPhase.name
+                      : "Paused"}
+                </span>
               </div>
             </div>
 
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667] mt-4">
-              {config.displayTechnique}
-            </p>
-            <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
-              {formatTime(remainingSeconds)}
-            </h2>
-            <p className="text-sm text-gray-400 mt-2">
-              Cycle {Math.min(cyclesCompleted + 1, totalCycles)}/{totalCycles}
-            </p>
+            {isCountingDown ? (
+              <div className="mt-4 flex flex-col items-center animate-fade-in">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7d9667] bg-[#eef6ea] px-3.5 py-1 rounded-full border border-[#7d9667]/20 shadow-sm">
+                  Get Ready
+                </span>
+                <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2 font-mono tracking-tight animate-pulse">
+                  {countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin!"}
+                </h2>
+                <p className="text-xs font-bold text-gray-400 mt-1">
+                  Take a deep breath and center yourself...
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667] mt-4">
+                  {config.displayTechnique}
+                </p>
+                <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
+                  {formatTime(remainingSeconds)}
+                </h2>
+                <p className="text-sm text-gray-400 mt-2">
+                  Cycle {Math.min(cyclesCompleted + 1, totalCycles)}/{totalCycles}
+                </p>
+              </>
+            )}
 
             <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-gray-400 mt-4 font-semibold max-w-[90%]">
               {config.phases.map((p, idx) => {
@@ -1018,27 +1057,175 @@ const MeditationScreen = () => {
             </div>
 
             <div className="flex flex-wrap justify-center gap-3 mt-8">
-              <button
-                type="button"
-                onClick={isRunning ? () => setIsRunning(false) : handleStart}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all"
-              >
-                {isRunning ? <FiPause /> : <FiPlay />}
-                {isRunning ? "Pause" : "Start"}
-              </button>
-              {/* <button
-                type="button"
-                onClick={handleStop}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-bold text-gray-500 border border-gray-100 hover:bg-gray-50 transition-all"
-              >
-                <FiSquare />
-                Stop
-              </button> */}
+              {isCountingDown ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCountingDown(false);
+                    setIsRunning(false);
+                    setCountdownValue(5);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 hover:bg-gray-200 px-6 py-3 text-sm font-bold text-gray-600 transition-all cursor-pointer"
+                >
+                  <FiX />
+                  <span>Cancel</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={isRunning ? () => setIsRunning(false) : handleStart}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all cursor-pointer"
+                >
+                  {isRunning ? <FiPause /> : <FiPlay />}
+                  {isRunning ? "Pause" : "Start"}
+                </button>
+              )}
             </div>
           </div>
         </section>
 
         <aside className="space-y-4">
+          {/* Customise Breathing Card - only shown when Custom is clicked */}
+          {isCustomBreathing && (
+            <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
+                    Customise Breathing
+                  </p>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[#eef6ea] text-[#7d9667]">
+                    {selectedTechnique === "box"
+                      ? "Box (4 Steps)"
+                      : selectedTechnique === "circle"
+                        ? "Circle (2 Steps)"
+                        : "Triangle (3 Steps)"}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-400 mb-3 font-medium">
+                {selectedTechnique === "box"
+                  ? "Adjust inhale, hold, exhale, and hold seconds:"
+                  : selectedTechnique === "circle"
+                    ? "Adjust inhale and exhale seconds:"
+                    : "Adjust inhale, hold, and exhale seconds:"}
+              </p>
+
+              {/* Custom inputs dynamically rendered for box (4), circle (2), triangle (3) */}
+              <div
+                className={`grid gap-2 ${
+                  selectedTechnique === "box"
+                    ? "grid-cols-2 sm:grid-cols-4"
+                    : selectedTechnique === "circle"
+                      ? "grid-cols-2"
+                      : "grid-cols-3"
+                }`}
+              >
+                {/* Inhale (all techniques) */}
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                    Inhale
+                  </span>
+                  <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={customInhale}
+                      onChange={(e) => {
+                        setCustomInhale(Math.max(1, parseInt(e.target.value) || 1));
+                        resetLocalSession();
+                      }}
+                      className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                    />
+                    <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
+                  </div>
+                </div>
+
+                {/* Hold 1 (only for Triangle and Box) */}
+                {selectedTechnique !== "circle" && (
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                      {selectedTechnique === "box" ? "Hold 1" : "Hold"}
+                    </span>
+                    <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        value={customHold1}
+                        onChange={(e) => {
+                          setCustomHold1(Math.max(0, parseInt(e.target.value) || 0));
+                          resetLocalSession();
+                        }}
+                        className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                      />
+                      <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Exhale (all techniques) */}
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                    Exhale
+                  </span>
+                  <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={customExhale}
+                      onChange={(e) => {
+                        setCustomExhale(Math.max(1, parseInt(e.target.value) || 1));
+                        resetLocalSession();
+                      }}
+                      className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                    />
+                    <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
+                  </div>
+                </div>
+
+                {/* Hold 2 (only for Box - 4th phase) */}
+                {selectedTechnique === "box" && (
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+                      Hold 2
+                    </span>
+                    <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                      <input
+                        type="number"
+                        min="0"
+                        max="60"
+                        value={customHold2}
+                        onChange={(e) => {
+                          setCustomHold2(Math.max(0, parseInt(e.target.value) || 0));
+                          resetLocalSession();
+                        }}
+                        className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                      />
+                      <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[11px] text-[#7d9667] mt-3 font-bold">
+                Total cycle:{" "}
+                {selectedTechnique === "box"
+                  ? (parseInt(customInhale) || 0) +
+                    (parseInt(customHold1) || 0) +
+                    (parseInt(customExhale) || 0) +
+                    (parseInt(customHold2) || 0)
+                  : selectedTechnique === "circle"
+                    ? (parseInt(customInhale) || 0) + (parseInt(customExhale) || 0)
+                    : (parseInt(customInhale) || 0) +
+                      (parseInt(customHold1) || 0) +
+                      (parseInt(customExhale) || 0)}
+              </p>
+            </div>
+          )}
+
           <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
               Duration

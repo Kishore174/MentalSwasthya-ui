@@ -3,7 +3,7 @@ import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight, FiGift } from "react-ico
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
-import { loginUser, registerUser } from "../Api/authApi";
+import { loginUser, registerUser, forgotPassword } from "../Api/authApi";
 import { useAuth } from "../context/AuthContext";
 
 /* ─── Font injection ─────────────────────────────────────── */
@@ -106,6 +106,12 @@ const LoginPage = () => {
         setForm((f) => ({ ...f, email: form.email.trim() }));
         return;
       }
+      if (authMode === "forgot-password") {
+        await forgotPassword({ email: form.email.trim() });
+        toast.success("If the email exists, a password reset link has been sent.");
+        switchMode("login");
+        return;
+      }
       const res = await loginUser({ email: form.email.trim(), password: form.password });
       const { token, user } = getAuthPayload(res.data);
       if (!token) throw new Error("No token in response");
@@ -201,7 +207,7 @@ const LoginPage = () => {
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
           
               <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
-                {isRegister ? "Sign Up" : "Sign In"}
+                {isRegister ? "Sign Up" : authMode === "forgot-password" ? "Reset Password" : "Sign In"}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -239,12 +245,13 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            {authMode !== "forgot-password" && (
+              <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Password</label>
                 {!isRegister && (
                   <span
-                    onClick={() => toast("Contact support to reset passwords.")}
+                    onClick={() => switchMode("forgot-password")}
                     className="text-xs text-[#8fb39c] font-semibold hover:underline cursor-pointer select-none"
                   >
                     Forgot Password?
@@ -269,7 +276,8 @@ const LoginPage = () => {
                   {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
               </div>
-            </div>
+              </div>
+            )}
 
             {isRegister && (
               <div className="space-y-1.5">
@@ -341,7 +349,7 @@ const LoginPage = () => {
             )}
 
             {/* Keep me signed in (only in Login) */}
-            {!isRegister && (
+            {authMode === "login" && (
               <div className="flex items-center gap-2 py-1">
                 <label className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-[#8fb39c] select-none">
                   <input
@@ -354,25 +362,24 @@ const LoginPage = () => {
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? "Please wait..." : isRegister ? "Sign Up" : "Log In"}
+              {loading ? "Please wait..." : isRegister ? "Sign Up" : authMode === "forgot-password" ? "Send Reset Link" : "Log In"}
               <FiArrowRight size={15} />
             </button>
           </form>
 
           {/* Register / Sign In Switch */}
           <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
-            {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+            {authMode === "forgot-password" ? "Remembered your password?" : isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
             <span
-              onClick={() => switchMode(isRegister ? "login" : "register")}
+              onClick={() => switchMode(isRegister || authMode === "forgot-password" ? "login" : "register")}
               className="text-white hover:underline cursor-pointer font-bold"
             >
-              {isRegister ? "Sign in" : "Sign up"}
+              {authMode === "forgot-password" ? "Sign in" : isRegister ? "Sign in" : "Sign up"}
             </span>
           </p>
 

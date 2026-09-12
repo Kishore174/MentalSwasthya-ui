@@ -12,6 +12,7 @@ import {
   FiCopy,
   FiShare2,
   FiCheck,
+  FiX,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import CompletionScreen from "../components/CompletionScreen";
@@ -76,7 +77,7 @@ const SilentMeditationScreen = () => {
 
   // States
   const [isCountingDown, setIsCountingDown] = useState(false);
-  const [countdownValue, setCountdownValue] = useState(3);
+  const [countdownValue, setCountdownValue] = useState(5);
   const [sessionId, setSessionId] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -102,24 +103,41 @@ const SilentMeditationScreen = () => {
     }
   }, [durationSeconds, sessionId]);
 
-  // Initial countdown timer
+  // Initial countdown timer with Settled, Ready, 3, 2, 1
   useEffect(() => {
-    let timer;
-    if (isCountingDown) {
-      timer = setInterval(() => {
-        setCountdownValue((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            setIsCountingDown(false);
-            triggerStartSession();
-            return 3;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (!isCountingDown) return undefined;
+
+    if (soundOn) {
+      if (countdownValue > 0) {
+        playPromptTone(520);
+      } else {
+        playBell('single');
+      }
     }
-    return () => clearInterval(timer);
-  }, [isCountingDown]);
+
+    if (vibrationOn) {
+      try {
+        if ("vibrate" in navigator) {
+          navigator.vibrate(countdownValue > 0 ? 80 : [100, 50, 100]);
+        }
+      } catch (e) {}
+    }
+
+    if (countdownValue > 0) {
+      const timer = setTimeout(() => {
+        setCountdownValue((prev) => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    const startTimer = setTimeout(() => {
+      setIsCountingDown(false);
+      setIsRunning(true);
+      if (soundOn) playBell('single');
+    }, 600);
+
+    return () => clearTimeout(startTimer);
+  }, [isCountingDown, countdownValue, soundOn, vibrationOn]);
 
   // Main session timer
   useEffect(() => {
@@ -185,13 +203,14 @@ const SilentMeditationScreen = () => {
     }
   };
 
-  const handleStart = () => {
-    setCountdownValue(3);
+  const handleStart = async () => {
+    setCountdownValue(5);
     setIsCountingDown(true);
-  };
+    setElapsedSeconds(0);
+    setRemainingSeconds(durationSeconds);
+    const localId = `local-${Date.now()}`;
+    setSessionId(localId);
 
-  const triggerStartSession = async () => {
-    if (soundOn) playBell('single');
     try {
       setApiMessage("");
       const res = await startBreathingSession({
@@ -200,25 +219,11 @@ const SilentMeditationScreen = () => {
       });
       const data = res.data?.data || res.data || {};
       const newSessId = data.sessionId || data.id || data._id || data.session?._id || data.session?.id;
-
       if (newSessId) {
         setSessionId(newSessId);
-        setElapsedSeconds(0);
-        setRemainingSeconds(durationSeconds);
-        setIsRunning(true);
-      } else {
-        setSessionId(`local-${Date.now()}`);
-        setElapsedSeconds(0);
-        setRemainingSeconds(durationSeconds);
-        setIsRunning(true);
       }
     } catch (err) {
       console.error("API error starting silent session:", err);
-      // Local fallback in case backend is offline
-      setSessionId(`local-${Date.now()}`);
-      setElapsedSeconds(0);
-      setRemainingSeconds(durationSeconds);
-      setIsRunning(true);
     }
   };
 
@@ -295,6 +300,8 @@ const SilentMeditationScreen = () => {
   const resetLocalSession = () => {
     setSessionId(null);
     setIsRunning(false);
+    setIsCountingDown(false);
+    setCountdownValue(5);
     setElapsedSeconds(0);
     setRemainingSeconds(durationSeconds);
     setMedCompleted(false);
@@ -417,51 +424,9 @@ const SilentMeditationScreen = () => {
     );
   }
 
-  // 2. CountDown State
-  if (isCountingDown) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 animate-fade-in backdrop-blur-xl">
-        <div className="absolute top-6 left-6 z-50">
-          <button
-            type="button"
-            onClick={() => { setIsCountingDown(false); setIsRunning(false); navigate(-1); }}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
-            title="Go Back"
-          >
-            <FiArrowLeft size={16} />
-          </button>
-        </div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] bg-[#7d9667]/20 rounded-full blur-[90px] pointer-events-none animate-pulse"></div>
-
-        <div className="relative z-10 flex flex-col items-center justify-center text-center">
-          <span className="text-sm md:text-base font-black uppercase tracking-[0.35em] text-[#a8c896] mb-8">
-            Get Ready
-          </span>
-
-          <div className="w-48 h-48 rounded-full border-4 border-[#7d9667]/50 flex items-center justify-center bg-white/5 backdrop-blur-md shadow-[0_0_70px_rgba(125,150,103,0.35)] animate-countdown">
-            <span className="text-7xl md:text-8xl font-black text-white tracking-tight drop-shadow-md">
-              {countdownValue}
-            </span>
-          </div>
-
-          <p className="text-sm font-semibold text-white/60 mt-8 tracking-wide">
-            Sit comfortably and prepare for silence...
-          </p>
-
-          <button
-            type="button"
-            onClick={() => setIsCountingDown(false)}
-            className="mt-8 px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 text-xs font-bold text-white/60 hover:text-white transition-all border border-white/10"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 3. Immersive Active Session Layout
-  if (sessionId) {
+  // 2. Immersive Active Session Layout (triggers ONLY after countdown timer completes)
+  const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
+  if (isSessionActive) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
 
@@ -518,10 +483,9 @@ const SilentMeditationScreen = () => {
             </div>
           </div>
 
-          {/* Time Remaining */}
-          <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-8">
+          {/* <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-2 font-mono">
             {formatTime(remainingSeconds)}
-          </h2>
+          </h2> */}
 
           {/* Progress Bar */}
           <div className="w-full max-w-xs sm:max-w-sm mt-5">
@@ -540,19 +504,19 @@ const SilentMeditationScreen = () => {
         </div>
 
         {/* Bottom Control Bar */}
-        {/* <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6">
+        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 z-50">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => setSoundOn(!soundOn)}
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-white/60 hover:text-white transition-colors cursor-pointer"
             >
               {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
             </button>
             <button
               type="button"
               onClick={() => setVibrationOn(!vibrationOn)}
-              className={`transition-colors ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
+              className={`transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
             >
               <FiZap size={20} />
             </button>
@@ -563,7 +527,7 @@ const SilentMeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setIsRunning(false)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
               >
                 <FiPause />
                 Pause
@@ -572,7 +536,7 @@ const SilentMeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setIsRunning(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-[#6f865c] transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-[#6f865c] transition-all cursor-pointer"
               >
                 <FiPlay />
                 Resume
@@ -581,13 +545,13 @@ const SilentMeditationScreen = () => {
             <button
               type="button"
               onClick={handleStop}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all"
+              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
             >
               <FiSquare />
               Stop
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     );
   }
@@ -640,32 +604,66 @@ const SilentMeditationScreen = () => {
 
               {/* Central bubble shape */}
               <div className="breath-shape circle" style={breathScaleStyle}>
-                <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none text-white">
-                  {isRunning ? "" : "Paused"}
+                <span className={isCountingDown ? "text-xl md:text-2xl font-black uppercase tracking-wider select-none text-white animate-pulse" : "text-lg md:text-xl font-black uppercase tracking-wider select-none text-white"}>
+                  {isCountingDown
+                    ? (countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin")
+                    : isRunning
+                      ? ""
+                      : "Paused"}
                 </span>
               </div>
             </div>
 
-            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667] mt-5">
-              Silent Meditation Bubble
-            </p>
-            <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
-              {formatTime(remainingSeconds)}
-            </h2>
-            <p className="text-sm text-gray-400 mt-2">
-              Coherent 5-second Breathing Cycle
-            </p>
+            {isCountingDown ? (
+              <div className="mt-4 flex flex-col items-center animate-fade-in">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#7d9667] bg-[#eef6ea] px-3.5 py-1 rounded-full border border-[#7d9667]/20 shadow-sm">
+                  Get Ready
+                </span>
+                <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2 font-mono tracking-tight animate-pulse">
+                  {countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin!"}
+                </h2>
+                <p className="text-xs font-bold text-gray-400 mt-1">
+                  Sit comfortably and prepare for silence...
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667] mt-5">
+                  Silent Meditation Bubble
+                </p>
+                <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
+                  {formatTime(remainingSeconds)}
+                </h2>
+                <p className="text-sm text-gray-400 mt-2">
+                  Coherent 5-second Breathing Cycle
+                </p>
+              </>
+            )}
 
-            {/* Start Button */}
+            {/* Start / Cancel Button */}
             <div className="flex justify-center mt-8">
-              <button
-                type="button"
-                onClick={handleStart}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] px-8 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all duration-300 active:scale-[0.98]"
-              >
-                <FiPlay />
-                Start Session
-              </button>
+              {isCountingDown ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCountingDown(false);
+                    setCountdownValue(5);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 hover:bg-gray-200 px-8 py-4 text-xs font-black uppercase tracking-widest text-gray-600 transition-all duration-300 cursor-pointer"
+                >
+                  <FiX />
+                  <span>Cancel</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] px-8 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                >
+                  <FiPlay />
+                  <span>Start Session</span>
+                </button>
+              )}
             </div>
           </div>
         </section>

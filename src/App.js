@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./Admin/LoginPage";
+import ResetPasswordPage from "./Admin/ResetPasswordPage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 // import RoleRoute from "./routes/RoleRoute";
 import Mainfol from "./Admin/Mainfol";
@@ -34,6 +35,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
 
