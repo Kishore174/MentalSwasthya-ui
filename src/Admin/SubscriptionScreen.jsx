@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  FiCheck, FiX, FiActivity, FiBriefcase, FiZap, FiCalendar,
+  FiCheck, FiX, FiActivity, FiZap, FiCalendar,
   FiArrowRight, FiCopy, FiShare2, FiGift, FiStar, FiPercent, FiClock
 } from "react-icons/fi";
 import toast from "react-hot-toast";
@@ -11,7 +11,8 @@ const SubscriptionScreen = () => {
 
   // Load initial settings with dynamic states
   const [currentTier, setCurrentTier] = useState(() => {
-    return localStorage.getItem("mentalswasthya_subscription_tier") || "pro";
+    const saved = localStorage.getItem("mentalswasthya_subscription_tier") || "pro";
+    return saved === "executive" ? "pro" : saved;
   });
   
   const [billingCycle, setBillingCycle] = useState(() => {
@@ -59,26 +60,6 @@ const SubscriptionScreen = () => {
       themeClass: "border-[#7d9667]/40 bg-gradient-to-br from-white to-[#eef6ea]/20",
       badgeText: "Most Popular",
       badgeColor: "bg-[#eef6ea] text-[#7d9667] border-[#7d9667]/30",
-      features: [
-        { text: "Unlimited Custom Breathing Presets", checked: true },
-        { text: "Full Language Filters (Hindi/English)", checked: true },
-        { text: "Advanced Wellness Progress Ring Metrics", checked: true },
-        { text: "Custom Personal Audio Uploads (MP3/WAV)", checked: true },
-        { text: "Local Offline IndexedDB Storage", checked: true },
-        { text: "1-on-1 Monthly Mindfulness Consultations", checked: false }
-      ]
-    },
-    {
-      id: "executive",
-      name: "Executive Calm VIP",
-      desc: "Premium content and private guide consultations.",
-      monthlyPrice: 29.99,
-      annualPrice: 23.99,
-      icon: FiBriefcase,
-      iconColor: "text-purple-600 bg-purple-50 border-purple-200",
-      themeClass: "border-purple-200 bg-gradient-to-br from-white to-purple-50/20",
-      badgeText: "VIP Tier",
-      badgeColor: "bg-purple-50 text-purple-600 border-purple-200/50",
       features: [
         { text: "Unlimited Custom Breathing Presets", checked: true },
         { text: "Full Language Filters (Hindi/English)", checked: true },
@@ -406,8 +387,8 @@ const SubscriptionScreen = () => {
           </div>
         </div>
 
-        {/* 3-Column Plan Comparison Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 2-Column Plan Comparison Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6">
           {plans.map((plan) => {
             const isCurrent = currentTier === plan.id;
             const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.annualPrice;

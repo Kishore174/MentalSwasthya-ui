@@ -13,7 +13,7 @@ const MOOD_LEVELS = [
 const FeedbackWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(4.8);
-  const [remarks, setRemarks] = useState("");
+  const [remarks, setRemarks] = useState("Your thoughts mean a lot to us, share them here!");
   const [submitted, setSubmitted] = useState(false);
   const [hoverLevel, setHoverLevel] = useState(null);
 

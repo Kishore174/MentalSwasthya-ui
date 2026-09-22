@@ -172,24 +172,28 @@ const IntentionsScreen = () => {
   };
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", color: "#22331b" }} className="space-y-8 pb-10">
+    <div style={{ fontFamily: "'DM Sans', sans-serif", color: "#22331b" }} className="space-y-6 pb-10">
       
-      {/* ─── Page Title ─── */}
-      <div style={{ textAlign: "center", marginBottom: 12 }}>
-        <h1 style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: "2.4rem",
-          fontWeight: 700,
-          color: "#29401f",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase"
-        }}>
-          DAILY INTENTIONS
-        </h1>
-        <p style={{ fontSize: 13, color: "#66785c", marginTop: 4 }}>
-          Align your mindset, cultivate gratitude, and anchor your purpose for today.
+      {/* ─── Hero Banner matching Dashboard lines & aesthetics ─── */}
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 z-20">
+        <div className="absolute inset-0 rounded-[28px] overflow-hidden pointer-events-none">
+          <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
+          <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-sky-200/20" />
+        </div>
+        <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
+          MentalSwasthya
         </p>
-      </div>
+        <div className="relative mt-3 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#22331b]">
+              Your daily intentions
+            </h1>
+            <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
+              Align your mindset, cultivate gratitude, and anchor your daily purpose through mindful practice.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* ─── TOP SECTION: 2-Column Main Writer ─── */}
       <div style={{

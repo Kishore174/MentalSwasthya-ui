@@ -36,6 +36,7 @@ const formatRelativeTime = (dateString) => {
 
 const routeTitles = {
   '/app': { title: 'Dashboard', subtitle: 'Overview of your mental wellness journey' },
+  '/app/intentions': { title: 'Intention', subtitle: 'Overview of your daily mindful intentions' },
   '/app/about': { title: 'About Mental Swasthya', subtitle: 'Empowering holistic health and mindfulness' },
   '/app/meditation': { title: 'Breathing Exercises', subtitle: 'Find peace and center through guided breathwork' },
   '/app/silent-meditation': { title: 'Silent Meditation', subtitle: 'Calm presence through steady silent breathing' },

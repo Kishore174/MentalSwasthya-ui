@@ -107,9 +107,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, [setIsSidebarOpen]);
 
-  const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-    : "AD";
 
   return (
     <>
@@ -264,50 +261,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </div>
         </div>
 
-        {/* ── User profile chip ── */}
-        <div style={{
-          position: "relative", zIndex: 1,
-          margin: "14px 14px 4px",
-          padding: "12px 14px",
-          borderRadius: 16,
-          background: "#ffffff",
-          border: "1px solid #e1eadb",
-          display: "flex", alignItems: "center", gap: 11,
-          flexShrink: 0,
-        }}>
-          {/* Avatar */}
-          <div style={{
-            width: 38, height: 38, borderRadius: 11,
-            background: "linear-gradient(135deg, #7d9667 0%, #9bb787 100%)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 700, color: "#ffffff",
-            flexShrink: 0,
-            boxShadow: "0 8px 18px rgba(125,150,103,0.22)",
-            letterSpacing: "0.02em",
-          }}>
-            {initials}
-          </div>
-          <div style={{ overflow: "hidden", flex: 1 }}>
-            <p style={{
-              fontSize: 13, fontWeight: 600,
-              color: "#22331b",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-              lineHeight: 1.2, marginBottom: 3,
-            }}>
-              {user?.name || "Admin"}
-            </p>
-            <span style={{
-              display: "inline-block",
-              fontSize: 9.5, fontWeight: 600, letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: "#7d9667",
-              background: "#eef6ea",
-              padding: "2px 8px", borderRadius: 99,
-            }}>
-              {user?.role || "admin"}
-            </span>
-          </div>
-        </div>
 
         {/* ── Section label ── */}
         <p style={{

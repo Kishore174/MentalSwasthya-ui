@@ -19,3 +19,13 @@ export const forgotPassword = (data) => {
 export const resetPassword = (data) => {
   return axiosInstance.post("/auth/individual/reset-password", data);
 };
+
+// VERIFY EMAIL
+export const verifyEmail = (data) => {
+  return axiosInstance.post("/auth/individual/verify-email", data);
+};
+
+// RESEND VERIFICATION EMAIL
+export const resendVerification = (data) => {
+  return axiosInstance.post("/auth/individual/resend-verification", data);
+};

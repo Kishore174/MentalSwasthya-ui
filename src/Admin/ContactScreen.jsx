@@ -62,7 +62,8 @@ const ContactScreen = () => {
           We're here to listen
         </h1>
         <p className="text-sm text-[#66785c] mt-3 max-w-2xl leading-6">
-          Have feedback, need support, or just want to share your mindfulness journey? Let us know and we'll reply as soon as possible.
+          Have feedback, need support, or just want to share your mindfulness journey?
+          We would love to hear from you!
         </p>
       </section>
 
@@ -113,7 +114,7 @@ const ContactScreen = () => {
               Response Time Guarantee
             </h4>
             <p className="text-xs text-[#66785c] mt-2 leading-relaxed">
-              We value your presence on our platform. Our dedicated care specialists review messages daily and aim to reply within 24 hours.
+              We value your presence on our platform. Our dedicated team review messages daily and reply within 24 hours.
             </p>
           </div>
         </div>

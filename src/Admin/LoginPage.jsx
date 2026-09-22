@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight, FiGift } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight, FiGift, FiRefreshCw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
-import { loginUser, registerUser, forgotPassword } from "../Api/authApi";
+import { loginUser, registerUser, forgotPassword, verifyEmail, resendVerification } from "../Api/authApi";
 import { useAuth } from "../context/AuthContext";
 
 /* ─── Font injection ─────────────────────────────────────── */
@@ -35,6 +35,9 @@ const LoginPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+  const [otp, setOtp] = useState("");
+  const [resending, setResending] = useState(false);
+  const [verifyEmailAddress, setVerifyEmailAddress] = useState("");
 
   const [croppedLogo, setCroppedLogo] = useState(null);
 
@@ -76,7 +79,28 @@ const LoginPage = () => {
     setAuthMode(mode);
     setShowPassword(false);
     setShowConfirmPassword(false);
-    setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+    setOtp("");
+    if (mode !== "verify-email") {
+      setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+    }
+  };
+
+  const handleResendCode = async () => {
+    const targetEmail = verifyEmailAddress || form.email.trim();
+    if (!targetEmail) {
+      toast.error("Email address missing. Please return to Sign In.");
+      return;
+    }
+    setResending(true);
+    try {
+      const res = await resendVerification({ email: targetEmail });
+      toast.success(res?.data?.message || "A new verification code has been sent to your email.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to resend verification code.");
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -94,6 +118,16 @@ const LoginPage = () => {
           password: form.password,
           referralCode: form.referralCode.trim()
         });
+
+        const payload = res?.data?.data || res?.data || {};
+        if (payload.requiresEmailVerification || res?.data?.requiresEmailVerification) {
+          toast.success("Account created! Please enter the 6-digit verification code sent to your email.");
+          setVerifyEmailAddress(form.email.trim());
+          setAuthMode("verify-email");
+          setOtp("");
+          return;
+        }
+
         const { token, user } = getAuthPayload(res.data);
         if (token) { 
           login(token, user); 
@@ -101,17 +135,41 @@ const LoginPage = () => {
           navigate("/splash", { replace: true }); 
           return; 
         }
-        toast.success("Account created. Please sign in.");
-        switchMode("login");
-        setForm((f) => ({ ...f, email: form.email.trim() }));
+        toast.success("Account created. Please verify your email.");
+        setVerifyEmailAddress(form.email.trim());
+        setAuthMode("verify-email");
         return;
       }
+
+      if (authMode === "verify-email") {
+        if (!otp.trim() || otp.trim().length < 6) {
+          toast.error("Please enter the complete 6-digit verification code.");
+          setLoading(false);
+          return;
+        }
+        const res = await verifyEmail({
+          email: verifyEmailAddress || form.email.trim(),
+          otp: otp.trim()
+        });
+        const { token, user } = getAuthPayload(res.data);
+        if (token) {
+          login(token, user);
+          toast.success("Email verified successfully! Welcome to Mental Swasthya.");
+          navigate("/splash", { replace: true });
+          return;
+        }
+        toast.success("Email verified successfully! Please sign in.");
+        switchMode("login");
+        return;
+      }
+
       if (authMode === "forgot-password") {
         await forgotPassword({ email: form.email.trim() });
         toast.success("If the email exists, a password reset link has been sent.");
         switchMode("login");
         return;
       }
+
       const res = await loginUser({ email: form.email.trim(), password: form.password });
       const { token, user } = getAuthPayload(res.data);
       if (!token) throw new Error("No token in response");
@@ -120,7 +178,15 @@ const LoginPage = () => {
       navigate("/splash", { replace: true });
     } catch (err) {
       console.error(err);
-      const errorMsg = err?.response?.data?.message || err?.message || "Something went wrong";
+      const data = err?.response?.data;
+      if (data?.requiresEmailVerification || (err?.response?.status === 403 && data?.message?.toLowerCase().includes("verify your email"))) {
+        toast.error(data?.message || "Please verify your email address.");
+        setVerifyEmailAddress(form.email.trim() || data?.email || "");
+        setAuthMode("verify-email");
+        setOtp("");
+        return;
+      }
+      const errorMsg = data?.message || err?.message || "Something went wrong";
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -206,6 +272,75 @@ const LoginPage = () => {
         {/* Right panel: Dark Green Form and Google OAuth button */}
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
           
+          {authMode === "verify-email" ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-8 h-8 rounded-lg bg-[#144729] flex items-center justify-center text-[#8fb39c]">
+                  <FiMail size={17} />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8fb39c]">
+                  Email Verification
+                </span>
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
+                Verify Your Email
+              </h2>
+              <p className="text-xs text-gray-300 leading-relaxed mb-6">
+                We've sent a 6-digit verification code to{" "}
+                <strong className="text-white underline">{verifyEmailAddress || form.email}</strong>.
+                Enter the code below or click the verification link in your inbox.
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    6-Digit Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    required
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3.5 text-center text-2xl font-mono tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otp.length < 6}
+                  className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] disabled:opacity-50 text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? "Verifying..." : "Verify & Continue"}
+                  <FiArrowRight size={15} />
+                </button>
+
+                <div className="flex items-center justify-between pt-3 border-t border-[#144729]/60 text-xs mt-4">
+                  <button
+                    type="button"
+                    disabled={resending}
+                    onClick={handleResendCode}
+                    className="text-[#8fb39c] hover:text-white font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <FiRefreshCw size={13} className={resending ? "animate-spin" : ""} />
+                    {resending ? "Sending code..." : "Resend Code"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    className="text-gray-400 hover:text-white font-medium transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            <>
               <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
                 {isRegister ? "Sign Up" : authMode === "forgot-password" ? "Reset Password" : "Sign In"}
               </h2>
@@ -382,6 +517,8 @@ const LoginPage = () => {
               {authMode === "forgot-password" ? "Sign in" : isRegister ? "Sign in" : "Sign up"}
             </span>
           </p>
+          </>
+          )}
 
         </div>
       </div>

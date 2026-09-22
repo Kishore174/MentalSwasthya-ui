@@ -315,7 +315,7 @@ const LandingPage = () => {
   const features = [
     {
       title: "Intuitively designed interface",
-      desc: "A simple, intuitive and easy to navigate design that empowers your wellness journey without the hastle. Never miss a beat, receive timely notifications to keep your streak going and maintain your wellness consistency.",
+      desc: "A simple, intuitive and easy to navigate design that empowers your wellness journey without the hastle. ",
       icon: <FiCompass size={22} />,
       badge: "User Experience"
     },
@@ -1172,7 +1172,7 @@ const LandingPage = () => {
               boxShadow: "0 4px 20px rgba(22,35,20,0.05)"
             }}>
               {/* Header with Navigation Controls */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 16, marginBottom: 28 }}>
                 <div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#7d9667", textTransform: "uppercase", letterSpacing: "0.16em" }}>
                     WELLNESS INSIGHTS
@@ -1180,6 +1180,9 @@ const LandingPage = () => {
                   <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 700, color: "#1a2416", marginTop: 2 }}>
                     Curated Articles
                   </h3>
+                  <p style={{ fontSize: 13, color: "#6b7f63", marginTop: 4 }}>
+                    Explore expert insights, mindful strategies, and science-backed reads to support your mental wellbeing.
+                  </p>
                 </div>
 
                 <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -1366,60 +1369,62 @@ const LandingPage = () => {
                   </div>
                 </div>
 
-                {/* Sliding Picture Review Card */}
+                {/* Community Review Card */}
                 <div style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.12)",
                   borderRadius: 28,
-                  padding: "32px 28px",
+                  padding: "36px 32px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 20
+                  gap: 22
                 }}>
-                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 20 }}>
-                    
-                    {/* User Profile Avatar & Role */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                      <img
-                        src={communityReviews[reviewIndex].image}
-                        alt={communityReviews[reviewIndex].name}
-                        style={{
-                          width: 84, height: 84, borderRadius: 24,
-                          objectFit: "cover",
-                          border: "3px solid #a8c896",
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                          flexShrink: 0,
-                          transition: "all 0.4s ease"
-                        }}
-                      />
-                      <div>
-                        <h4 style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", marginBottom: 2 }}>
-                          {communityReviews[reviewIndex].name}
-                        </h4>
-                        <p style={{ fontSize: 12.5, color: "#a8c896", fontWeight: 700 }}>
-                          {communityReviews[reviewIndex].role}
-                        </p>
-                        <div style={{ display: "flex", gap: 3, marginTop: 6, color: "#fbbf24", fontSize: 15 }}>
-                          {"★".repeat(communityReviews[reviewIndex].rating)}
-                        </div>
-                      </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                    {/* Reviewer Name & Role */}
+                    <div>
+                      <h4 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 4, letterSpacing: "-0.01em" }}>
+                        {communityReviews[reviewIndex].name}
+                      </h4>
+                      <p style={{ fontSize: 13, color: "#a8c896", fontWeight: 600 }}>
+                        {communityReviews[reviewIndex].role}
+                      </p>
                     </div>
 
-                    <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.08)", padding: "6px 14px", borderRadius: 99 }}>
-                      {communityReviews[reviewIndex].date}
-                    </span>
+                    {/* Rating and Date */}
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "rgba(251, 191, 36, 0.12)",
+                        border: "1px solid rgba(251, 191, 36, 0.3)",
+                        padding: "6px 14px",
+                        borderRadius: 99
+                      }}>
+                        <span style={{ color: "#fbbf24", fontSize: 15, letterSpacing: "2px" }}>
+                          {"★".repeat(communityReviews[reviewIndex].rating)}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24" }}>
+                          {communityReviews[reviewIndex].rating}.0 Rating
+                        </span>
+                      </div>
+
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.08)", padding: "6px 14px", borderRadius: 99 }}>
+                        {communityReviews[reviewIndex].date}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Review Quote Block */}
                   <p style={{
-                    fontSize: "1.1rem",
-                    color: "rgba(232,240,227,0.92)",
-                    lineHeight: 1.6,
+                    fontSize: "1.15rem",
+                    color: "rgba(232,240,227,0.94)",
+                    lineHeight: 1.7,
                     fontWeight: 400,
                     fontStyle: "italic",
                     borderLeft: "3px solid #a8c896",
-                    paddingLeft: 16,
-                    margin: "8px 0"
+                    paddingLeft: 20,
+                    margin: 0
                   }}>
                     "{communityReviews[reviewIndex].review}"
                   </p>
