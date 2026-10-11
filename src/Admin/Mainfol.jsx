@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import Header from './Header'
 import Footer from './Footer'
 import FeedbackWidget from '../components/FeedbackWidget'
+import SubscriptionAlertBanner from '../components/SubscriptionAlertBanner'
 
 const Mainfol = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -25,6 +26,7 @@ const Mainfol = () => {
         <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       </div>
       <div className='flex lg:flex-1 w-full flex-col min-w-0'>
+        <SubscriptionAlertBanner />
         <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         <div className='px-4 lg:px-8 pt-6 mx-auto w-full mb-5 flex-1'>
           <Outlet />

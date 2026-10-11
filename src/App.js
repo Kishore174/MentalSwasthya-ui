@@ -20,6 +20,7 @@ import SubscriptionScreen from "./Admin/SubscriptionScreen";
 import GiftCardsScreen from "./Admin/GiftCardsScreen";
 import AchievementsScreen from "./Admin/AchievementsScreen";
 import SilentMeditationScreen from "./Admin/SilentMeditationScreen";
+import ProfileScreen from "./Admin/ProfileScreen";
 import { Toaster } from "react-hot-toast";
 
 const HomeRoute = () => {
@@ -56,6 +57,7 @@ function App() {
               <Route path="subscription" element={<SubscriptionScreen />} />
               <Route path="gift-cards" element={<GiftCardsScreen />} />
               <Route path="achievements" element={<AchievementsScreen />} />
+              <Route path="profile" element={<ProfileScreen />} />
               {/* <Route path="users" element={<Users />} /> */}
             </Route>
           </Route>

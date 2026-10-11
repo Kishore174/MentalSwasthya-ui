@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { resetPassword } from "../Api/authApi";
+import { resetPassword, forgotPassword } from "../Api/authApi";
 import toast from "react-hot-toast";
-import { FiEye, FiEyeOff, FiLock, FiArrowRight } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiLock, FiArrowRight, FiMail, FiKey, FiRefreshCw } from "react-icons/fi";
 import loginicon from "../Assets/logo.jpg";
 
 const ResetPasswordPage = () => {
@@ -10,17 +10,43 @@ const ResetPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
+  const [useOtp, setUseOtp] = useState(!token);
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResendCode = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter your email address to receive a reset code.");
+      return;
+    }
+    setResending(true);
+    try {
+      const res = await forgotPassword({ email: email.trim() });
+      toast.success(res?.data?.message || "A new 6-digit reset code has been sent to your email.");
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to send reset code.");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!token) {
+    if (!token && !useOtp) {
       toast.error("Invalid or missing reset token.");
+      return;
+    }
+
+    if (useOtp && (!email.trim() || otp.trim().length < 6)) {
+      toast.error("Please provide both your email and the complete 6-digit code.");
       return;
     }
 
@@ -36,7 +62,11 @@ const ResetPasswordPage = () => {
 
     setLoading(true);
     try {
-      const res = await resetPassword({ token, password });
+      const payload = useOtp || !token
+        ? { email: email.trim(), otp: otp.trim(), password }
+        : { token, password };
+
+      const res = await resetPassword(payload);
       toast.success(res?.data?.message || "Password reset successful! Please log in.");
       navigate("/login");
     } catch (err) {
@@ -92,99 +122,153 @@ const ResetPasswordPage = () => {
 
         {/* Right panel: Reset Password Form */}
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-8 h-8 rounded-lg bg-[#144729] flex items-center justify-center text-[#8fb39c]">
+              <FiKey size={17} />
+            </span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8fb39c]">
+              Password Recovery
+            </span>
+          </div>
+
           <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
             Reset Password
           </h2>
           <p className="text-xs text-[#8fb39c] font-medium mb-6">
-            Enter your new password below to regain access to your account.
+            {useOtp || !token
+              ? "Enter your email, the 6-digit code you received, and your new password."
+              : "Enter your new password below to regain access to your account."}
           </p>
 
-          {!token ? (
-            <div className="bg-[#062413] border border-amber-600/40 text-amber-300 p-4 rounded-xl text-xs space-y-2">
-              <p className="font-semibold">Reset Token Missing or Invalid</p>
-              <p className="text-gray-300">
-                Please request a password reset from the login page to receive a valid link in your email.
-              </p>
-              <button
-                type="button"
-                onClick={() => navigate("/login")}
-                className="mt-2 text-white underline font-bold"
-              >
-                Back to Login
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
-                  New Password
-                </label>
-                <div className="relative">
-                  <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    minLength={8}
-                    placeholder="At least 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
-                  >
-                    {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                  </button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {(useOtp || !token) && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <FiMail className="absolute left-4 top-3.5 text-gray-400/80" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter registered email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
-                  Confirm New Password
-                </label>
-                <div className="relative">
-                  <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                      6-Digit Verification Code
+                    </label>
+                    <button
+                      type="button"
+                      disabled={resending}
+                      onClick={handleResendCode}
+                      className="text-[11px] text-[#8fb39c] hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <FiRefreshCw size={11} className={resending ? "animate-spin" : ""} />
+                      {resending ? "Sending..." : "Resend Code"}
+                    </button>
+                  </div>
                   <input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type="text"
+                    maxLength={6}
                     required
-                    minLength={8}
-                    placeholder="Re-enter new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-center text-xl font-mono tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
-                  >
-                    {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                  </button>
                 </div>
-              </div>
+              </>
+            )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner mt-2 flex items-center justify-center gap-2"
-              >
-                {loading ? "Resetting..." : "Update Password"}
-                <FiArrowRight size={15} />
-              </button>
-
-              <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
-                Remember your password?{" "}
-                <span
-                  onClick={() => navigate("/login")}
-                  className="text-white hover:underline cursor-pointer font-bold"
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                New Password
+              </label>
+              <div className="relative">
+                <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  placeholder="At least 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
                 >
-                  Sign in
-                </span>
-              </p>
-            </form>
-          )}
+                  {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                >
+                  {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner mt-2 flex items-center justify-center gap-2"
+            >
+              {loading ? "Resetting..." : "Update Password"}
+              <FiArrowRight size={15} />
+            </button>
+
+            {token && (
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => setUseOtp(!useOtp)}
+                  className="text-[11px] text-[#8fb39c] hover:text-white underline"
+                >
+                  {useOtp ? "Use reset link token instead" : "Use 6-digit code instead"}
+                </button>
+              </div>
+            )}
+
+            <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
+              Remember your password?{" "}
+              <span
+                onClick={() => navigate("/login")}
+                className="text-white hover:underline cursor-pointer font-bold"
+              >
+                Sign in
+              </span>
+            </p>
+          </form>
         </div>
       </div>
     </div>

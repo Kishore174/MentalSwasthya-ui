@@ -7,7 +7,7 @@ import {
   MdQueueMusic,
   MdBook
 } from "react-icons/md";
-import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward, FiBookOpen } from "react-icons/fi";
+import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward, FiBookOpen, FiUser } from "react-icons/fi";
 import logo from "../Assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
 
@@ -84,6 +84,12 @@ const menuItems = [
     path: "/app/contact",
     icon: FiMail,
     roles: ["admin", "individual", "user"],
+  },
+  {
+    name: "My Profile",
+    path: "/app/profile",
+    icon: FiUser,
+    roles: ["admin", "individual", "user", "employee", "org_admin", "super_admin"],
   },
   {
     name: "Users",

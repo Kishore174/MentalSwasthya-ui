@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FiEye, FiEyeOff, FiMail, FiUser, FiArrowRight, FiGift, FiRefreshCw } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { FiEye, FiEyeOff, FiMail, FiArrowRight, FiGift, FiRefreshCw, FiLock, FiKey, FiShield, FiSmartphone } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
-import { loginUser, registerUser, forgotPassword, verifyEmail, resendVerification } from "../Api/authApi";
+import { loginUser, registerUser, forgotPassword, resetPassword, verifyEmail, resendVerification, verify2FA, resend2FA } from "../Api/authApi";
 import { useAuth } from "../context/AuthContext";
+import { getDeviceId, getDeviceName } from "../utils/device";
 
 /* ─── Font injection ─────────────────────────────────────── */
 const fontLink = document.createElement("link");
@@ -28,13 +29,28 @@ const getAuthPayload = (responseData) => {
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+
+  const getTargetUrl = () => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectParam = searchParams.get("redirect") || searchParams.get("next");
+      if (redirectParam) return redirectParam;
+      if (location.state?.from?.pathname) {
+        return `${location.state.from.pathname}${location.state.from.search || ""}`;
+      }
+    } catch {
+      // fallback
+    }
+    return null;
+  };
 
   const [authMode, setAuthMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "", giftCode: "" });
   const [otp, setOtp] = useState("");
   const [resending, setResending] = useState(false);
   const [verifyEmailAddress, setVerifyEmailAddress] = useState("");
@@ -70,7 +86,16 @@ const LoginPage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) navigate("/app");
+    if (token) {
+      const target = getTargetUrl() || "/app";
+      navigate(target, { replace: true });
+    }
+
+    const deviceMsg = sessionStorage.getItem("device_switched_msg");
+    if (deviceMsg) {
+      toast.error(deviceMsg, { duration: 6000 });
+      sessionStorage.removeItem("device_switched_msg");
+    }
   }, [navigate]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -80,8 +105,8 @@ const LoginPage = () => {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setOtp("");
-    if (mode !== "verify-email") {
-      setForm({ name: "", email: "", password: "", confirmPassword: "", referralCode: "" });
+    if (mode !== "verify-email" && mode !== "reset-password" && mode !== "2fa") {
+      setForm({ email: "", password: "", confirmPassword: "", giftCode: "" });
     }
   };
 
@@ -93,11 +118,23 @@ const LoginPage = () => {
     }
     setResending(true);
     try {
-      const res = await resendVerification({ email: targetEmail });
-      toast.success(res?.data?.message || "A new verification code has been sent to your email.");
+      if (authMode === "reset-password") {
+        const res = await forgotPassword({ email: targetEmail });
+        toast.success(res?.data?.message || "A new 6-digit reset code has been sent to your email.");
+      } else if (authMode === "2fa") {
+        const res = await resend2FA({
+          email: targetEmail,
+          deviceId: getDeviceId(),
+          deviceName: getDeviceName(),
+        });
+        toast.success(res?.data?.message || "A new 2FA code has been sent to your email.");
+      } else {
+        const res = await resendVerification({ email: targetEmail });
+        toast.success(res?.data?.message || "A new verification code has been sent to your email.");
+      }
     } catch (err) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to resend verification code.");
+      toast.error(err?.response?.data?.message || "Failed to resend code.");
     } finally {
       setResending(false);
     }
@@ -112,11 +149,12 @@ const LoginPage = () => {
     setLoading(true);
     try {
       if (authMode === "register") {
+        const giftCodeValue = (form.giftCode || form.referralCode || "").trim();
         const res = await registerUser({ 
-          name: form.name.trim(), 
           email: form.email.trim(), 
           password: form.password,
-          referralCode: form.referralCode.trim()
+          giftCode: giftCodeValue,
+          referralCode: giftCodeValue
         });
 
         const payload = res?.data?.data || res?.data || {};
@@ -132,7 +170,8 @@ const LoginPage = () => {
         if (token) { 
           login(token, user); 
           toast.success("Account created. Welcome!"); 
-          navigate("/splash", { replace: true }); 
+          const target = getTargetUrl();
+          navigate(target || "/splash", { replace: true }); 
           return; 
         }
         toast.success("Account created. Please verify your email.");
@@ -155,7 +194,8 @@ const LoginPage = () => {
         if (token) {
           login(token, user);
           toast.success("Email verified successfully! Welcome to Mental Swasthya.");
-          navigate("/splash", { replace: true });
+          const target = getTargetUrl();
+          navigate(target || "/splash", { replace: true });
           return;
         }
         toast.success("Email verified successfully! Please sign in.");
@@ -164,18 +204,92 @@ const LoginPage = () => {
       }
 
       if (authMode === "forgot-password") {
-        await forgotPassword({ email: form.email.trim() });
-        toast.success("If the email exists, a password reset link has been sent.");
+        if (!form.email.trim()) {
+          toast.error("Please enter your email address.");
+          setLoading(false);
+          return;
+        }
+        const res = await forgotPassword({ email: form.email.trim() });
+        setVerifyEmailAddress(form.email.trim());
+        setOtp("");
+        setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+        setAuthMode("reset-password");
+        toast.success(res?.data?.message || "Reset code sent! Check your email for the 6-digit code.");
+        return;
+      }
+
+      if (authMode === "reset-password") {
+        if (!otp.trim() || otp.trim().length < 6) {
+          toast.error("Please enter the complete 6-digit reset code.");
+          setLoading(false);
+          return;
+        }
+        if (!form.password || form.password.length < 8) {
+          toast.error("Password must be at least 8 characters long.");
+          setLoading(false);
+          return;
+        }
+        if (form.password !== form.confirmPassword) {
+          toast.error("Passwords do not match.");
+          setLoading(false);
+          return;
+        }
+
+        const res = await resetPassword({
+          email: verifyEmailAddress || form.email.trim(),
+          otp: otp.trim(),
+          password: form.password,
+        });
+        toast.success(res?.data?.message || "Password has been reset successfully! Please sign in.");
         switchMode("login");
         return;
       }
 
-      const res = await loginUser({ email: form.email.trim(), password: form.password });
+      if (authMode === "2fa") {
+        if (!otp.trim() || otp.trim().length < 6) {
+          toast.error("Please enter the complete 6-digit 2FA verification code.");
+          setLoading(false);
+          return;
+        }
+        const res = await verify2FA({
+          email: verifyEmailAddress || form.email.trim(),
+          otp: otp.trim(),
+          deviceId: getDeviceId(),
+          deviceName: getDeviceName(),
+        });
+        const { token, user } = getAuthPayload(res.data);
+        if (token) {
+          login(token, user);
+          toast.success("Device authorized! Signed in successfully.");
+          const target = getTargetUrl();
+          navigate(target || "/splash", { replace: true });
+          return;
+        }
+        toast.success("Device authorized! Please sign in.");
+        switchMode("login");
+        return;
+      }
+
+      const res = await loginUser({ 
+        email: form.email.trim(), 
+        password: form.password,
+        deviceId: getDeviceId(),
+        deviceName: getDeviceName(),
+      });
+      const data = res?.data?.data || res?.data;
+      if (data?.requires2FA) {
+        toast(data?.message || "New device detected. Please verify with the 2FA code sent to your email.", { icon: "🔐" });
+        setVerifyEmailAddress(form.email.trim());
+        setAuthMode("2fa");
+        setOtp("");
+        return;
+      }
       const { token, user } = getAuthPayload(res.data);
       if (!token) throw new Error("No token in response");
       login(token, user);
       toast.success("Welcome back!");
-      navigate("/splash", { replace: true });
+      const target = getTargetUrl();
+      navigate(target || "/splash", { replace: true });
     } catch (err) {
       console.error(err);
       const data = err?.response?.data;
@@ -272,7 +386,201 @@ const LoginPage = () => {
         {/* Right panel: Dark Green Form and Google OAuth button */}
         <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
           
-          {authMode === "verify-email" ? (
+          {authMode === "reset-password" ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-8 h-8 rounded-lg bg-[#144729] flex items-center justify-center text-[#8fb39c]">
+                  <FiKey size={17} />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8fb39c]">
+                  Password Recovery
+                </span>
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
+                Set New Password
+              </h2>
+              <p className="text-xs text-gray-300 leading-relaxed mb-6">
+                We've sent a 6-digit reset code to{" "}
+                <strong className="text-white underline">{verifyEmailAddress || form.email}</strong>.
+                Enter the code and choose your new password.
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    6-Digit Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    required
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-center text-2xl font-mono tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      required
+                      minLength={8}
+                      placeholder="At least 8 characters"
+                      value={form.password}
+                      onChange={handleChange}
+                      className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                    >
+                      {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      required
+                      minLength={8}
+                      placeholder="Re-enter new password"
+                      value={form.confirmPassword}
+                      onChange={handleChange}
+                      className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                    >
+                      {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otp.length < 6 || form.password.length < 8}
+                  className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] disabled:opacity-50 text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? "Updating..." : "Update Password"}
+                  <FiArrowRight size={15} />
+                </button>
+
+                <div className="flex items-center justify-between pt-3 border-t border-[#144729]/60 text-xs mt-4">
+                  <button
+                    type="button"
+                    disabled={resending}
+                    onClick={handleResendCode}
+                    className="text-[#8fb39c] hover:text-white font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <FiRefreshCw size={13} className={resending ? "animate-spin" : ""} />
+                    {resending ? "Sending code..." : "Resend Code"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    className="text-gray-400 hover:text-white font-medium transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : authMode === "2fa" ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-8 h-8 rounded-lg bg-[#144729] flex items-center justify-center text-[#8fb39c]">
+                  <FiShield size={17} />
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#8fb39c]">
+                  Two-Factor Authentication (2FA)
+                </span>
+              </div>
+
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
+                Authorize New Device
+              </h2>
+
+              <div className="bg-[#062413] border border-[#144729] rounded-xl p-3 mb-4 flex items-start gap-2.5">
+                <FiSmartphone size={16} className="text-[#8fb39c] flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-[#8fb39c] leading-relaxed">
+                  <strong className="text-white">One-Device Policy:</strong> Your account can only be active on one device at a time. Authorizing this device will automatically sign out any other active device.
+                </p>
+              </div>
+
+              <p className="text-xs text-gray-300 leading-relaxed mb-6">
+                We've sent a 6-digit verification code to{" "}
+                <strong className="text-white underline">{verifyEmailAddress || form.email}</strong>.
+                Enter the code below to authorize this device (valid for 15 minutes).
+              </p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                    6-Digit 2FA Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    required
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3.5 text-center text-2xl font-mono tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otp.length < 6}
+                  className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] disabled:opacity-50 text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner flex items-center justify-center gap-2 mt-2"
+                >
+                  {loading ? "Authorizing..." : "Authorize Device & Sign In"}
+                  <FiArrowRight size={15} />
+                </button>
+
+                <div className="flex items-center justify-between pt-3 border-t border-[#144729]/60 text-xs mt-4">
+                  <button
+                    type="button"
+                    disabled={resending}
+                    onClick={handleResendCode}
+                    className="text-[#8fb39c] hover:text-white font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <FiRefreshCw size={13} className={resending ? "animate-spin" : ""} />
+                    {resending ? "Sending code..." : "Resend Code"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    className="text-gray-400 hover:text-white font-medium transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : authMode === "verify-email" ? (
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-8 h-8 rounded-lg bg-[#144729] flex items-center justify-center text-[#8fb39c]">
@@ -289,7 +597,7 @@ const LoginPage = () => {
               <p className="text-xs text-gray-300 leading-relaxed mb-6">
                 We've sent a 6-digit verification code to{" "}
                 <strong className="text-white underline">{verifyEmailAddress || form.email}</strong>.
-                Enter the code below or click the verification link in your inbox.
+                Enter the code below or click the verification link in your inbox (valid for 15 minutes).
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -341,31 +649,20 @@ const LoginPage = () => {
             </div>
           ) : (
             <>
-              <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
+              <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
                 {isRegister ? "Sign Up" : authMode === "forgot-password" ? "Reset Password" : "Sign In"}
               </h2>
+              {authMode === "forgot-password" && (
+                <p className="text-xs text-[#8fb39c] font-medium mb-6">
+                  Enter your registered email address to receive a 6-digit code and reset link.
+                </p>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Full Name</label>
-                <div className="relative">
-                  <FiUser className="absolute left-4 top-3.5 text-gray-400/80" />
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    placeholder="Enter name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Username or Email Address</label>
+              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                {isRegister ? "Email Address" : "Username or Email Address"}
+              </label>
               <div className="relative">
                 <FiMail className="absolute left-4 top-3.5 text-gray-400/80" />
                 <input
@@ -440,14 +737,14 @@ const LoginPage = () => {
 
             {isRegister && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code (Optional)</label>
+                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Gift Code (Optional)</label>
                 <div className="relative">
                   <FiGift className="absolute left-4 top-3.5 text-gray-400/80" />
                   <input
                     type="text"
-                    name="referralCode"
-                    placeholder="Enter referral code"
-                    value={form.referralCode}
+                    name="giftCode"
+                    placeholder="Enter gift code"
+                    value={form.giftCode || ""}
                     onChange={handleChange}
                     className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
                   />
@@ -502,21 +799,32 @@ const LoginPage = () => {
               disabled={loading}
               className="w-full rounded-xl bg-[#062413] hover:bg-[#03140a] text-white font-bold py-3.5 text-sm transition-all border border-[#144729] shadow-inner mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? "Please wait..." : isRegister ? "Sign Up" : authMode === "forgot-password" ? "Send Reset Link" : "Log In"}
+              {loading ? "Please wait..." : isRegister ? "Sign Up" : authMode === "forgot-password" ? "Send 6-Digit Code" : "Log In"}
               <FiArrowRight size={15} />
             </button>
           </form>
 
           {/* Register / Sign In Switch */}
-          <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
-            {authMode === "forgot-password" ? "Remembered your password?" : isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
-            <span
-              onClick={() => switchMode(isRegister || authMode === "forgot-password" ? "login" : "register")}
-              className="text-white hover:underline cursor-pointer font-bold"
-            >
-              {authMode === "forgot-password" ? "Sign in" : isRegister ? "Sign in" : "Sign up"}
-            </span>
-          </p>
+          <div className="flex flex-col items-center justify-center gap-2 mt-5 text-center text-xs font-semibold text-[#8fb39c] select-none">
+            {authMode === "forgot-password" && (
+              <button
+                type="button"
+                onClick={() => switchMode("reset-password")}
+                className="text-[#8fb39c] hover:text-white hover:underline text-xs font-medium cursor-pointer"
+              >
+                Already have a reset code? Enter code
+              </button>
+            )}
+            <p>
+              {authMode === "forgot-password" ? "Remembered your password?" : isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
+              <span
+                onClick={() => switchMode(isRegister || authMode === "forgot-password" ? "login" : "register")}
+                className="text-white hover:underline cursor-pointer font-bold"
+              >
+                {authMode === "forgot-password" ? "Sign in" : isRegister ? "Sign in" : "Sign up"}
+              </span>
+            </p>
+          </div>
           </>
           )}
 
