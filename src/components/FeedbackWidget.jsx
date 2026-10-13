@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiMessageSquare, FiX, FiCheck, FiHeart, FiStar } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
@@ -34,6 +34,26 @@ const FeedbackWidget = () => {
   const needleX = cx + radius * Math.cos(rad);
   const needleY = cy - radius * Math.sin(rad);
 
+  // Lock page scroll and allow Escape to close while the modal is open
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen]);
+
+  // Gauge geometry is in SVG units (viewBox 340x180); position the floating
+  // badge in percentages so it stays on the needle when the SVG scales down.
+  const badgeLeftPct = (needleX / 340) * 100;
+  const badgeTopPct = (needleY / 180) * 100;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const feedbackItem = {
@@ -64,27 +84,42 @@ const FeedbackWidget = () => {
 
   return (
     <>
-      {/* ─── Sleek Right-Side Attached Trigger Tab ─── */}
+      {/* ─── Trigger: round floating icon button docked bottom-right on phones/tablets,
+           sleek right-side attached vertical tab on desktop (lg+) ─── */}
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-gradient-to-br from-[#2a4023] via-[#3a5830] to-[#547343] text-white px-3 py-4 rounded-l-2xl shadow-[0_12px_35px_rgba(30,50,20,0.25)] border-y border-l border-white/20 flex flex-col items-center gap-2.5 cursor-pointer hover:translate-x-[-3px] transition-all duration-300 group"
+        className="fixed z-40 bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] w-12 h-12 rounded-full justify-center border lg:w-auto lg:h-auto lg:bottom-auto lg:right-0 lg:top-1/2 lg:-translate-y-1/2 lg:px-3 lg:py-4 lg:rounded-none lg:rounded-l-2xl lg:border-0 lg:border-y lg:border-l bg-gradient-to-br from-[#2a4023] via-[#3a5830] to-[#547343] text-white shadow-[0_12px_35px_rgba(30,50,20,0.25)] border-white/20 flex flex-col items-center gap-2.5 cursor-pointer lg:hover:translate-x-[-3px] transition-all duration-300 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d9667] focus-visible:ring-offset-2"
         title="Share your experience"
+        aria-label="Share feedback"
+        aria-haspopup="dialog"
       >
-        <div className="w-7 h-7 rounded-xl bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <FiMessageSquare size={15} className="text-[#d5e8cb]" />
+        <div className="w-7 h-7 rounded-xl lg:bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <FiMessageSquare size={18} className="text-[#d5e8cb] lg:w-[15px] lg:h-[15px]" aria-hidden="true" />
         </div>
-        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-[#e3f0db] [writing-mode:vertical-lr] rotate-180">
+        <span aria-hidden="true" className="hidden lg:inline text-[11px] font-black uppercase tracking-[0.2em] text-[#e3f0db] [writing-mode:vertical-lr] rotate-180">
           Feedback
         </span>
       </button>
 
       {/* ─── Ultra-Modern Feedback Modal Overlay ─── */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-slate-950/60 backdrop-blur-md animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsOpen(false);
+          }}
+        >
           
-          <div className="relative w-full max-w-[500px] bg-gradient-to-b from-[#ffffff] via-[#f7faf5] to-[#edf4e8] rounded-[36px] border border-white shadow-[0_25px_70px_rgba(20,35,15,0.3)] p-7 md:p-8 overflow-hidden">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rate your experience"
+            className="relative w-full max-w-[500px] max-h-full overflow-y-auto overscroll-contain bg-gradient-to-b from-[#ffffff] via-[#f7faf5] to-[#edf4e8] rounded-[28px] sm:rounded-[36px] border border-white shadow-[0_25px_70px_rgba(20,35,15,0.3)] p-5 sm:p-7 md:p-8"
+          >
             
-            {/* Soft Ambient Background Glow */}
+            {/* Soft Ambient Background Glow (clipped wrapper so the card itself can scroll) */}
+            <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none">
             <div
               className="absolute -top-24 -left-24 w-56 h-56 rounded-full blur-3xl opacity-30 transition-all duration-500 pointer-events-none"
               style={{ backgroundColor: currentLevelObj.color }}
@@ -93,11 +128,14 @@ const FeedbackWidget = () => {
               className="absolute -bottom-24 -right-24 w-56 h-56 rounded-full blur-3xl opacity-25 transition-all duration-500 pointer-events-none"
               style={{ backgroundColor: currentLevelObj.color }}
             />
+            </div>
 
             {/* Close Button */}
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="absolute right-5 top-5 w-9 h-9 rounded-full bg-slate-100/80 hover:bg-slate-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-all shadow-sm z-20"
+              aria-label="Close feedback"
+              className="absolute right-3 top-3 sm:right-5 sm:top-5 w-10 h-10 rounded-full bg-slate-100/80 hover:bg-slate-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition-all shadow-sm z-20"
             >
               <FiX size={18} />
             </button>
@@ -116,14 +154,14 @@ const FeedbackWidget = () => {
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col items-center text-center space-y-5 relative z-10">
+              <form onSubmit={handleSubmit} className="flex flex-col items-center text-center space-y-4 sm:space-y-5 relative z-10">
                 
                 {/* Header */}
-                <div>
+                <div className="px-8 sm:px-0">
                   <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#7d9667] bg-[#eef6ea] px-3 py-1 rounded-full mb-2">
                     <FiHeart size={12} className="text-[#7d9667]" /> Your Opinion Matters
                   </span>
-                  <h2 className="text-2xl md:text-3xl font-black text-[#1e3019] tracking-tight">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#1e3019] tracking-tight">
                     Rate Your Experience
                   </h2>
                   <p className="text-xs text-[#5c6e54] mt-1 max-w-sm mx-auto font-medium">
@@ -132,7 +170,7 @@ const FeedbackWidget = () => {
                 </div>
 
                 {/* ─── Speedometer Arc Gauge Dial ─── */}
-                <div className="relative w-full max-w-[340px] h-[190px] flex items-center justify-center my-1 select-none">
+                <div className="relative w-full max-w-[340px] aspect-[340/180] flex items-center justify-center my-1 select-none">
                   
                   <svg className="w-full h-full overflow-visible" viewBox="0 0 340 180">
                     <defs>
@@ -211,13 +249,13 @@ const FeedbackWidget = () => {
                   {/* Dynamic Glowing Rating Badge Floating over Needle */}
                   <div
                     style={{
-                      left: `${needleX}px`,
-                      top: `${needleY}px`,
+                      left: `${badgeLeftPct}%`,
+                      top: `${badgeTopPct}%`,
                       transform: "translate(-50%, -50%)",
                       borderColor: currentLevelObj.color,
                       boxShadow: `0 8px 24px ${currentLevelObj.color}44`
                     }}
-                    className="absolute w-16 h-16 rounded-full bg-white border-3 flex flex-col items-center justify-center z-20 pointer-events-none transition-all duration-100 scale-105"
+                    className="absolute w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white border-[3px] flex flex-col items-center justify-center z-20 pointer-events-none transition-all duration-100 scale-105"
                   >
                     <span className="text-sm font-black text-gray-900 leading-none">
                       {rating.toFixed(1)}
@@ -233,7 +271,8 @@ const FeedbackWidget = () => {
                     step="0.1"
                     value={rating}
                     onChange={(e) => setRating(parseFloat(e.target.value))}
-                    className="absolute bottom-2 w-full max-w-[280px] opacity-0 cursor-pointer h-16 z-30"
+                    aria-label="Experience rating from 1 to 5"
+                    className="absolute bottom-0 w-[82%] opacity-0 cursor-pointer h-3/4 z-30"
                   />
                 </div>
 
@@ -252,7 +291,9 @@ const FeedbackWidget = () => {
                           backgroundColor: isSelected ? item.bg : "#ffffff",
                           borderColor: isSelected ? item.color : "#e2ebd9",
                         }}
-                        className={`py-2 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 ${
+                        aria-label={`${item.label} (${item.level} of 5)`}
+                        aria-pressed={isSelected}
+                        className={`min-h-[52px] min-w-0 py-2 px-0.5 sm:px-1 rounded-xl sm:rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 ${
                           isSelected
                             ? "shadow-sm font-black scale-105 ring-2"
                             : "opacity-80 hover:opacity-100 hover:scale-102"
@@ -260,7 +301,7 @@ const FeedbackWidget = () => {
                       >
                         <span className="text-lg select-none">{item.emoji}</span>
                         <span
-                          className="text-[10px] font-extrabold tracking-tight line-clamp-1"
+                          className="text-[9px] sm:text-[10px] font-extrabold tracking-tight leading-tight line-clamp-2 sm:line-clamp-1 max-w-full break-words"
                           style={{ color: isSelected ? item.color : "#66785c" }}
                         >
                           {item.label}
@@ -272,22 +313,23 @@ const FeedbackWidget = () => {
 
                 {/* ─── Remarks Textarea Field (Like Message Field) ─── */}
                 <div className="w-full space-y-1.5 text-left">
-                  <label className="text-xs font-bold text-[#5c6e54] flex items-center gap-1.5">
+                  <label htmlFor="feedback-remarks" className="text-xs font-bold text-[#5c6e54] flex items-center gap-1.5">
                     <FiMessageSquare size={13} className="text-[#7d9667]" /> Remarks & Comments
                   </label>
                   <textarea
+                    id="feedback-remarks"
                     rows={4}
                     placeholder="Enter your detailed remarks, thoughts, or suggestions here..."
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    className="w-full rounded-2xl bg-white border border-[#d8e5d3] p-4 text-xs md:text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#7d9667] focus:ring-4 focus:ring-[#7d9667]/15 shadow-sm transition-all resize-none leading-relaxed"
+                    className="w-full rounded-2xl bg-white border border-[#d8e5d3] p-3 sm:p-4 text-base sm:text-sm font-medium text-gray-800 placeholder:text-gray-400 outline-none focus:border-[#7d9667] focus:ring-4 focus:ring-[#7d9667]/15 shadow-sm transition-all resize-none leading-relaxed"
                   />
                 </div>
 
                 {/* ─── Submit Button ─── */}
                 <button
                   type="submit"
-                  className="w-full rounded-2xl bg-[#1e3019] hover:bg-[#152312] text-white py-3.5 text-sm font-extrabold shadow-[0_10px_25px_rgba(30,48,25,0.25)] transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+                  className="w-full rounded-2xl bg-[#1e3019] hover:bg-[#152312] text-white py-3.5 min-h-[48px] text-sm font-extrabold shadow-[0_10px_25px_rgba(30,48,25,0.25)] transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
                 >
                   <FiStar className="text-amber-400 fill-amber-400" size={15} />
                   Submit Feedback

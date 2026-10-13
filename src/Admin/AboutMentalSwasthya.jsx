@@ -128,19 +128,17 @@ const AboutMentalSwasthya = () => {
   };
 
   return (
-    <div style={{ 
-      background: "#f7f9f4", 
-      fontFamily: "'DM Sans', sans-serif", 
-      minHeight: "100vh",
+    <div className="ams-root" style={{
+      background: "#f7f9f4",
+      fontFamily: "'DM Sans', sans-serif",
       overflow: "hidden",
     }}>
 
       {/* ══════════════════════════ HERO ══════════════════════════ */}
-      <header style={{
+      <header className="ams-hero" style={{
         background: "linear-gradient(168deg, #0a1208 0%, #162314 45%, #0d1b0b 100%)",
         position: "relative",
         overflow: "hidden",
-        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
       }}>
@@ -176,33 +174,34 @@ const AboutMentalSwasthya = () => {
 
         {/* Nav bar */}
         {!isEmbedded && (
-          <div style={{
+          <div className="ams-nav" style={{
             position: "relative", zIndex: 10,
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "28px 48px",
             opacity: heroVisible ? 1 : 0,
             transform: heroVisible ? "none" : "translateY(-14px)",
             transition: "opacity 0.7s 0.1s, transform 0.7s 0.1s",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="ams-nav-brand" style={{ display: "flex", alignItems: "center", minWidth: 0 }}>
               <img src={loginicon} alt="logo" style={{
+                flexShrink: 0,
                 width: 40, height: 40, borderRadius: 11,
                 objectFit: "cover",
                 border: "1px solid rgba(168,200,150,0.22)",
                 boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               }} />
-              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.6)" }}>
+              <span className="ams-nav-brand-text" style={{ fontWeight: 600, textTransform: "uppercase", color: "rgba(168,200,150,0.6)" }}>
                 MentalSwasthya
               </span>
             </div>
-            <div style={{
+            <div className="ams-nav-badge" style={{
               display: "flex", alignItems: "center", gap: 7,
-              padding: "8px 16px", borderRadius: 99,
+              flexShrink: 0, whiteSpace: "nowrap",
+              borderRadius: 99,
               background: "rgba(125,150,103,0.12)",
               border: "0.5px solid rgba(168,200,150,0.2)",
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,0.6)" }} />
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(168,200,150,0.55)" }}>
+              <span style={{ flexShrink: 0, width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74,222,128,0.6)" }} />
+              <span className="ams-nav-badge-text" style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: "rgba(168,200,150,0.55)" }}>
                 First Time Guide
               </span>
             </div>
@@ -210,10 +209,9 @@ const AboutMentalSwasthya = () => {
         )}
 
         {/* Hero content */}
-        <div style={{
+        <div className="ams-hero-content" style={{
           flex: 1, display: "flex", flexDirection: "column",
           justifyContent: "center", alignItems: "flex-start",
-          padding: "0 48px 120px",
           position: "relative", zIndex: 10,
           maxWidth: 900,
         }}>
@@ -298,11 +296,11 @@ const AboutMentalSwasthya = () => {
       <Marquee />
 
       {/* ══════════════════════════ BODY ══════════════════════════ */}
-      <main style={{ background: "#f7f9f4", padding: "80px 48px 0" }}>
+      <main className="ams-main" style={{ background: "#f7f9f4" }}>
 
         {/* Section header */}
         <Reveal>
-          <div style={{ maxWidth: 1080, margin: "0 auto 64px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
+          <div className="ams-section-head" style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
             <div>
               <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667", marginBottom: 14 }}>
                 The Toolkit
@@ -324,17 +322,17 @@ const AboutMentalSwasthya = () => {
         </Reveal>
 
         {/* ── Tool cards ── */}
-        <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))", gap: 20 }}>
           {tools.map((tool, i) => (
             <Reveal key={tool.title} delay={i * 0.12}>
               <div
+                className="ams-tool-card"
                 onMouseEnter={() => setHoveredCard(i)}
                 onMouseLeave={() => setHoveredCard(null)}
                 style={{
                   borderRadius: 24,
                   background: hoveredCard === i ? "#ffffff" : "#ffffff",
                   border: `1.5px solid ${hoveredCard === i ? tool.border : "#e8eee3"}`,
-                  padding: "36px 32px",
                   position: "relative", overflow: "hidden",
                   cursor: "default",
                   transform: hoveredCard === i ? "translateY(-6px) scale(1.01)" : "none",
@@ -403,12 +401,11 @@ const AboutMentalSwasthya = () => {
         {/* ── Context section ── */}
         <div style={{ maxWidth: 1080, margin: "72px auto 0" }}>
           <Reveal>
-            <div style={{
+            <div className="ams-context" style={{
               borderRadius: 28,
               background: "linear-gradient(135deg, #162314 0%, #1e3019 100%)",
-              padding: "52px 56px",
               position: "relative", overflow: "hidden",
-              display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48,
+              display: "grid",
               alignItems: "center",
             }}>
               {/* Background texture */}
@@ -454,13 +451,12 @@ const AboutMentalSwasthya = () => {
       </main>
 
       {/* ══════════════════════════ CTA ══════════════════════════ */}
-      <footer style={{ padding: "80px 48px 60px", maxWidth: 1080, margin: "0 auto" }}>
+      <footer className="ams-footer" style={{ maxWidth: 1080, margin: "0 auto" }}>
         <Reveal>
-          <div style={{
-            display: "flex", alignItems: "center",
+          <div className="ams-cta" style={{
+            display: "flex",
             justifyContent: "space-between", flexWrap: "wrap",
             gap: 32,
-            padding: "36px 44px",
             borderRadius: 24,
             background: "#ffffff",
             border: "1.5px solid #e2eadc",
@@ -483,8 +479,9 @@ const AboutMentalSwasthya = () => {
             <button
               type="button"
               onClick={handleContinue}
+              className="ams-cta-btn"
               style={{
-                display: "inline-flex", alignItems: "center", gap: 12,
+                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
                 padding: "18px 32px",
                 borderRadius: 16,
                 background: "#1a2416",
@@ -546,16 +543,44 @@ const AboutMentalSwasthya = () => {
           0%,100% { transform: translate(0,0) scale(1); }
           50% { transform: translate(30px, -35px) scale(1.09); }
         }
-        * { box-sizing: border-box; }
+        .ams-root { min-height: 100vh; min-height: 100dvh; }
+        .ams-root, .ams-root *, .ams-root *::before, .ams-root *::after { box-sizing: border-box; }
+        .ams-hero { min-height: 100vh; min-height: 100dvh; }
+        .ams-nav { padding: 28px 48px; gap: 16px; }
+        .ams-nav-brand { gap: 12px; }
+        .ams-nav-brand-text { font-size: 12px; letter-spacing: 0.16em; }
+        .ams-nav-badge { padding: 8px 16px; }
+        .ams-nav-badge-text { letter-spacing: 0.16em; }
+        .ams-hero-content { padding: 0 48px 120px; }
+        .ams-main { padding: 80px 48px 0; }
+        .ams-section-head { margin-bottom: 64px !important; }
+        .ams-tool-card { padding: 36px 32px; }
+        .ams-context { padding: 52px 56px; grid-template-columns: 1fr 1fr; gap: 48px; }
+        .ams-footer { padding: 80px 48px 60px; }
+        .ams-cta { padding: 36px 44px; align-items: center; }
         @media (max-width: 768px) {
-          header { min-height: auto !important; }
-          header > div:last-of-type { padding: 0 24px 80px !important; }
-          header nav { padding: 20px 24px !important; }
-          main { padding: 48px 24px 0 !important; }
-          footer { padding: 48px 24px 40px !important; }
-          div[style*="gridTemplateColumns: '1fr 1fr'"] { grid-template-columns: 1fr !important; }
-          div[style*="padding: '52px 56px'"] { padding: 32px 24px !important; }
-          div[style*="padding: '36px 44px'"] { padding: 28px 24px !important; flex-direction: column !important; align-items: flex-start !important; }
+          .ams-hero { min-height: auto; }
+          .ams-nav { padding: 20px 24px; }
+          .ams-hero-content { padding: 24px 24px 96px; }
+          .ams-main { padding: 48px 24px 0; }
+          .ams-section-head { margin-bottom: 40px !important; }
+          .ams-context { grid-template-columns: 1fr; padding: 36px 28px; gap: 24px; }
+          .ams-footer { padding: 48px 24px 40px; }
+          .ams-cta { padding: 28px 24px; flex-direction: column; align-items: flex-start; gap: 24px; }
+        }
+        @media (max-width: 480px) {
+          .ams-nav { padding: 18px 20px; gap: 10px; }
+          .ams-nav-brand { gap: 10px; }
+          .ams-nav-brand-text { font-size: 11px; letter-spacing: 0.1em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .ams-nav-badge { padding: 7px 12px; }
+          .ams-nav-badge-text { letter-spacing: 0.1em; }
+          .ams-hero-content { padding: 20px 20px 88px; }
+          .ams-main { padding: 40px 20px 0; }
+          .ams-tool-card { padding: 28px 24px; }
+          .ams-context { padding: 32px 22px; border-radius: 22px !important; }
+          .ams-footer { padding: 40px 20px 32px; }
+          .ams-cta { padding: 24px 20px; align-items: stretch; }
+          .ams-cta-btn { width: 100%; padding: 16px 20px !important; white-space: normal !important; }
         }
       `}</style>
     </div>

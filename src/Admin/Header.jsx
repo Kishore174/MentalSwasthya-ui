@@ -166,39 +166,46 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#f6f9f3]/90 backdrop-blur-md border-b border-[#dde8d5] px-4 lg:px-8 py-3 transition-all duration-200">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-40 w-full bg-[#f6f9f3]/90 backdrop-blur-md border-b border-[#dde8d5] px-4 lg:px-8 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] lg:pl-8 lg:pr-8 transition-all duration-200">
+      {/* relative: on phones the dropdowns anchor to this full-width row so they fit the screen */}
+      <div className="relative flex items-center justify-between gap-2">
         {/* Left Side: Mobile Hamburger & Page Header Context */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <button
-            className="lg:hidden p-2 rounded-xl text-[#29401f] bg-white border border-[#dde8d5] hover:bg-[#eef6ea] transition-all duration-200 shadow-sm"
+            type="button"
+            className="lg:hidden shrink-0 flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-[#29401f] bg-white border border-[#dde8d5] hover:bg-[#eef6ea] transition-all duration-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d9667]"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            aria-label="Toggle Navigation Sidebar"
+            aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isSidebarOpen}
+            aria-controls="app-sidebar"
           >
             <MdMenu className="text-xl" />
           </button>
 
-          <div>
-            <h1 className="text-lg md:text-xl font-bold text-[#29401f] tracking-tight leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-bold text-[#29401f] tracking-tight leading-tight truncate">
               {routeInfo.title}
             </h1>
-            <p className="hidden sm:block text-xs text-[#66785c] font-medium">
+            <p className="hidden sm:block text-xs text-[#66785c] font-medium truncate">
               {routeInfo.subtitle}
             </p>
           </div>
         </div>
 
         {/* Right Side: Bell Icon & Profile Dropdown */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
           {/* Bell Icon Notification Dropdown Container */}
-          <div className="relative" ref={bellRef}>
+          <div className="sm:relative" ref={bellRef}>
             <button
               onClick={() => {
                 setIsNotificationsOpen((prev) => !prev);
                 setIsProfileOpen(false);
               }}
-              className="relative p-2.5 rounded-full text-[#526447] hover:text-[#29401f] hover:bg-[#eef6ea] border border-[#d5e3cb] bg-white transition-all duration-200 shadow-sm focus:outline-none active:scale-95"
-              aria-label="View Notifications"
+              type="button"
+              aria-expanded={isNotificationsOpen}
+              aria-haspopup="true"
+              className="relative flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-full text-[#526447] hover:text-[#29401f] hover:bg-[#eef6ea] border border-[#d5e3cb] bg-white transition-all duration-200 shadow-sm focus:outline-none active:scale-95"
+              aria-label={unreadCount > 0 ? `View notifications (${unreadCount} unread)` : 'View notifications'}
             >
               <FiBell className="text-lg md:text-xl" />
               {unreadCount > 0 && (
@@ -210,10 +217,10 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
             {/* Notifications Popover */}
             {isNotificationsOpen && (
-              <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-[#dde8d5] rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+              <div className="absolute inset-x-0 top-full mt-3 sm:inset-x-auto sm:right-0 sm:top-auto w-auto sm:w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-6rem)] flex flex-col bg-white border border-[#dde8d5] rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn">
                 {/* Popover Header */}
-                <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-[#f7faf5] to-[#eef6ea] border-b border-[#dde8d5]">
-                  <div className="flex items-center gap-2">
+                <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-3 sm:py-3.5 bg-gradient-to-r from-[#f7faf5] to-[#eef6ea] border-b border-[#dde8d5]">
+                  <div className="flex items-center gap-2 min-w-0">
                     <FiBell className="text-[#526447]" />
                     <span className="font-semibold text-sm text-[#29401f]">
                       Notifications
@@ -226,8 +233,9 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   </div>
                   {unreadCount > 0 && (
                     <button
+                      type="button"
                       onClick={markAllAsRead}
-                      className="text-xs text-[#526447] hover:text-[#29401f] font-medium hover:underline flex items-center gap-1"
+                      className="shrink-0 min-h-[40px] px-1 text-xs text-[#526447] hover:text-[#29401f] font-medium hover:underline flex items-center gap-1 whitespace-nowrap"
                     >
                       <FiCheck className="text-xs" /> Mark all read
                     </button>
@@ -235,7 +243,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </div>
 
                 {/* Notifications List */}
-                <div className="max-h-80 overflow-y-auto divide-y divide-[#f0f5ed]">
+                <div className="flex-1 min-h-0 sm:max-h-80 overflow-y-auto overscroll-contain divide-y divide-[#f0f5ed]">
                   {notifications.length === 0 ? (
                     <div className="p-6 text-center text-xs text-[#7b8e70]">
                       No notifications right now.
@@ -265,16 +273,16 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           )}
                         </div>
 
-                        <div className="flex-1 pr-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-semibold text-[#29401f]">
+                        <div className="flex-1 min-w-0 sm:pr-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-xs font-semibold text-[#29401f] min-w-0 break-words">
                               {item.title}
                             </h4>
-                            <span className="text-[10px] text-[#7b8e70]">
+                            <span className="text-[10px] text-[#7b8e70] shrink-0 whitespace-nowrap">
                               {item.time}
                             </span>
                           </div>
-                          <p className="text-[11px] text-[#526447] mt-0.5 leading-snug">
+                          <p className="text-[11px] text-[#526447] mt-0.5 leading-snug break-words">
                             {item.message}
                           </p>
                         </div>
@@ -284,9 +292,11 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                         )}
 
                         <button
+                          type="button"
                           onClick={(e) => deleteNotification(item.id, e)}
-                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity p-1"
+                          className="shrink-0 -my-2 -mr-2 flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 sm:my-0 sm:mr-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
                           title="Dismiss"
+                          aria-label={`Dismiss notification: ${item.title}`}
                         >
                           <FiX className="text-xs" />
                         </button>
@@ -297,10 +307,11 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                 {/* Footer */}
                 {notifications.length > 0 && (
-                  <div className="p-2 text-center bg-[#f9fbf8] border-t border-[#dde8d5]">
+                  <div className="shrink-0 p-1 sm:p-2 text-center bg-[#f9fbf8] border-t border-[#dde8d5]">
                     <button
+                      type="button"
                       onClick={() => setNotifications([])}
-                      className="text-[11px] text-[#66785c] hover:text-red-600 transition-colors font-medium"
+                      className="min-h-[40px] sm:min-h-0 px-3 text-[11px] text-[#66785c] hover:text-red-600 transition-colors font-medium"
                     >
                       Clear all notifications
                     </button>
@@ -311,13 +322,16 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
           </div>
 
           {/* Profile Dropdown Container */}
-          <div className="relative" ref={profileRef}>
+          <div className="sm:relative" ref={profileRef}>
             <button
+              type="button"
+              aria-expanded={isProfileOpen}
+              aria-haspopup="true"
               onClick={() => {
                 setIsProfileOpen((prev) => !prev);
                 setIsNotificationsOpen(false);
               }}
-              className="flex items-center gap-2.5 p-1.5 pl-2 pr-3 rounded-full bg-white hover:bg-[#eef6ea] border border-[#d5e3cb] transition-all duration-200 shadow-sm focus:outline-none active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2.5 p-1 sm:p-1.5 pl-1.5 sm:pl-2 pr-2.5 sm:pr-3 min-h-[40px] sm:min-h-[44px] rounded-full bg-white hover:bg-[#eef6ea] border border-[#d5e3cb] transition-all duration-200 shadow-sm focus:outline-none active:scale-95 cursor-pointer"
               aria-label="User Profile Menu"
             >
               {user?.avatar || user?.profileImage ? (
@@ -346,13 +360,13 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
             {/* Profile Dropdown Menu */}
             {isProfileOpen && (
-              <div className="absolute right-0 mt-3 w-64 bg-white border border-[#dde8d5] rounded-2xl shadow-xl z-50 overflow-hidden animate-fadeIn">
+              <div className="absolute right-0 top-full sm:top-auto mt-3 w-64 max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain bg-white border border-[#dde8d5] rounded-2xl shadow-xl z-50 animate-fadeIn">
                 {/* Profile Header Info */}
                 <div className="p-4 bg-gradient-to-br from-[#f8fbf6] to-[#eef6ea] border-b border-[#dde8d5] flex items-center gap-3">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#7d9667] to-[#526543] text-white flex items-center justify-center font-bold text-sm shadow-md shrink-0">
                     {getInitials(user?.name)}
                   </div>
-                  <div className="overflow-hidden">
+                  <div className="overflow-hidden min-w-0">
                     <h3 className="text-xs font-bold text-[#29401f] truncate">
                       {user?.name || 'User Account'}
                     </h3>
@@ -370,7 +384,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <Link
                     to="/app/achievements"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-sm sm:text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
                   >
                     <FiAward className="text-[#66785c] text-sm" />
                     <span>My Achievements</span>
@@ -379,7 +393,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <Link
                     to="/app/subscription"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-sm sm:text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
                   >
                     <FiCreditCard className="text-[#66785c] text-sm" />
                     <span>Subscription Plan</span>
@@ -388,7 +402,7 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   <Link
                     to="/app/contact"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
+                    className="flex items-center gap-2.5 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-sm sm:text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
                   >
                     <FiMail className="text-[#66785c] text-sm" />
                     <span>Contact Support</span>
@@ -398,8 +412,9 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 {/* Logout Button */}
                 <div className="p-2 border-t border-[#dde8d5] bg-[#fafcf9]">
                   <button
+                    type="button"
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 min-h-[44px] sm:min-h-[36px] text-sm sm:text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                   >
                     <FiLogOut className="text-sm" />
                     <span>Log Out</span>

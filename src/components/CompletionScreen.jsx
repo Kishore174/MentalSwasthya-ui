@@ -88,7 +88,7 @@ export default function CompletionScreen({
   const nextRewardAt = referralCount >= 3 ? null : referralCount + 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 h-dvh flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] px-3 sm:px-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 md:py-6 overflow-y-auto overscroll-contain">
       <style>{`
         ${FONT_IMPORT}
         .ms-serif { font-family: 'Fraunces', serif; }
@@ -116,13 +116,13 @@ export default function CompletionScreen({
       `}</style>
 
       <div
-        className={`ms-sans w-full max-w-2xl rounded-[28px] bg-white shadow-[0_20px_60px_-15px_rgba(30,48,25,0.18)] border border-[#e7f0e2] my-auto overflow-hidden ${
+        className={`ms-sans w-full max-w-2xl rounded-[24px] sm:rounded-[28px] bg-white shadow-[0_20px_60px_-15px_rgba(30,48,25,0.18)] border border-[#e7f0e2] my-auto overflow-hidden ${
           mounted ? "ms-mount" : "opacity-0"
         }`}
       >
         {/* ── Hero ───────────────────────────────────────────── */}
-        <div className="relative px-6 md:px-10 pt-10 pb-8 text-center bg-gradient-to-b from-[#f4faf1] to-white">
-          <div className="relative mx-auto w-40 h-32">
+        <div className="relative px-4 sm:px-6 md:px-10 pt-7 sm:pt-10 pb-6 sm:pb-8 text-center bg-gradient-to-b from-[#f4faf1] to-white">
+          <div className="relative mx-auto w-32 h-[6.5rem] sm:w-40 sm:h-32">
             {mounted && (
               <div className="ms-aura-anim absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(184,215,205,0.55)_0%,rgba(184,215,205,0)_70%)]" />
             )}
@@ -155,7 +155,7 @@ export default function CompletionScreen({
             </svg>
           </div>
 
-          <h1 className="ms-serif text-[2.3rem] leading-none font-medium text-[#1e3019] mt-4">
+          <h1 className="ms-serif text-[2rem] sm:text-[2.3rem] leading-none font-medium text-[#1e3019] mt-3 sm:mt-4">
             Well done.
           </h1>
           <p className="text-[13.5px] text-[#5c6f52] mt-3 max-w-sm mx-auto leading-relaxed">
@@ -163,17 +163,17 @@ export default function CompletionScreen({
           </p>
         </div>
 
-        <div className="px-6 md:px-10 pb-8">
+        <div className="px-4 sm:px-6 md:px-10 pb-6 sm:pb-8">
           {/* ── Session timeline ── */}
-          <div className="rounded-2xl bg-[#f7faf5] border border-[#e6efe0] px-4 py-5 -mt-1">
-            <div className="relative grid grid-cols-5 gap-1">
+          <div className="rounded-2xl bg-[#f7faf5] border border-[#e6efe0] px-2 sm:px-4 py-4 sm:py-5 -mt-1">
+            <div className="relative grid grid-cols-5 gap-0.5 sm:gap-1">
               <div className="absolute left-[10%] right-[10%] top-[18px] h-px bg-[#cfe0c6]" />
               {STEPS.map((s) => (
                 <div key={s.key} className="relative flex flex-col items-center text-center">
                   <div className="w-9 h-9 rounded-full bg-white border border-[#cfe0c6] flex items-center justify-center text-sm shadow-sm">
                     {s.icon}
                   </div>
-                  <span className="text-[9.5px] font-semibold text-[#3a4d31] mt-2 leading-tight">
+                  <span className="text-[9.5px] font-semibold text-[#3a4d31] mt-2 leading-tight break-words max-w-full">
                     {s.label}
                   </span>
                   <span className="text-[9px] text-[#7d9667] mt-0.5">{stepStatus[s.key]}</span>
@@ -181,7 +181,7 @@ export default function CompletionScreen({
               ))}
             </div>
 
-            <div className="flex items-center justify-center gap-1.5 mt-5 pt-4 border-t border-[#e6efe0]">
+            <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 mt-5 pt-4 border-t border-[#e6efe0] text-center">
               <span className="text-xs">🔥</span>
               <span className="text-xs font-semibold text-[#8a5a1f]">{streakDays}-day streak</span>
               <span className="text-xs text-[#8a8f7f]">— your longest run yet</span>
@@ -192,7 +192,7 @@ export default function CompletionScreen({
           <button
             type="button"
             onClick={handleShare}
-            className="w-full mt-4 rounded-xl bg-[#f7faf5] hover:bg-[#eef4e8] transition-colors px-4 py-3 flex items-center justify-between border border-[#e6efe0] text-left"
+            className="w-full min-h-[44px] mt-4 rounded-xl bg-[#f7faf5] hover:bg-[#eef4e8] transition-colors px-4 py-3 flex items-center justify-between border border-[#e6efe0] text-left"
           >
             <span className="text-[12.5px] text-[#5c6f52]">
               Know someone who could use five calm minutes?
@@ -203,7 +203,7 @@ export default function CompletionScreen({
           </button>
 
           {/* ── Referral program ─────────────────────────── */}
-          <div className="rounded-2xl border border-[#e1ebd9] mt-4 p-5 md:p-6">
+          <div className="rounded-2xl border border-[#e1ebd9] mt-4 p-4 sm:p-5 md:p-6">
             <div className="flex items-center gap-2">
               <span className="w-7 h-7 rounded-full bg-[#f0f6ea] flex items-center justify-center">
                 <Gift size={14} className="text-[#7d9667]" />
@@ -224,7 +224,7 @@ export default function CompletionScreen({
               </div>
               <div className="flex justify-between mt-2">
                 {[1, 2, 3].map((n) => (
-                  <div key={n} className="flex flex-col items-center gap-1" style={{ width: 60 }}>
+                  <div key={n} className="flex flex-col items-center gap-1 w-[60px]">
                     <span
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                         n <= referralCount
@@ -242,7 +242,7 @@ export default function CompletionScreen({
 
             {/* Next reward focus card */}
             {nextRewardAt ? (
-              <div className="mt-5 rounded-xl bg-[#f7faf5] border border-[#e6efe0] p-4">
+              <div className="mt-5 rounded-xl bg-[#f7faf5] border border-[#e6efe0] p-3 sm:p-4">
                 <p className="text-[12px] font-semibold text-[#22331b]">
                   Invite one more friend to unlock month {nextRewardAt}.
                 </p>
@@ -252,20 +252,21 @@ export default function CompletionScreen({
                     readOnly
                     value={refLink}
                     onFocus={(e) => e.target.select()}
-                    className="w-full rounded-lg bg-white border border-[#dbe7d3] px-3 py-2 text-xs font-medium text-[#3a4d31] outline-none select-all"
+                    aria-label="Your referral link"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 rounded-lg bg-white border border-[#dbe7d3] px-3 py-2 text-base sm:text-xs font-medium text-[#3a4d31] outline-none select-all"
                   />
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={copyReferralLink}
-                      className="px-3.5 py-2 rounded-lg bg-[#1e382b] hover:bg-[#14281e] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
+                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-[#1e382b] hover:bg-[#14281e] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       <Copy size={13} /> Copy
                     </button>
                     <button
                       type="button"
                       onClick={shareReferralLink}
-                      className="px-3.5 py-2 rounded-lg bg-white hover:bg-[#f2f6ee] text-[#3a4d31] font-semibold text-xs transition-colors border border-[#dbe7d3] flex items-center justify-center gap-1.5 whitespace-nowrap"
+                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-white hover:bg-[#f2f6ee] text-[#3a4d31] font-semibold text-xs transition-colors border border-[#dbe7d3] flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       <Share2 size={13} /> Share
                     </button>
@@ -291,14 +292,14 @@ export default function CompletionScreen({
             <button
               type="button"
               onClick={handleDone}
-              className="flex-1 rounded-xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-semibold shadow-sm transition-colors"
+              className="flex-1 min-h-[44px] rounded-xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-semibold shadow-sm transition-colors"
             >
               Return to dashboard
             </button>
             <button
               type="button"
               onClick={handleTomorrow}
-              className="flex-1 rounded-xl border border-[#e1ebd9] hover:bg-[#f7faf5] text-[#5c6f52] px-5 py-3 text-sm font-semibold transition-colors"
+              className="flex-1 min-h-[44px] rounded-xl border border-[#e1ebd9] hover:bg-[#f7faf5] text-[#5c6f52] px-5 py-3 text-sm font-semibold transition-colors"
             >
               I'll be back tomorrow
             </button>

@@ -7,7 +7,8 @@ const Footer = () => {
       component="footer"
       sx={{
         py: 2,
-        px: 4,
+        px: { xs: 2, sm: 4 },
+        pb: 'max(16px, env(safe-area-inset-bottom))',
         mt: 'auto',
         backgroundColor: (theme) =>
           theme.palette.mode === 'light'

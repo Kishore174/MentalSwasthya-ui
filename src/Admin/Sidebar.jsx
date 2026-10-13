@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   MdOutlineDashboard,
   MdPeopleOutline,
@@ -7,7 +7,7 @@ import {
   MdQueueMusic,
   MdBook
 } from "react-icons/md";
-import { FiLogOut, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward, FiBookOpen } from "react-icons/fi";
+import { FiLogOut, FiX, FiChevronRight, FiMail, FiCreditCard, FiGift, FiAward, FiBookOpen } from "react-icons/fi";
 import logo from "../Assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
 
@@ -100,12 +100,48 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     item.roles.includes(user?.role || "admin")
   );
 
+  const location = useLocation();
+  const isDesktopRef = useRef(null);
+
+  // Only react when the lg breakpoint is actually crossed. Mobile browsers fire
+  // "resize" when the address bar shows/hides, which used to close the drawer.
   useEffect(() => {
-    const handleResize = () => setIsSidebarOpen(window.innerWidth >= 1024);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const sync = () => {
+      if (isDesktopRef.current === mql.matches) return;
+      isDesktopRef.current = mql.matches;
+      setIsSidebarOpen(mql.matches);
+    };
+    sync();
+    if (mql.addEventListener) mql.addEventListener("change", sync);
+    else mql.addListener(sync);
+    return () => {
+      if (mql.removeEventListener) mql.removeEventListener("change", sync);
+      else mql.removeListener(sync);
+    };
   }, [setIsSidebarOpen]);
+
+  const isDrawer = isSidebarOpen && isDesktopRef.current === false;
+
+  // Close the mobile drawer on navigation
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 1023.98px)").matches) setIsSidebarOpen(false);
+  }, [location.pathname, setIsSidebarOpen]);
+
+  // Lock body scroll + close on Escape while the mobile drawer is open
+  useEffect(() => {
+    if (!isDrawer) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsSidebarOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isDrawer, setIsSidebarOpen]);
 
 
   return (
@@ -165,6 +201,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
         .logout-btn:hover .logout-icon {
           color: #dc6262;
         }
+        .sidebar-nav-link:focus-visible, .logout-btn:focus-visible {
+          outline: 2px solid #7d9667;
+          outline-offset: 2px;
+        }
+        @media (max-width: 1023.98px) {
+          .sidebar-nav-link, .logout-btn { min-height: 44px; font-size: 14px; }
+        }
         @keyframes sidebarFadeIn {
           from { opacity: 0; transform: translateX(-12px); }
           to { opacity: 1; transform: translateX(0); }
@@ -177,19 +220,27 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
       {/* ── Sidebar ── */}
       <aside
+        id="app-sidebar"
+        aria-label="Main navigation"
         style={{
           position: "fixed",
           top: 0, left: 0,
           zIndex: 50,
-          height: "100vh",
+          height: "100dvh",
           width: 248,
+          maxWidth: "85vw",
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          paddingLeft: "env(safe-area-inset-left)",
+          boxSizing: "border-box",
+          visibility: isSidebarOpen ? "visible" : "hidden",
           display: "flex",
           flexDirection: "column",
           background: "linear-gradient(180deg, #fbfdf8 0%, #f2f7ee 56%, #eef6ea 100%)",
           borderRight: "1px solid #dde8d5",
           boxShadow: "8px 0 32px rgba(80,105,67,0.10)",
           transform: isSidebarOpen ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+          transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1), visibility 0.3s",
           fontFamily: "'DM Sans', sans-serif",
         }}
         className="lg:translate-x-0"
@@ -238,7 +289,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
               objectFit: "cover",
             }} />
           </div>
-          <div>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{
               fontFamily: "'Cormorant Garamond', serif",
               fontSize: "1.05rem", fontWeight: 600,
@@ -259,6 +310,14 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
               </span>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close navigation menu"
+            className="lg:hidden flex items-center justify-center w-10 h-10 -mr-2 rounded-xl text-[#526447] hover:bg-[#eef6ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d9667]"
+          >
+            <FiX size={20} />
+          </button>
         </div>
 
 
@@ -275,8 +334,8 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
         </p>
 
         {/* ── Navigation ── */}
-        <nav style={{
-          flex: 1, overflowY: "auto",
+        <nav aria-label="Main menu" style={{
+          flex: 1, overflowY: "auto", overscrollBehavior: "contain",
           padding: "0 10px 12px",
           position: "relative", zIndex: 1,
           display: "flex", flexDirection: "column", gap: 2,
@@ -338,7 +397,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           padding: "10px 10px 18px",
           flexShrink: 0,
         }}>
-          <button onClick={logout} className="logout-btn">
+          <button type="button" onClick={logout} className="logout-btn">
             <FiLogOut
               className="logout-icon"
               style={{ fontSize: 16, color: "#8a9a80", transition: "color 0.2s" }}
@@ -351,11 +410,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
       {/* ── Mobile overlay ── */}
       {isSidebarOpen && (
         <div
+          aria-hidden="true"
           style={{
             position: "fixed", inset: 0,
             background: "rgba(31,47,24,0.34)",
             backdropFilter: "blur(4px)",
-            zIndex: 40,
+            WebkitBackdropFilter: "blur(4px)",
+            zIndex: 45, // above sticky header (40) & floating widgets, below the drawer (50)
             transition: "opacity 0.3s",
           }}
           className="lg:hidden"

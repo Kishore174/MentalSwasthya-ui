@@ -76,7 +76,7 @@ const VerifyEmailPage = () => {
 
   return (
     <div
-      className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen supports-[height:100dvh]:min-h-dvh relative flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* Background Split Screen */}
@@ -93,19 +93,18 @@ const VerifyEmailPage = () => {
       </div>
 
       {/* Main Card */}
-      <div className="w-full max-w-[960px] bg-white rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row min-h-[520px]">
+      <div className="w-full max-w-[960px] bg-white rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row md:min-h-[520px]">
         {/* Left panel: Branding */}
-        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center px-6 py-7 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
           <img
             src={loginicon}
             alt="logo"
-            className="w-48 h-48 object-cover rounded-3xl border border-gray-150 shadow-md mb-6"
+            className="w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover rounded-2xl sm:rounded-3xl border border-gray-150 shadow-md mb-4 md:mb-6"
           />
           <h1
-            className="text-[#0a331c] tracking-tight font-medium text-center"
+            className="text-[#0a331c] tracking-tight font-medium text-center text-[2.125rem] sm:text-[2.5rem]"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "2.5rem",
               lineHeight: "1.1",
             }}
           >
@@ -117,7 +116,7 @@ const VerifyEmailPage = () => {
         </div>
 
         {/* Right panel: Verification Status */}
-        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
+        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center px-5 py-7 sm:p-8 md:p-12 relative text-white">
           {status === "verifying" && (
             <div className="text-center py-8 space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full bg-[#144729] border border-[#8fb39c]/40 flex items-center justify-center animate-pulse">
@@ -181,18 +180,24 @@ const VerifyEmailPage = () => {
 
               {/* Resend Verification Form */}
               <form onSubmit={handleResend} className="space-y-3 pt-2">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide block">
+                <label htmlFor="verify-resend-email" className="text-xs font-bold text-[#8fb39c] tracking-wide block">
                   Request a New Verification Link
                 </label>
                 <div className="relative">
-                  <FiMail className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <FiMail aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
+                    id="verify-resend-email"
+                    name="email"
                     type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     placeholder="Enter your registered email"
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
                   />
                 </div>
 
@@ -206,11 +211,11 @@ const VerifyEmailPage = () => {
                 </button>
               </form>
 
-              <div className="pt-2 border-t border-[#144729] text-center">
+              <div className="pt-1 border-t border-[#144729] text-center">
                 <button
                   type="button"
                   onClick={() => navigate("/login")}
-                  className="text-xs text-gray-400 hover:text-white font-semibold transition-colors"
+                  className="min-h-[44px] px-3 text-xs text-gray-400 hover:text-white font-semibold transition-colors"
                 >
                   Return to Sign In
                 </button>

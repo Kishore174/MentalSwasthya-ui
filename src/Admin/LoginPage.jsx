@@ -197,7 +197,7 @@ const LoginPage = () => {
 
   return (
     <div
-      className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen supports-[height:100dvh]:min-h-dvh relative flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* ── Background Split Screen (Forest green & Light Mint) ── */}
@@ -229,24 +229,23 @@ const LoginPage = () => {
       </div>
 
       {/* ─── Premium Split-Panel Login Card ─── */}
-      <div className="w-full max-w-[960px] bg-white rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row min-h-[560px]">
+      <div className="w-full max-w-[960px] bg-white rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row md:min-h-[560px]">
         
         {/* Left panel: Original logo and Serif Brand */}
-        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center px-6 py-7 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
           
           {/* Actual branding logo image */}
           <img 
             src={croppedLogo || loginicon} 
             alt="logo" 
-            className="w-56 h-56 object-cover rounded-3xl border border-gray-150 shadow-md mb-6" 
+            className="w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 object-cover rounded-2xl sm:rounded-3xl border border-gray-150 shadow-md mb-4 md:mb-6" 
           />
 
           {/* Title Serif */}
           <h1
-            className="text-[#0a331c] tracking-tight font-medium text-center"
+            className="text-[#0a331c] tracking-tight font-medium text-center text-[2.25rem] sm:text-[2.75rem]"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "2.75rem",
               lineHeight: "1.1"
             }}
           >
@@ -254,7 +253,7 @@ const LoginPage = () => {
           </h1>
 
           {/* Separator leaf line */}
-          <div className="flex items-center justify-center gap-3.5 w-3/5 my-4">
+          <div className="flex items-center justify-center gap-3.5 w-3/5 my-3 md:my-4">
             <div className="h-[1px] bg-gray-200 flex-grow" />
             <svg className="w-3.5 h-3.5 text-[#0a331c] opacity-80" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L7.58,20.43C9.37,20.8 11.23,20.41 12.83,19.38C16.89,16.76 18.23,11.43 17,8M12.24,17.42C10.74,18.06 9,17.79 7.69,16.63C6,15.11 6.09,12.39 7.82,11C11.5,8 14.5,10.5 12.24,17.42Z" />
@@ -270,7 +269,7 @@ const LoginPage = () => {
         </div>
 
         {/* Right panel: Dark Green Form and Google OAuth button */}
-        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
+        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center px-5 py-7 sm:p-8 md:p-12 relative text-white">
           
           {authMode === "verify-email" ? (
             <div>
@@ -294,18 +293,23 @@ const LoginPage = () => {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                  <label htmlFor="login-otp" className="block text-xs font-bold text-[#8fb39c] tracking-wide">
                     6-Digit Verification Code
                   </label>
                   <input
+                    id="login-otp"
+                    name="otp"
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="one-time-code"
                     maxLength={6}
                     autoFocus
                     required
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3.5 text-center text-2xl font-mono tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3.5 text-center text-2xl font-mono tracking-[6px] sm:tracking-[8px] outline-none focus:border-[#8fb39c] text-white placeholder-gray-600 transition-all"
                   />
                 </div>
 
@@ -318,12 +322,12 @@ const LoginPage = () => {
                   <FiArrowRight size={15} />
                 </button>
 
-                <div className="flex items-center justify-between pt-3 border-t border-[#144729]/60 text-xs mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 pt-1 border-t border-[#144729]/60 text-xs mt-4">
                   <button
                     type="button"
                     disabled={resending}
                     onClick={handleResendCode}
-                    className="text-[#8fb39c] hover:text-white font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                    className="min-h-[44px] text-[#8fb39c] hover:text-white font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     <FiRefreshCw size={13} className={resending ? "animate-spin" : ""} />
                     {resending ? "Sending code..." : "Resend Code"}
@@ -332,7 +336,7 @@ const LoginPage = () => {
                   <button
                     type="button"
                     onClick={() => switchMode("login")}
-                    className="text-gray-400 hover:text-white font-medium transition-colors"
+                    className="min-h-[44px] text-gray-400 hover:text-white font-medium transition-colors"
                   >
                     Back to Sign In
                   </button>
@@ -341,41 +345,48 @@ const LoginPage = () => {
             </div>
           ) : (
             <>
-              <h2 className="text-3xl font-bold tracking-tight text-white mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-5 sm:mb-6">
                 {isRegister ? "Sign Up" : authMode === "forgot-password" ? "Reset Password" : "Sign In"}
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Full Name</label>
+                <label htmlFor="login-name" className="block text-xs font-bold text-[#8fb39c] tracking-wide">Full Name</label>
                 <div className="relative">
-                  <FiUser className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <FiUser aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
+                    id="login-name"
                     type="text"
                     name="name"
+                    autoComplete="name"
                     required
                     placeholder="Enter name"
                     value={form.name}
                     onChange={handleChange}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Username or Email Address</label>
+              <label htmlFor="login-email" className="block text-xs font-bold text-[#8fb39c] tracking-wide">Username or Email Address</label>
               <div className="relative">
-                <FiMail className="absolute left-4 top-3.5 text-gray-400/80" />
+                <FiMail aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                 <input
+                  id="login-email"
                   type="email"
                   name="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   required
                   placeholder="Enter email address"
                   value={form.email}
                   onChange={handleChange}
-                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
                 />
               </div>
             </div>
@@ -383,30 +394,36 @@ const LoginPage = () => {
             {authMode !== "forgot-password" && (
               <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Password</label>
+                <label htmlFor="login-password" className="text-xs font-bold text-[#8fb39c] tracking-wide">Password</label>
                 {!isRegister && (
-                  <span
+                  <button
+                    type="button"
                     onClick={() => switchMode("forgot-password")}
-                    className="text-xs text-[#8fb39c] font-semibold hover:underline cursor-pointer select-none"
+                    className="-my-3 -mr-2 px-2 py-3 rounded-lg text-xs text-[#8fb39c] font-semibold hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c] cursor-pointer select-none"
                   >
                     Forgot Password?
-                  </span>
+                  </button>
                 )}
               </div>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   name="password"
+                  autoComplete={isRegister ? "new-password" : "current-password"}
                   required
                   placeholder="••••••••"
                   value={form.password}
                   onChange={handleChange}
-                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                  className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  aria-controls="login-password"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c]"
                 >
                   {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
@@ -416,21 +433,26 @@ const LoginPage = () => {
 
             {isRegister && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Confirm Password</label>
+                <label htmlFor="login-confirm-password" className="block text-xs font-bold text-[#8fb39c] tracking-wide">Confirm Password</label>
                 <div className="relative">
                   <input
+                    id="login-confirm-password"
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
+                    autoComplete="new-password"
                     required
                     placeholder="••••••••"
                     value={form.confirmPassword}
                     onChange={handleChange}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-4 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    aria-pressed={showConfirmPassword}
+                    aria-controls="login-confirm-password"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c]"
                   >
                     {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
@@ -440,16 +462,19 @@ const LoginPage = () => {
 
             {isRegister && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code (Optional)</label>
+                <label htmlFor="login-referral" className="block text-xs font-bold text-[#8fb39c] tracking-wide">Referral Code (Optional)</label>
                 <div className="relative">
-                  <FiGift className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <FiGift aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
+                    id="login-referral"
                     type="text"
                     name="referralCode"
+                    autoComplete="off"
+                    autoCapitalize="characters"
                     placeholder="Enter referral code"
                     value={form.referralCode}
                     onChange={handleChange}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all"
                   />
                 </div>
               </div>
@@ -510,12 +535,13 @@ const LoginPage = () => {
           {/* Register / Sign In Switch */}
           <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
             {authMode === "forgot-password" ? "Remembered your password?" : isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
-            <span
+            <button
+              type="button"
               onClick={() => switchMode(isRegister || authMode === "forgot-password" ? "login" : "register")}
-              className="text-white hover:underline cursor-pointer font-bold"
+              className="inline-block -my-3 -mx-1 px-1 py-3 rounded-md text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c] cursor-pointer font-bold"
             >
               {authMode === "forgot-password" ? "Sign in" : isRegister ? "Sign in" : "Sign up"}
-            </span>
+            </button>
           </p>
           </>
           )}

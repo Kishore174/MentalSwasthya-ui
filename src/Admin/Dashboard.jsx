@@ -3,10 +3,10 @@ import {
   FiCalendar,
   FiChevronDown,
   FiCheck,
-  FiDroplet,
   FiRefreshCcw,
 } from "react-icons/fi";
-import { FaFire } from "react-icons/fa";
+import { FaLungs, FaRegCommentDots, FaRegLightbulb } from "react-icons/fa";
+import { MdSelfImprovement } from "react-icons/md";
 import { getBreathingHistory } from "../Api/breathingApi";
 
 const getHistoryPayload = (response) => {
@@ -153,7 +153,10 @@ const CustomPeriodDropdown = ({ selectedPeriod, onSelectPeriod }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-between gap-3 rounded-xl bg-[#f4f8f1] border border-[#e1eadb] px-3.5 py-2 text-xs font-black text-[#22331b] shadow-sm hover:bg-[#eef6ea] transition-all cursor-pointer min-w-[145px]"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-label={`Period: ${activeOption.label}`}
+        className="inline-flex items-center justify-between gap-3 rounded-xl bg-[#f4f8f1] border border-[#e1eadb] px-3.5 py-2 min-h-[44px] sm:min-h-[40px] text-sm sm:text-xs font-black text-[#22331b] shadow-sm hover:bg-[#eef6ea] transition-all cursor-pointer min-w-[145px]"
       >
         <span className="flex items-center gap-2">
           <FiCalendar className="text-[#7d9667] text-sm" />
@@ -167,7 +170,7 @@ const CustomPeriodDropdown = ({ selectedPeriod, onSelectPeriod }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-white border border-[#e8efe3] shadow-2xl shadow-[#7d9667]/30 z-[100] py-1.5 overflow-hidden">
+        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-52 max-w-[calc(100vw-2rem)] max-h-[60dvh] overflow-y-auto rounded-2xl bg-white border border-[#e8efe3] shadow-2xl shadow-[#7d9667]/30 z-[100] py-1.5 overflow-hidden">
           {PERIOD_OPTIONS.map((opt) => {
             const isSelected = selectedPeriod === opt.id;
             return (
@@ -178,7 +181,7 @@ const CustomPeriodDropdown = ({ selectedPeriod, onSelectPeriod }) => {
                   onSelectPeriod(opt.id);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-4 py-2.5 min-h-[44px] sm:min-h-0 text-sm sm:text-xs font-bold transition-colors cursor-pointer ${
                   isSelected
                     ? "bg-[#f4f8f1] text-[#7d9667] font-black"
                     : "text-[#3a4a31] hover:bg-[#fbfdf8]"
@@ -196,238 +199,150 @@ const CustomPeriodDropdown = ({ selectedPeriod, onSelectPeriod }) => {
 };
 
 /* ==========================================
-   IMAGE 2: STREAK FREEZE STATUS COMPONENT
+   DAILY XP BREAKDOWN COMPONENT
    ========================================== */
-const StreakFreezeCard = () => {
-  const [usedCount, setUsedCount] = useState(() => {
-    try {
-      const saved = localStorage.getItem("mentalswasthya_streak_freeze");
-      if (saved) return JSON.parse(saved).used ?? 3;
-    } catch (e) { }
-    return 3;
+// XP earned per completed practice. Colors are shared with the Wellness Overview rings
+// (validated for colorblind separation on white; gold is low-contrast, so every slice is labelled).
+const XP_ACTIVITIES = [
+  { key: "intention", label: "Intention", xp: 5, color: "#e3a92b", tint: "#fdf6e7", Icon: FaRegLightbulb },
+  { key: "breathing", label: "Breathing", xp: 15, color: "#2b93b3", tint: "#eaf5f8", Icon: FaLungs },
+  { key: "meditation", label: "Meditation", xp: 15, color: "#6a3f8c", tint: "#f3eef7", Icon: MdSelfImprovement },
+  { key: "affirmation", label: "Affirmations", xp: 20, color: "#4a7f2e", tint: "#eef5ea", Icon: FaRegCommentDots },
+];
+
+// Clockwise from 12 o'clock
+const XP_DONUT_ORDER = ["breathing", "affirmation", "meditation", "intention"];
+
+const DAILY_XP_GOAL = XP_ACTIVITIES.reduce((sum, activity) => sum + activity.xp, 0);
+
+const DailyXpCard = ({ counts }) => {
+  const [activeKey, setActiveKey] = useState(null);
+
+  const rows = XP_ACTIVITIES.map((activity) => {
+    const count = counts[activity.key] || 0;
+    return { ...activity, count, earned: count * activity.xp };
+  });
+  const totalXp = rows.reduce((sum, row) => sum + row.earned, 0);
+  const activeRow = rows.find((row) => row.key === activeKey);
+
+  const radius = 78;
+  const circumference = 2 * Math.PI * radius;
+  const earnedRows = XP_DONUT_ORDER.map((key) => rows.find((row) => row.key === key)).filter((row) => row.earned > 0);
+  const gap = earnedRows.length > 1 ? 2.5 : 0;
+
+  let offset = 0;
+  const segments = earnedRows.map((row) => {
+    const length = (row.earned / totalXp) * circumference;
+    const segment = { ...row, length, start: offset };
+    offset += length;
+    return segment;
   });
 
-  const cardTheme = "light";
-
-  const maxFreezes = 5;
-  const availableCount = Math.max(0, maxFreezes - usedCount);
-
-  const handleUseFreeze = () => {
-    if (availableCount > 0) {
-      const newUsed = usedCount + 1;
-      setUsedCount(newUsed);
-      try {
-        localStorage.setItem("mentalswasthya_streak_freeze", JSON.stringify({ used: newUsed, max: maxFreezes }));
-      } catch (e) { }
-    }
-  };
-
-  const handleRestoreFreeze = () => {
-    if (usedCount > 0) {
-      const newUsed = usedCount - 1;
-      setUsedCount(newUsed);
-      try {
-        localStorage.setItem("mentalswasthya_streak_freeze", JSON.stringify({ used: newUsed, max: maxFreezes }));
-      } catch (e) { }
-    }
-  };
-
-  // SVG Arc Math: Center = (160, 135), Radius = 100
-  const cx = 160;
-  const cy = 135;
-  const r = 100;
-
-  const fireEndAngle = 180 - usedCount * 36;
-
-  const getCoords = (deg) => {
-    const rad = (deg * Math.PI) / 180;
-    return {
-      x: cx + r * Math.cos(rad),
-      y: cy - r * Math.sin(rad)
-    };
-  };
-
-  const fireStart = getCoords(180);
-  const fireEnd = getCoords(fireEndAngle);
-  const iceEnd = getCoords(0);
-
-  const firePathD = usedCount > 0
-    ? `M ${fireStart.x} ${fireStart.y} A ${r} ${r} 0 0 1 ${fireEnd.x} ${fireEnd.y}`
-    : "";
-
-  const icePathD = availableCount > 0
-    ? `M ${fireEnd.x} ${fireEnd.y} A ${r} ${r} 0 0 1 ${iceEnd.x} ${iceEnd.y}`
-    : "";
-
-  const slots = Array.from({ length: maxFreezes }).map((_, i) => {
-    const angle = 180 - (i + 0.5) * 36;
-    const coords = getCoords(angle);
-    const isUsed = i < usedCount;
-    return { id: i, angle, ...coords, isUsed };
-  });
-
-  const isDark = cardTheme === "dark";
+  const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key));
 
   return (
-    <div className={`rounded-[28px] border transition-all duration-300 p-6 md:p-7 relative overflow-hidden ${isDark
-        ? "bg-gradient-to-b from-[#181d29] to-[#0f141f] border-slate-800 text-white shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
-        : "bg-white border-[#e8efe3] text-[#22331b] shadow-[0_10px_30px_rgba(80,105,67,0.06)]"
-      }`}>
-      {/* Background ambient glow */}
-      <div className={`absolute -left-20 -top-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${isDark ? "bg-amber-500/10" : "bg-[#7d9667]/10"
-        }`} />
-      <div className={`absolute -right-20 -bottom-20 w-60 h-60 rounded-full blur-3xl pointer-events-none ${isDark ? "bg-cyan-500/10" : "bg-sky-200/20"
-        }`} />
+    <div className="rounded-[28px] border bg-white border-[#e8efe3] text-[#22331b] shadow-[0_10px_30px_rgba(80,105,67,0.06)] p-4 sm:p-6 md:p-7 relative overflow-hidden">
+      <div className="absolute -left-20 -top-20 w-60 h-60 rounded-full blur-3xl pointer-events-none bg-[#7d9667]/10" />
+      <div className="absolute -right-20 -bottom-20 w-60 h-60 rounded-full blur-3xl pointer-events-none bg-sky-200/20" />
 
-      {/* Header bar */}
-      <div className={`flex flex-wrap items-center justify-between gap-4 pb-4 border-b ${isDark ? "border-slate-800/80" : "border-[#e8efe3]"
-        }`}>
-        <div>
-          <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-[#7d9667]"
-            }`}>MentalSwasthya • Streak</span>
-          <h2 className={`text-xl font-black tracking-tight flex items-center gap-2 mt-0.5 ${isDark ? "text-white" : "text-[#22331b]"
-            }`}>
-            <span className="inline-block animate-pulse text-amber-500">🔥</span> STREAK FREEZE STATUS
-          </h2>
+      <div className="relative flex flex-wrap items-end justify-between gap-3 pb-4 border-b border-[#e8efe3]">
+        <div className="min-w-0">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7d9667]">MentalSwasthya • Daily XP</span>
+          <h2 className="text-lg sm:text-xl font-black tracking-tight mt-0.5 text-[#22331b]">TODAY'S XP BREAKDOWN</h2>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className={`border rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-2 ${isDark ? "bg-slate-800/80 border-slate-700/60" : "bg-[#f4f8f1] border-[#e1eadb]"
-            }`}>
-            <span className={isDark ? "text-slate-400" : "text-[#66785c]"}>Current Streak:</span>
-            <span className="text-amber-500 font-extrabold">45 Days</span>
-          </div>
-
-          <div className={`border rounded-xl px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 ${isDark ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400" : "bg-[#edf8f0] border-[#c8e6d0] text-[#4c9a62]"
-            }`}>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            Daily Goal Completed
-          </div>
-
-          {/* <button
-            type="button"
-            onClick={() => setCardTheme(isDark ? "light" : "dark")}
-            className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-              isDark
-                ? "bg-slate-800 border-slate-700 text-slate-300 hover:text-white"
-                : "bg-[#eef6ea] border-[#7d9667]/20 text-[#7d9667] hover:bg-[#7d9667] hover:text-white"
-            }`}
-          >
-            {isDark ? "☀️ Light Theme" : "🌙 Dark Theme"}
-          </button> */}
-        </div>
+        <span className="border rounded-xl px-3.5 py-1.5 text-xs font-bold bg-[#f4f8f1] border-[#e1eadb] text-[#66785c]">
+          Daily goal: <span className="text-[#22331b]">{DAILY_XP_GOAL} XP</span>
+        </span>
       </div>
 
-      {/* Main card content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mt-6">
-
-        {/* Left Dragon Emblem / Status */}
-        <div className={`lg:col-span-4 flex flex-col items-center justify-center text-center p-5 rounded-2xl border ${isDark
-            ? "bg-slate-900/60 border-slate-800/80"
-            : "bg-[#fbfdf8] border-[#e8efe3]"
-          }`}>
-          <div className={`w-20 h-20 rounded-2xl border flex items-center justify-center mb-3 shadow-sm ${isDark
-              ? "bg-gradient-to-br from-amber-500/20 via-red-500/10 to-transparent border-amber-500/30 shadow-[0_0_25px_rgba(245,158,11,0.2)]"
-              : "bg-gradient-to-br from-amber-100 via-orange-50 to-amber-50 border-amber-200"
-            }`}>
-            <svg viewBox="0 0 64 64" className="w-14 h-14 text-amber-500 drop-shadow">
-              <path fill="currentColor" d="M32 4c-6 4-12 11-12 19 0 7 4 12 9 14-6 2-10 7-10 13 0 9 7 14 15 14s15-5 15-14c0-6-4-11-10-13 5-2 9-7 9-14 0-8-6-15-12-19zm-3 10c2 0 4 2 4 4s-2 4-4 4-4-2-4-4 2-4 4-4zm6 24c4 0 7 3 7 7s-3 7-7 7-7-3-7-7 3-7 7-7z" />
-            </svg>
-          </div>
-          <span className={`text-[11px] font-black uppercase tracking-widest ${isDark ? "text-slate-300" : "text-[#22331b]"
-            }`}>STREAK STATUS</span>
-          <span className="text-xs font-bold text-amber-600 mt-1">Dragon Guard Active</span>
-        </div>
-
-        {/* Center Arc Gauge */}
-        <div className="lg:col-span-8 flex flex-col items-center justify-center">
-          <div className="relative w-full max-w-[340px] aspect-[2/1] flex items-center justify-center">
-            <svg viewBox="0 0 320 160" className="w-full h-full overflow-visible">
-              <defs>
-                <linearGradient id="fireGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#f59e0b" />
-                  <stop offset="100%" stopColor="#ef4444" />
-                </linearGradient>
-                <linearGradient id="iceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#38bdf8" />
-                  <stop offset="100%" stopColor="#0284c7" />
-                </linearGradient>
-              </defs>
-
-              {/* Base Background Track Arc */}
-              <path
-                d={`M ${fireStart.x} ${fireStart.y} A ${r} ${r} 0 0 1 ${iceEnd.x} ${iceEnd.y}`}
-                fill="none"
-                stroke={isDark ? "#1e293b" : "#f1f5f9"}
-                strokeWidth="22"
-                strokeLinecap="round"
-              />
-
-              {/* Fire Arc (Used) */}
-              {usedCount > 0 && (
-                <path
-                  d={firePathD}
+      <div className="relative grid grid-cols-1 md:grid-cols-2 items-center gap-6 md:gap-8 pt-5 sm:pt-6">
+        {/* Donut */}
+        <div className="relative w-full max-w-[280px] sm:max-w-[300px] mx-auto aspect-square">
+          <svg viewBox="0 0 200 200" className="w-full h-full" role="img"
+            aria-label={`Today's XP: ${totalXp} total. ${rows.map((row) => `${row.label} ${row.earned} XP`).join(", ")}.`}>
+            <circle cx="100" cy="100" r={radius} fill="none" stroke="#eef2ea" strokeWidth="30" />
+            <g transform="rotate(-90 100 100)">
+              {segments.map((segment) => (
+                <circle
+                  key={segment.key}
+                  cx="100"
+                  cy="100"
+                  r={radius}
                   fill="none"
-                  stroke="url(#fireGradient)"
-                  strokeWidth="20"
-                  strokeLinecap="round"
-                  style={{ transition: "all 0.5s ease" }}
+                  stroke={segment.color}
+                  strokeWidth={activeKey === segment.key ? 34 : 30}
+                  strokeDasharray={`${Math.max(segment.length - gap, 0.01)} ${circumference}`}
+                  strokeDashoffset={-(segment.start + gap / 2)}
+                  opacity={activeKey && activeKey !== segment.key ? 0.35 : 1}
+                  className="cursor-pointer"
+                  style={{ transition: "opacity 0.2s ease, stroke-width 0.2s ease, stroke-dasharray 0.8s ease" }}
+                  onMouseEnter={() => setActiveKey(segment.key)}
+                  onMouseLeave={() => setActiveKey(null)}
+                  onClick={() => toggleActive(segment.key)}
                 />
-              )}
-
-              {/* Ice Arc (Available) */}
-              {availableCount > 0 && (
-                <path
-                  d={icePathD}
-                  fill="none"
-                  stroke="url(#iceGradient)"
-                  strokeWidth="20"
-                  strokeLinecap="round"
-                  style={{ transition: "all 0.5s ease" }}
-                />
-              )}
-
-              {/* Slot Markers */}
-              {slots.map((slot) => (
-                <g key={slot.id} transform={`translate(${slot.x}, ${slot.y})`}>
-                  <circle
-                    r="13"
-                    fill={slot.isUsed ? (isDark ? "#7c2d12" : "#fef3c7") : (isDark ? "#0c4a6e" : "#e0f2fe")}
-                    stroke={slot.isUsed ? "#f59e0b" : "#38bdf8"}
-                    strokeWidth="2"
-                  />
-                  {slot.isUsed ? (
-                    <text x="0" y="4" textAnchor="middle" fontSize="12" fill="#f59e0b">🔥</text>
-                  ) : (
-                    <text x="0" y="4" textAnchor="middle" fontSize="12" fill="#0284c7">💧</text>
-                  )}
-                </g>
               ))}
+            </g>
+          </svg>
 
-              {/* Center Text Overlay */}
-              <g transform="translate(160, 110)">
-                <text x="-45" y="-15" textAnchor="middle" fontSize="22" fontWeight="900" fill="#f59e0b">{usedCount}</text>
-                <text x="-45" y="5" textAnchor="middle" fontSize="11" fontWeight="700" fill={isDark ? "#cbd5e1" : "#66785c"}>Used</text>
-
-                <text x="45" y="-15" textAnchor="middle" fontSize="22" fontWeight="900" fill="#0284c7">{availableCount}</text>
-                <text x="45" y="5" textAnchor="middle" fontSize="11" fontWeight="700" fill={isDark ? "#cbd5e1" : "#66785c"}>Available</text>
-              </g>
-            </svg>
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6 mt-2 text-xs font-bold">
-            <span className="flex items-center gap-1.5 text-amber-600">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
-              🔥 Used (Fire: {usedCount})
+          {/* Center readout (shows the hovered / tapped practice) */}
+          <div className="absolute inset-[24%] rounded-full bg-white shadow-[0_6px_24px_rgba(80,105,67,0.14)] border border-[#eef2ea] flex flex-col items-center justify-center text-center pointer-events-none" aria-live="polite">
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#66785c]">
+              {activeRow ? activeRow.label : "Daily Total"}
             </span>
-            <span className="flex items-center gap-1.5 text-cyan-600">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 shadow-sm" />
-              💧 Available (Ice: {availableCount})
+            <span className="text-3xl sm:text-4xl font-black leading-none text-[#22331b] mt-1">
+              {activeRow ? activeRow.earned : totalXp}
             </span>
+            <span className="text-xs font-bold text-[#66785c] mt-0.5">XP</span>
           </div>
         </div>
 
+        {/* Legend + values (direct labels and table view in one) */}
+        <div className="min-w-0">
+          <ul className="space-y-2.5">
+            {rows.map(({ key, label, xp, color, tint, Icon, count, earned }) => {
+              const isActive = activeKey === key;
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    aria-pressed={isActive}
+                    onMouseEnter={() => setActiveKey(key)}
+                    onMouseLeave={() => setActiveKey(null)}
+                    onFocus={() => setActiveKey(key)}
+                    onBlur={() => setActiveKey(null)}
+                    onClick={() => toggleActive(key)}
+                    className={`w-full min-h-[56px] flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors ${isActive ? "border-[#cfdcc6] bg-[#f4f8f1]" : "border-[#eef2ea] bg-white hover:bg-[#fbfdf8]"
+                      } ${activeKey && !isActive ? "opacity-60" : ""}`}
+                  >
+                    <span className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: tint, color }}>
+                      <Icon aria-hidden="true" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2 text-sm font-black text-[#22331b]">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} aria-hidden="true" />
+                        <span className="truncate">{label}</span>
+                      </span>
+                      <span className="block text-[11px] font-semibold text-gray-500 mt-0.5">
+                        {count} {count === 1 ? "session" : "sessions"} · {xp} XP each
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-base font-black text-[#22331b] leading-none">{earned}</span>
+                      <span className="block text-[10px] font-bold uppercase text-gray-500 mt-0.5">XP</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs font-semibold text-[#66785c] mt-4 text-center md:text-left">
+            {totalXp === 0
+              ? `Complete any practice today to start earning XP. Finish all four to reach ${DAILY_XP_GOAL} XP.`
+              : totalXp >= DAILY_XP_GOAL
+                ? "Daily goal reached. Wonderful consistency!"
+                : `${DAILY_XP_GOAL - totalXp} XP to go to reach today's goal.`}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -479,7 +394,7 @@ const MilestoneShieldBadge = ({ badgeType, achieved }) => {
 
   return (
     <div className="flex flex-col items-center group cursor-pointer transition-transform duration-300 hover:scale-105">
-      <div className="relative w-14 h-16 md:w-16 md:h-18 flex flex-col items-center justify-center filter drop-shadow-[0_6px_10px_rgba(0,0,0,0.5)]">
+      <div className="relative w-9 h-11 sm:w-14 sm:h-16 md:w-16 md:h-[4.5rem] flex flex-col items-center justify-center filter drop-shadow-[0_6px_10px_rgba(0,0,0,0.5)]">
         <svg viewBox="0 0 64 74" className="absolute inset-0 w-full h-full overflow-visible">
           <defs>
             <linearGradient id={`ringGrad-${badgeType}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -505,10 +420,10 @@ const MilestoneShieldBadge = ({ badgeType, achieved }) => {
         </svg>
 
         <div className="relative z-10 flex flex-col items-center justify-center -mt-1">
-          <div className={`w-8 h-8 rounded-full border-2 border-white/40 flex items-center justify-center shadow-inner text-sm bg-gradient-to-b ${cfg.bgGrad}`}>
+          <div className={`w-5 h-5 sm:w-8 sm:h-8 rounded-full border sm:border-2 border-white/40 flex items-center justify-center shadow-inner text-[10px] sm:text-sm bg-gradient-to-b ${cfg.bgGrad}`}>
             <span className="drop-shadow">{cfg.icon}</span>
           </div>
-          <span className="text-[10px] font-black text-white mt-0.5 tracking-tighter drop-shadow-md">{cfg.subLabel}</span>
+          <span className="text-[8px] sm:text-[10px] font-black text-white mt-0.5 tracking-tighter drop-shadow-md leading-none">{cfg.subLabel}</span>
         </div>
       </div>
     </div>
@@ -538,7 +453,7 @@ const MilestoneAchievementsCard = () => {
   const isDark = cardTheme === "dark";
 
   return (
-    <div className={`rounded-[28px] border transition-all duration-300 p-6 md:p-8 relative overflow-hidden ${isDark
+    <div className={`rounded-[28px] border transition-all duration-300 p-4 sm:p-6 md:p-8 relative overflow-hidden ${isDark
         ? "bg-gradient-to-br from-[#0c1322] via-[#10192d] to-[#090d18] border-[#1e2d4a] text-white shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
         : "bg-white border-[#e8efe3] text-[#22331b] shadow-[0_10px_30px_rgba(80,105,67,0.06)]"
       }`}>
@@ -550,15 +465,15 @@ const MilestoneAchievementsCard = () => {
       </svg>
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10 mb-4 sm:mb-8">
         <div>
           <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? "text-slate-400" : "text-[#7d9667]"
             }`}>MentalSwasthya • Rewards</span>
-          <h2 className={`text-2xl md:text-3xl font-black tracking-wider uppercase ${isDark ? "text-[#38bdf8] drop-shadow-[0_2px_10px_rgba(56,189,248,0.3)]" : "text-[#22331b]"
+          <h2 className={`text-xl sm:text-2xl md:text-3xl font-black tracking-wide sm:tracking-wider uppercase break-words ${isDark ? "text-[#38bdf8] drop-shadow-[0_2px_10px_rgba(56,189,248,0.3)]" : "text-[#22331b]"
             }`}>
             MILESTONE ACHIEVEMENTS
           </h2>
-          <p className={`text-xs font-bold uppercase tracking-[0.14em] mt-1 ${isDark ? "text-slate-400" : "text-[#66785c]"
+          <p className={`text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.14em] mt-1 ${isDark ? "text-slate-400" : "text-[#66785c]"
             }`}>
             SUMMARY OF MILESTONES REACHED (TIMES COMPLETED)
           </p>
@@ -579,18 +494,26 @@ const MilestoneAchievementsCard = () => {
       </div>
 
       {/* Chart Main Area */}
-      <div className="relative z-10 grid grid-cols-12 gap-2 md:gap-4 items-end min-h-[360px] pt-4 pb-2 px-2">
+      <div className="relative z-10 flex gap-1.5 sm:gap-2 md:gap-4 items-end sm:min-h-[360px] pt-4 pb-2 px-0 sm:px-2">
 
         {/* Y-Axis Column */}
-        <div className={`col-span-2 md:col-span-1 flex flex-col justify-between h-[240px] text-right pr-2 font-extrabold text-[11px] md:text-xs ${isDark ? "text-slate-400" : "text-[#66785c]"
+        <div className={`w-7 sm:w-16 md:w-20 shrink-0 flex flex-col justify-between h-[240px] text-right pr-1 sm:pr-2 font-extrabold text-[10px] sm:text-[11px] md:text-xs ${isDark ? "text-slate-400" : "text-[#66785c]"
           }`}>
           {yAxisTicks.map((tick, idx) => (
-            <span key={idx} className="leading-none whitespace-nowrap">{tick.label}</span>
+            <span key={idx} className="leading-none whitespace-nowrap">
+              {idx === 0 ? (
+                <>
+                  20+<span className="hidden sm:inline"> TIMES</span>
+                </>
+              ) : (
+                tick.label
+              )}
+            </span>
           ))}
         </div>
 
         {/* Chart Column Canvas */}
-        <div className={`col-span-10 md:col-span-11 relative h-[240px] border-l border-b ${isDark ? "border-slate-700/80" : "border-[#e8efe3]"
+        <div className={`flex-1 min-w-0 relative h-[240px] border-l border-b ${isDark ? "border-slate-700/80" : "border-[#e8efe3]"
           }`}>
 
           {/* Horizontal Gridlines */}
@@ -601,15 +524,15 @@ const MilestoneAchievementsCard = () => {
           </div>
 
           {/* 5 Milestone Bars */}
-          <div className="absolute inset-0 grid grid-cols-5 gap-2 md:gap-6 px-2 md:px-6 items-end">
+          <div className="absolute inset-0 grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6 items-end">
             {milestoneData.map((item, index) => {
               const heightPct = Math.min(100, (item.times / maxY) * 100);
 
               return (
-                <div key={index} className="flex flex-col items-center h-full justify-end group">
+                <div key={index} className="flex flex-col items-center h-full justify-end group min-w-0">
 
                   {/* Shield Badge */}
-                  <div className="mb-2 relative z-20">
+                  <div className="mb-1 sm:mb-2 relative z-20">
                     <MilestoneShieldBadge
                       badgeType={item.badgeType}
                       achieved={item.achieved}
@@ -650,13 +573,13 @@ const MilestoneAchievementsCard = () => {
       </div>
 
       {/* Bottom Status Cards */}
-      <div className="relative z-10 grid grid-cols-12 gap-2 md:gap-4 mt-4">
-        <div className="col-span-2 md:col-span-1" />
-        <div className="col-span-10 md:col-span-11 grid grid-cols-5 gap-2 md:gap-6 px-2 md:px-6">
+      <div className="relative z-10 flex gap-1.5 sm:gap-2 md:gap-4 mt-3 sm:mt-4 px-0 sm:px-2">
+        <div className="w-7 sm:w-16 md:w-20 shrink-0" />
+        <div className="flex-1 min-w-0 grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6">
           {milestoneData.map((item, index) => (
             <div
               key={index}
-              className={`rounded-xl p-2 md:p-3 text-center border transition-all ${item.achieved
+              className={`min-w-0 rounded-lg sm:rounded-xl px-0.5 py-1.5 sm:p-2 md:p-3 text-center border transition-all ${item.achieved
                   ? isDark
                     ? "bg-slate-800/90 border-slate-600 text-white shadow-sm"
                     : "bg-[#f4f8f1] border-[#e1eadb] text-[#22331b] shadow-sm"
@@ -665,10 +588,10 @@ const MilestoneAchievementsCard = () => {
                     : "bg-gray-50 border-gray-100 text-gray-400"
                 }`}
             >
-              <div className="text-[9px] md:text-[11px] font-black uppercase tracking-wider leading-tight">
+              <div className="text-[7.5px] sm:text-[9px] md:text-[11px] font-black uppercase tracking-normal sm:tracking-wider leading-tight break-words">
                 {item.statusText}
               </div>
-              <div className={`text-[10px] md:text-xs font-black uppercase tracking-wider mt-0.5 ${item.achieved ? "text-amber-500" : isDark ? "text-slate-500" : "text-gray-400"
+              <div className={`text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-normal sm:tracking-wider leading-tight mt-0.5 break-words ${item.achieved ? "text-amber-500" : isDark ? "text-slate-500" : "text-gray-400"
                 }`}>
                 {item.countText}
               </div>
@@ -832,6 +755,43 @@ const Dashboard = () => {
     };
   }, [completedHistory, selectedPeriod, selectedDate]);
 
+  // Completed practices today (always "today", independent of the period filter)
+  const dailyXpCounts = useMemo(() => {
+    const today = toDateInputValue(Date.now());
+    const isToday = (value) => {
+      if (value === undefined || value === null || value === "") return false;
+      const time = new Date(value).getTime();
+      return !Number.isNaN(time) && toDateInputValue(time) === today;
+    };
+
+    let intention = 0;
+    try {
+      const intentions = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]");
+      // Intentions store a localized display date; fall back to the numeric id (Date.now()) when it can't be parsed
+      intention = intentions.filter((item) => {
+        const parsed = new Date(item.timestamp || item.date).getTime();
+        return isToday(Number.isNaN(parsed) ? item.id : parsed);
+      }).length;
+    } catch (e) {
+      console.error(e);
+    }
+
+    let playHistory = [];
+    try {
+      playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
+    } catch (e) {
+      console.error(e);
+    }
+    const todaysPlays = playHistory.filter((item) => isToday(item.timestamp));
+
+    return {
+      intention,
+      breathing: completedHistory.filter((session) => isToday(session.completedAt || session.createdAt)).length,
+      meditation: todaysPlays.filter((item) => item.type === "meditation").length,
+      affirmation: todaysPlays.filter((item) => item.type === "affirmation").length,
+    };
+  }, [completedHistory]);
+
   const weeklyData = useMemo(() => {
     const counts = [0, 0, 0, 0, 0, 0, 0];
     const loginCounts = [0, 0, 0, 0, 0, 0, 0];
@@ -905,8 +865,8 @@ const Dashboard = () => {
   }, [completedHistory, selectedPeriod, selectedDate]);
 
   return (
-    <div className="space-y-6 text-[#22331b]">
-      <section className="relative rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 z-20">
+    <div className="space-y-4 sm:space-y-6 text-[#22331b] min-w-0">
+      <section className="relative rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9 z-20">
         <div className="absolute inset-0 rounded-[28px] overflow-hidden pointer-events-none">
           <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
           <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-sky-200/20" />
@@ -916,7 +876,7 @@ const Dashboard = () => {
         </p>
         <div className="relative mt-3 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#22331b]">
+            <h1 className="text-[1.75rem] leading-tight sm:text-3xl md:text-4xl font-black tracking-tight text-[#22331b] break-words">
               Your wellness dashboard
             </h1>
             <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
@@ -925,7 +885,7 @@ const Dashboard = () => {
           </div>
 
           {/* Global Period Filter Custom Dropdown */}
-          <div className="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2.5 rounded-2xl border border-[#e1eadb] shadow-sm">
+          <div className="self-start xl:self-auto flex items-center gap-3 bg-white/90 backdrop-blur-md p-2.5 rounded-2xl border border-[#e1eadb] shadow-sm max-w-full">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-black uppercase tracking-wider text-[#7d9667]">Period:</span>
               <CustomPeriodDropdown
@@ -939,23 +899,23 @@ const Dashboard = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
 
         {/* Left: 4 Circular Gauges */}
-        <div className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-3 min-h-[300px]">
+        <div className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-3 min-h-[300px] min-w-0">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#7d9667]">Statistics</p>
             <h3 className="text-lg font-black text-[#22331b] mt-0.5">Wellness Overview</h3>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 items-center justify-around gap-4 my-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 items-center justify-around gap-4 my-5 sm:my-6">
 
             {/* Circle 1: Daily Intention (Teal) */}
             <div className="flex flex-col items-center text-center">
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#00a896" strokeWidth="3"
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e3a92b" strokeWidth="3"
                     strokeDasharray={`${(statsData.intentionsDays / 31) * 100} 100`} strokeLinecap="round"
                     style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
@@ -972,7 +932,7 @@ const Dashboard = () => {
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#028090" strokeWidth="3"
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#2b93b3" strokeWidth="3"
                     strokeDasharray={`${(statsData.breathingDays / 7) * 100} 100`} strokeLinecap="round"
                     style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
@@ -989,7 +949,7 @@ const Dashboard = () => {
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8338ec" strokeWidth="3"
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#6a3f8c" strokeWidth="3"
                     strokeDasharray={`${(statsData.meditationDays / 7) * 100} 100`} strokeLinecap="round"
                     style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
@@ -1006,7 +966,7 @@ const Dashboard = () => {
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="2.5" />
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#d97706" strokeWidth="3"
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#4a7f2e" strokeWidth="3"
                     strokeDasharray={`${(statsData.affirmationDays / 7) * 100} 100`} strokeLinecap="round"
                     style={{ transition: "stroke-dasharray 0.8s ease" }} />
                 </svg>
@@ -1021,14 +981,14 @@ const Dashboard = () => {
           </div>
 
           <div className="flex justify-center border-t border-gray-100/60 pt-3">
-            <span className="bg-[#f4f8f1] border border-[#e1eadb] rounded-full px-4 py-1 text-xs font-black uppercase text-[#66785c] tracking-wider">
+            <span className="bg-[#f4f8f1] border border-[#e1eadb] rounded-full px-4 py-1 text-[11px] sm:text-xs font-black uppercase text-[#66785c] tracking-wide sm:tracking-wider text-center max-w-full">
               TOTALS • Out of {statsData.totalPractices} wellness practices
             </span>
           </div>
         </div>
 
         {/* Right: completions bar chart */}
-        <div className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-2 relative min-h-[300px]">
+        <div className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-2 relative min-h-[260px] sm:min-h-[300px] min-w-0">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#7d9667]">Weekly Activity</p>
             <h3 className="text-lg font-black text-[#22331b] mt-0.5">Minutes / Day</h3>
@@ -1036,7 +996,7 @@ const Dashboard = () => {
 
           <div className="relative h-36 flex items-end justify-between gap-2.5 px-2 mt-4 mb-2">
             {hoveredBarIndex !== null && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-bold shadow-xl border border-gray-800 z-20 backdrop-blur-sm pointer-events-none transition-all">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-900/90 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-bold shadow-xl border border-gray-800 z-20 backdrop-blur-sm pointer-events-none transition-all">
                 {weeklyData[hoveredBarIndex].fullDay}: <span className="text-[#a8c896]">{weeklyData[hoveredBarIndex].count} mins</span>
               </div>
             )}
@@ -1069,8 +1029,8 @@ const Dashboard = () => {
 
       </section>
 
-      {/* Streak Freeze Status Card (Image 2) */}
-      <StreakFreezeCard />
+      {/* Today's XP breakdown by practice */}
+      <DailyXpCard counts={dailyXpCounts} />
 
       {/* Milestone Achievements Chart (Image 1) */}
       <MilestoneAchievementsCard />

@@ -27,8 +27,8 @@ const SplashScreen = () => {
 
   return (
     <div
+      className="min-h-screen supports-[height:100dvh]:min-h-dvh w-full px-6 py-10"
       style={{
-        minHeight: "100vh",
         background: "#060e05",
         display: "flex",
         alignItems: "center",
@@ -159,6 +159,7 @@ const SplashScreen = () => {
         <p style={{
           fontSize: 13, color: "rgba(168,200,150,0.45)",
           fontWeight: 300, letterSpacing: "0.04em",
+          textAlign: "center",
           marginBottom: 44,
           opacity: phase === 1 ? 1 : 0,
           transform: phase === 1 ? "translateY(0)" : "translateY(10px)",

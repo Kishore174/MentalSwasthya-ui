@@ -357,16 +357,16 @@ const GiftCardsScreen = () => {
   };
 
   return (
-    <div className="space-y-8 text-[#22331b] pb-10 relative">
+    <div className="space-y-6 sm:space-y-8 text-[#22331b] pb-10 relative">
       
       {/* ─── Header Banner ─── */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10 pointer-events-none" />
         <div>
           <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
             MentalSwasthya Gift Cards
           </p>
-          <h1 className="relative text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-2">
+          <h1 className="relative text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-2">
             Gift the experience of calm
           </h1>
           <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
@@ -382,13 +382,13 @@ const GiftCardsScreen = () => {
         <div className="lg:col-span-3 space-y-6">
           
           {/* Purchase form */}
-          <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5">
-            <h3 className="text-xl font-black text-[#22331b]">Configure Gift Card</h3>
+          <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5 min-w-0">
+            <h3 className="text-lg sm:text-xl font-black text-[#22331b]">Configure Gift Card</h3>
 
             {/* 1. Plan Type Selector: Regular vs Premium */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[#66785c]">Select Membership Plan Type</label>
-              <div className="grid grid-cols-2 gap-3">
+              <p id="gift-plan-type-label" className="text-xs font-bold text-[#66785c]">Select Membership Plan Type</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3" role="group" aria-labelledby="gift-plan-type-label">
                 {[
                   { id: "regular", name: "Regular Plan", desc: "Standard mindfulness library access" },
                   { id: "premium", name: "Premium VIP", desc: "Unlimited access + custom uploads & soundscapes", icon: FiStar }
@@ -400,18 +400,19 @@ const GiftCardsScreen = () => {
                       key={plan.id}
                       type="button"
                       onClick={() => setGiftData({ ...giftData, planType: plan.id })}
-                      className={`p-3.5 rounded-2xl text-left border transition-all flex flex-col justify-between ${
+                      aria-pressed={isSelected}
+                      className={`p-3 sm:p-3.5 min-w-0 rounded-2xl text-left border transition-all flex flex-col justify-between ${
                         isSelected
                           ? "border-[#7d9667] bg-[#eef6ea]/80 text-[#22331b] shadow-sm ring-1 ring-[#7d9667]"
                           : "border-gray-200 text-gray-500 hover:border-[#e2eadc] hover:bg-gray-50/50"
                       }`}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="text-sm font-black flex items-center gap-1.5">
+                        <span className="text-sm font-black flex items-center gap-1.5 min-w-0">
                           {Icon && <Icon className="text-amber-500" size={14} />}
                           {plan.name}
                         </span>
-                        {isSelected && <FiCheck className="text-[#7d9667]" size={16} />}
+                        {isSelected && <FiCheck className="text-[#7d9667] shrink-0" size={16} />}
                       </div>
                       <span className="text-[11px] text-gray-500 font-medium mt-1 leading-tight">{plan.desc}</span>
                     </button>
@@ -422,14 +423,15 @@ const GiftCardsScreen = () => {
 
             {/* 2. Duration Tabs (3M / 6M / 1Y) with Amount for Selected Plan */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[#66785c]">Select Membership Duration (3M / 6M / 1Y)</label>
-              <div className="grid grid-cols-3 gap-3">
+              <p id="gift-duration-label" className="text-xs font-bold text-[#66785c]">Select Membership Duration (3M / 6M / 1Y)</p>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3" role="group" aria-labelledby="gift-duration-label">
                 {Object.values(activePlanGroup).map((dur) => (
                   <button
                     key={dur.id}
                     type="button"
                     onClick={() => setGiftData({ ...giftData, duration: dur.id })}
-                    className={`py-3.5 px-2 rounded-2xl text-center border transition-all flex flex-col items-center justify-center gap-1 ${
+                    aria-pressed={giftData.duration === dur.id}
+                    className={`py-3 sm:py-3.5 px-2 min-h-[44px] rounded-2xl text-center border transition-all flex flex-col items-center justify-center gap-1 ${
                       giftData.duration === dur.id
                         ? "border-[#7d9667] bg-[#eef6ea]/90 text-[#22331b] font-black shadow-sm ring-1 ring-[#7d9667]"
                         : "border-gray-200 text-gray-500 hover:border-[#e2eadc] hover:bg-gray-50/50"
@@ -448,51 +450,55 @@ const GiftCardsScreen = () => {
             {/* Recipient details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#66785c]">Recipient Name</label>
+                <label htmlFor="gift-recipient" className="text-xs font-bold text-[#66785c]">Recipient Name</label>
                 <input
+                  id="gift-recipient"
                   type="text"
                   required
                   placeholder="Who is this for?"
                   value={giftData.recipient}
                   onChange={(e) => setGiftData({ ...giftData, recipient: e.target.value })}
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#66785c]">Recipient Email</label>
+                <label htmlFor="gift-email" className="text-xs font-bold text-[#66785c]">Recipient Email</label>
                 <input
+                  id="gift-email"
                   type="email"
                   required
                   placeholder="Where to deliver?"
                   value={giftData.email}
                   onChange={(e) => setGiftData({ ...giftData, email: e.target.value })}
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#66785c]">Your Name (Sender)</label>
+                <label htmlFor="gift-sender" className="text-xs font-bold text-[#66785c]">Your Name (Sender)</label>
                 <input
+                  id="gift-sender"
                   type="text"
                   required
                   placeholder="Who is sending this?"
                   value={giftData.sender}
                   onChange={(e) => setGiftData({ ...giftData, sender: e.target.value })}
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#66785c]">Gift Message (Default)</label>
+                <label htmlFor="gift-message" className="text-xs font-bold text-[#66785c]">Gift Message (Default)</label>
                 <input
+                  id="gift-message"
                   type="text"
                   placeholder="Add a custom message"
                   value={giftData.message}
                   onChange={(e) => setGiftData({ ...giftData, message: e.target.value })}
-                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-base sm:text-sm font-medium outline-none focus:border-[#7d9667] focus:bg-white transition-all text-[#22331b]"
                 />
               </div>
             </div>
@@ -524,27 +530,31 @@ const GiftCardsScreen = () => {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Card Preview Graphic */}
-          <div className="rounded-3xl bg-white border border-[#e8efe3] p-5 shadow-[0_10px_30px_rgba(80,105,67,0.04)]">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Live Gift Card Preview</h4>
+          <div className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-5 shadow-[0_10px_30px_rgba(80,105,67,0.04)]">
+            <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest min-w-0">Live Gift Card Preview</h4>
               <button
+                type="button"
                 onClick={handleDownloadCard}
-                className="text-xs font-bold text-[#7d9667] hover:underline flex items-center gap-1"
+                aria-label="Download gift card preview"
+                className="text-xs font-bold text-[#7d9667] hover:underline flex items-center gap-1 shrink-0 min-h-[40px] px-1"
               >
                 <FiDownload size={13} /> Download
               </button>
             </div>
             
             <div
-              className="rounded-2xl aspect-[1.58/1] w-full p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden shadow-xl"
+              className="rounded-2xl aspect-[1.58/1] w-full p-4 sm:p-6 flex flex-col justify-between gap-2 relative shadow-xl"
               style={{ background: activeTheme.bg }}
             >
-              {/* Graphic background circles */}
-              <div className="absolute right-0 top-0 w-36 h-36 rounded-full pointer-events-none" style={{ backgroundColor: activeTheme.logo }} />
+              {/* Graphic background circles (clipped separately so the card can grow taller than its aspect ratio when content needs it) */}
+              <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none" aria-hidden="true">
+                <div className="absolute right-0 top-0 w-28 h-28 sm:w-36 sm:h-36 rounded-full" style={{ backgroundColor: activeTheme.logo }} />
+              </div>
               
               {/* Header: Tier Name & Badge */}
               <div className="relative z-10 space-y-1">
-                <p className={`text-lg font-black tracking-tight ${activeTheme.text}`}>
+                <p className={`text-base sm:text-lg font-black tracking-tight leading-tight ${activeTheme.text}`}>
                   {activeDuration.name}
                 </p>
                 <span className={`inline-block text-[10px] font-black uppercase tracking-widest border px-2.5 py-0.5 rounded-full ${activeTheme.badge}`}>
@@ -554,8 +564,8 @@ const GiftCardsScreen = () => {
 
               {/* Body: Recipient, Sender & Message */}
               <div className="relative z-10 space-y-1">
-                <p className={`text-xs font-bold opacity-95 ${activeTheme.text}`}>To: {giftData.recipient || "Recipient Name"}</p>
-                <p className={`text-xs font-bold opacity-95 ${activeTheme.text}`}>From: {giftData.sender || "Sender Name"}</p>
+                <p className={`text-xs font-bold opacity-95 break-words ${activeTheme.text}`}>To: {giftData.recipient || "Recipient Name"}</p>
+                <p className={`text-xs font-bold opacity-95 break-words ${activeTheme.text}`}>From: {giftData.sender || "Sender Name"}</p>
                 {giftData.message && (
                   <p className={`text-[11px] italic opacity-90 line-clamp-2 border-t border-white/20 pt-1.5 mt-1 ${activeTheme.text}`}>
                     "{giftData.message}"
@@ -564,12 +574,12 @@ const GiftCardsScreen = () => {
               </div>
 
               {/* Footer: Validity Date & Website Link */}
-              <div className={`relative z-10 border-t border-white/20 pt-2 flex items-center justify-between text-[10px] font-semibold opacity-90 ${activeTheme.text}`}>
-                <div>
+              <div className={`relative z-10 border-t border-white/20 pt-2 flex flex-wrap items-end justify-between gap-x-3 gap-y-1.5 text-[10px] font-semibold opacity-90 ${activeTheme.text}`}>
+                <div className="min-w-0 flex-1 basis-[140px]">
                   <p>{activeDuration.validity}</p>
                   <p className="font-bold underline mt-0.5">mentalswasthya.com</p>
                 </div>
-                <span className="font-mono font-bold bg-white/20 px-2 py-1 rounded text-[11px]">
+                <span className="font-mono font-bold bg-white/20 px-2 py-1 rounded text-[11px] whitespace-nowrap shrink-0">
                   MS-GIFT-2026
                 </span>
               </div>
@@ -577,7 +587,7 @@ const GiftCardsScreen = () => {
           </div>
 
           {/* Redeem Card */}
-          <div className="rounded-3xl bg-white border border-[#e8efe3] p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-4">
+          <div className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-4">
             <h3 className="text-lg font-black text-[#22331b]">Redeem Gift Card</h3>
             
             {redeemedCode ? (
@@ -594,26 +604,28 @@ const GiftCardsScreen = () => {
                   Enter your unique alphanumeric voucher code to activate premium rewards.
                 </p>
                 <div className="flex gap-2">
+                  <label htmlFor="gift-redeem-code" className="sr-only">Gift card code</label>
                   <input
+                    id="gift-redeem-code"
                     type="text"
                     required
                     placeholder="CALM-XXXX"
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2.5 text-xs font-bold uppercase tracking-wider outline-none focus:border-[#7d9667] focus:bg-white text-[#22331b]"
+                    className="flex-1 min-w-0 min-h-[44px] rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2.5 text-base sm:text-xs font-bold uppercase tracking-wider outline-none focus:border-[#7d9667] focus:bg-white text-[#22331b]"
                   />
                   <button
                     type="submit"
-                    className="bg-[#7d9667] hover:bg-[#6f865c] text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all"
+                    className="bg-[#7d9667] hover:bg-[#6f865c] text-white px-4 py-2.5 min-h-[44px] shrink-0 rounded-xl text-xs font-bold transition-all"
                   >
                     Redeem
                   </button>
                 </div>
                 <div className="border-t border-dashed border-gray-100 pt-2 flex items-center justify-between text-[10px] text-gray-400">
                   <span>Need a test code?</span>
-                  <span className="font-bold text-[#7d9667] bg-[#eef6ea] px-2 py-0.5 rounded cursor-pointer select-all" onClick={() => setPromoCode("CALM-2026")}>
+                  <button type="button" className="font-bold text-[#7d9667] bg-[#eef6ea] px-2.5 py-1.5 rounded cursor-pointer select-all" onClick={() => setPromoCode("CALM-2026")} aria-label="Use test code CALM-2026">
                     CALM-2026
-                  </span>
+                  </button>
                 </div>
               </form>
             )}
@@ -624,13 +636,13 @@ const GiftCardsScreen = () => {
       </div>
 
       {/* ─── IN-PAGE SECTION DOWN AT BOTTOM: MY GIFTED CARDS & USED STATUS ─── */}
-      <section className="rounded-[32px] bg-white border border-[#e8efe3] p-6 md:p-8 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-6">
+      <section className="rounded-[28px] sm:rounded-[32px] bg-white border border-[#e8efe3] p-4 sm:p-6 md:p-8 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-5">
           <div>
             <span className="bg-[#eef6ea] text-[#7d9667] text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-[#d2e2c8] inline-flex items-center gap-1.5">
               <FiGift size={13} className="text-[#7d9667]" /> Gift Tracking & Usage History
             </span>
-            <h2 className="text-2xl md:text-3xl font-black text-[#22331b] mt-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#22331b] mt-2">
               My Gifted Wellness Cards & Status
             </h2>
             <p className="text-xs text-[#66785c] mt-1 leading-relaxed">
@@ -645,14 +657,14 @@ const GiftCardsScreen = () => {
         </div>
 
         {/* Gift Cards Grid (Exact UI layout matching reference concept image) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {giftedCards.map((card) => {
             const isUsed = card.status === "used";
             const theme = cardThemes[card.theme] || cardThemes.sage;
             return (
               <div
                 key={card.id}
-                className="relative rounded-[28px] p-6 sm:p-7 flex flex-col justify-between overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl group min-h-[270px]"
+                className="relative rounded-[24px] sm:rounded-[28px] p-5 sm:p-7 min-w-0 flex flex-col justify-between overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl group min-h-[270px]"
                 style={{ background: theme.bg }}
               >
                 {/* ─── Top-Right Large Soft Circle Overlay ─── */}
@@ -662,8 +674,8 @@ const GiftCardsScreen = () => {
                 />
 
                 {/* ─── Top Header: Title, Plan Badge & Used/Active Status Pill ─── */}
-                <div className="relative z-10 flex items-start justify-between gap-4">
-                  <div className="space-y-1.5">
+                <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 sm:gap-4">
+                  <div className="space-y-1.5 min-w-0">
                     <h3 className={`text-xl sm:text-2xl font-black tracking-tight ${theme.text}`}>
                       {card.name}
                     </h3>
@@ -678,7 +690,7 @@ const GiftCardsScreen = () => {
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       <span>Used</span>
                       <span className="opacity-40">|</span>
-                      <span className="font-mono text-[9px] opacity-90">{card.usedAt}</span>
+                      <span className="font-mono text-[9px] opacity-90 whitespace-nowrap">{card.usedAt}</span>
                     </div>
                   ) : (
                     <div className="bg-emerald-950/80 backdrop-blur-md text-emerald-300 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-emerald-400/40 shadow-md flex items-center gap-1.5 ring-2 ring-emerald-400/20 shrink-0">
@@ -692,7 +704,7 @@ const GiftCardsScreen = () => {
 
                 {/* ─── Body: Recipient, Sender & Italic Quote (Exact Image UI) ─── */}
                 <div className="relative z-10 my-4 space-y-1">
-                  <p className={`text-xs sm:text-sm font-bold opacity-95 ${theme.text}`}>
+                  <p className={`text-xs sm:text-sm font-bold opacity-95 break-words ${theme.text}`}>
                     To: <span className="font-black">{card.recipient}</span> <span className="text-[10px] opacity-80">({card.email})</span>
                   </p>
                   <p className={`text-xs sm:text-sm font-bold opacity-95 ${theme.text}`}>
@@ -706,7 +718,7 @@ const GiftCardsScreen = () => {
 
                 {/* ─── Footer: Validity, Website Link & Code Pill ─── */}
                 <div className={`relative z-10 border-t border-white/25 pt-3 flex flex-wrap items-center justify-between gap-3 text-xs ${theme.text}`}>
-                  <div>
+                  <div className="min-w-0">
                     <p className="opacity-95 font-semibold text-[11px]">{card.desc || "Valid for full subscription access"}</p>
                     <a
                       href="https://mentalswasthya.com"
@@ -721,8 +733,9 @@ const GiftCardsScreen = () => {
                   <button
                     type="button"
                     onClick={() => copyCode(card.fullCode)}
-                    className="font-mono font-black bg-white/25 hover:bg-white/35 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs sm:text-sm border border-white/30 transition-all flex items-center gap-1.5 shadow-sm"
+                    className="font-mono font-black bg-white/25 hover:bg-white/35 backdrop-blur-md px-3.5 py-1.5 min-h-[40px] rounded-xl text-xs sm:text-sm border border-white/30 transition-all flex items-center gap-1.5 shadow-sm"
                     title="Click to copy code"
+                    aria-label={`Copy gift code ${card.fullCode}`}
                   >
                     <FiCopy size={13} />
                     {card.fullCode}

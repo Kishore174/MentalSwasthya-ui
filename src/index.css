@@ -7,6 +7,8 @@
 @layer base {
   html {
     font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -27,7 +29,7 @@
   .input {
     @apply w-full pl-10 pr-4 py-3 
            bg-gray-50 border border-gray-200 rounded-2xl
-           text-sm text-gray-800 placeholder:text-gray-300
+           text-base sm:text-sm text-gray-800 placeholder:text-gray-300
            outline-none
            focus:border-[#7d9667] focus:bg-white
            focus:ring-2 focus:ring-[#7d9667]/20
@@ -90,5 +92,23 @@
   /* Page title */
   .page-title {
     @apply text-xl font-black text-gray-900 tracking-tight;
+  }
+}
+
+/* Respect users who ask for less motion: near-instant animations/transitions,
+   no smooth scrolling. Durations are kept tiny (not 0) so animationend /
+   transitionend handlers still fire. */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

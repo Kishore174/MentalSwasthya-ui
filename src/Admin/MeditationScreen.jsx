@@ -723,24 +723,30 @@ const MeditationScreen = () => {
 
   if (isSessionActive) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
+      <div
+        className="fixed inset-0 z-50 h-dvh overflow-hidden flex flex-col items-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white animate-fade-in pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Breathing session"
+      >
         {/* Glowing aura behind shape */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[450px] md:h-[450px] bg-[#7d9667]/15 rounded-full blur-[80px] pointer-events-none transition-transform duration-1000"
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top bar with minimal info and stop/exit button */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in z-50">
-          <div className="flex items-center gap-4">
+        <div className="relative w-full flex-none flex items-center justify-between gap-3 animate-fade-in z-50">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => { handleStop(); navigate(-1); }}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
               title="Go Back"
+              aria-label="Stop session and go back"
             >
-              <FiArrowLeft size={16} />
+              <FiArrowLeft size={18} />
             </button>
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
+            <div className="text-left min-w-0">
+              <span className="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
                 {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
               </span>
               <h3 className="text-sm font-bold text-white/50">
@@ -751,133 +757,137 @@ const MeditationScreen = () => {
           <button
             type="button"
             onClick={handleStop}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
             title="Exit Full View"
+            aria-label="Exit full view"
           >
             <FiSquare size={16} />
           </button>
         </div>
 
-        {/* Center content: the breathing shape & active phase */}
-        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
-          <div className="relative w-[320px] h-[320px] md:w-[420px] md:h-[420px] flex items-center justify-center">
-            {/* Outer animated breathing progress indicator matching shape */}
-            <ProgressShape
-              shape={config.shape}
-              progress={shapeCycleProgress}
-              strokeWidth={4}
-              trackColor="rgba(255,255,255,0.06)"
-              progressColor="#a8c896"
-              className="absolute inset-0 w-full h-full"
-            />
+        <div className="bs-full-body relative flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
+          {/* Center content: the breathing shape & active phase */}
+          <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full max-w-lg text-center">
+            <div className="bs-full-stage relative flex items-center justify-center">
+              {/* Outer animated breathing progress indicator matching shape */}
+              <ProgressShape
+                shape={config.shape}
+                progress={shapeCycleProgress}
+                strokeWidth={4}
+                trackColor="rgba(255,255,255,0.06)"
+                progressColor="#a8c896"
+                className="absolute inset-0 w-full h-full"
+              />
 
-            {/* Breathing shape with animated scale */}
-            <div className={`breath-shape-full ${config.shape}`} style={breathScaleStyle}>
-              <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                {isRunning ? currentPhase.name : "Paused"}
-              </span>
+              {/* Breathing shape with animated scale */}
+              <div className={`breath-shape-full ${config.shape}`} style={breathScaleStyle}>
+                <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
+                  {isRunning ? currentPhase.name : "Paused"}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* Large timer */}
-          {/* <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-8">
-            {formatTime(remainingSeconds)}
-          </h2> */}
-
-          {/* Horizontal Session Progress Bar */}
-          <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
-              <span>0%</span>
-              <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
-              <span>100%</span>
-            </div>
-            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
+            {/* Horizontal Session Progress Bar */}
+            <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
+                <span>0%</span>
+                <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
+                <span>100%</span>
+              </div>
               <div
-                className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(168,200,150,0.6)]"
-                style={{ width: `${progress}%` }}
-              ></div>
+                className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner"
+                role="progressbar"
+                aria-label="Session progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress)}
+              >
+                <div
+                  className="h-full bg-gradient-to-r from-[#7d9667] to-[#a8c896] rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(168,200,150,0.6)]"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
             </div>
           </div>
 
-          {/* Detailed phase sequence tracker */}
-          {/* <div className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/40 mt-6 font-semibold max-w-[90%]">
-            {config.phases.map((p, idx) => {
-              const isActive = isRunning && idx === activePhaseIndex;
-              return (
-                <React.Fragment key={idx}>
-                  <span
-                    className={`px-3 py-1.5 rounded-xl transition-all ${isActive
-                      ? "bg-[#7d9667] text-white font-extrabold shadow-lg shadow-[#7d9667]/20 scale-105 border border-[#7d9667]/30"
-                      : "bg-white/5 text-white/50 border border-white/5"
-                      }`}
-                  >
-                    {p.name} ({p.seconds}s)
-                  </span>
-                  {idx < config.phases.length - 1 && (
-                    <span className="text-white/20 mx-0.5">•</span>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div> */}
-        </div>
-
-        {/* Bottom bar with controls */}
-        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 animate-fade-in z-50">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setSoundOn(!soundOn)}
-              className="text-white/60 hover:text-white transition-colors cursor-pointer"
-              title="Toggle Sound"
-            >
-              {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setVibrationOn(!vibrationOn)}
-              className={`transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
-              title="Toggle Vibration"
-            >
-              <FiZap size={20} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {isRunning ? (
+          {/* Bottom bar with controls */}
+          <div className="bs-full-controls w-full max-w-md flex-none flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md px-3 sm:px-6 py-3 sm:py-4 rounded-3xl border border-white/10 shadow-2xl animate-fade-in z-50">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 type="button"
-                onClick={() => setIsRunning(false)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
+                onClick={() => setSoundOn(!soundOn)}
+                className="w-11 h-11 flex items-center justify-center rounded-full text-white/60 hover:text-white transition-colors cursor-pointer"
+                title="Toggle Sound"
+                aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
+                aria-pressed={soundOn}
               >
-                <FiPause />
-                Pause
+                {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
               </button>
-            ) : (
               <button
                 type="button"
-                onClick={() => setIsRunning(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
+                onClick={() => setVibrationOn(!vibrationOn)}
+                className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
+                title="Toggle Vibration"
+                aria-label={vibrationOn ? "Turn vibration off" : "Turn vibration on"}
+                aria-pressed={vibrationOn}
               >
-                <FiPlay />
-                Resume
+                <FiZap size={20} />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={handleStop}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
-            >
-              <FiSquare />
-              Stop
-            </button>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              {isRunning ? (
+                <button
+                  type="button"
+                  onClick={() => setIsRunning(false)}
+                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white text-gray-900 px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
+                >
+                  <FiPause />
+                  Pause
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsRunning(true)}
+                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-[#7d9667] text-white px-4 sm:px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
+                >
+                  <FiPlay />
+                  Resume
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleStop}
+                className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white/10 hover:bg-white/20 text-white px-4 sm:px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
+              >
+                <FiSquare />
+                Stop
+              </button>
+            </div>
           </div>
         </div>
 
         <style>{`
+          /* Stage scales with the viewport: never wider than the screen, never taller than the space left for it */
+          .bs-full-stage {
+            width: min(420px, 84vw, calc(100dvh - 330px));
+            min-width: 150px;
+            aspect-ratio: 1 / 1;
+          }
+          @media (max-width: 767px) {
+            .bs-full-stage { width: min(320px, 84vw, calc(100dvh - 300px)); }
+          }
+          /* Short landscape phones: shape on the left, controls on the right */
+          @media (max-height: 520px) and (orientation: landscape) {
+            .bs-full-body { flex-direction: row; gap: 1.5rem; }
+            .bs-full-stage { width: min(320px, 45vw, calc(100dvh - 150px)); min-width: 120px; }
+            .bs-full-controls { max-width: 22rem; }
+          }
+
           .breath-shape-full {
-            width: 240px;
-            height: 240px;
+            width: min(240px, 72%);
+            height: auto;
+            aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -901,7 +911,7 @@ const MeditationScreen = () => {
           .breath-shape-full.triangle {
             border-radius: 2px;
             clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            padding-top: 60px;
+            padding-top: min(60px, 18%);
           }
         `}</style>
       </div>
@@ -909,22 +919,23 @@ const MeditationScreen = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-130px)] rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
+    <div className="min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-3 sm:p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mt-1 flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
+            aria-label="Go back"
+            className="mt-1 flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
             title="Go Back"
           >
             <FiArrowLeft size={18} />
           </button>
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
               Mental Swasthya - Wellness Platform
             </p>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mt-2">
               Guided Breathing Session
             </h1>
             <p className="text-sm text-gray-500 mt-2">
@@ -933,14 +944,15 @@ const MeditationScreen = () => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 w-full lg:w-auto">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col items-stretch sm:items-end gap-2 w-full lg:w-auto">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-2" role="group" aria-label="Breathing technique">
             {Object.entries(techniques).map(([key, item]) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => handleTechniqueChange(key)}
-                className={`rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${selectedTechnique === key
+                aria-pressed={selectedTechnique === key}
+                className={`min-h-[44px] sm:min-h-0 rounded-2xl px-2 sm:px-4 py-2.5 text-xs font-black uppercase tracking-[0.08em] transition-all ${selectedTechnique === key
                   ? "bg-[#7d9667] text-white shadow-lg shadow-[#7d9667]/25"
                   : "bg-white text-gray-400 hover:text-[#7d9667]"
                   }`}
@@ -950,7 +962,7 @@ const MeditationScreen = () => {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-1 bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-gray-100/50 shadow-sm mt-1">
+          <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1 bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-gray-100/50 shadow-sm mt-1" role="group" aria-label="Breathing pattern">
             {presets[selectedTechnique].map((preset, index) => (
               <button
                 key={preset.label}
@@ -960,7 +972,8 @@ const MeditationScreen = () => {
                   setSelectedPresetIndex(index);
                   resetLocalSession();
                 }}
-                className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${!isCustomBreathing && selectedPresetIndex === index
+                aria-pressed={!isCustomBreathing && selectedPresetIndex === index}
+                className={`min-h-[40px] sm:min-h-0 whitespace-nowrap rounded-xl px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-[0.05em] transition-all ${!isCustomBreathing && selectedPresetIndex === index
                   ? "bg-[#7d9667] text-white shadow-sm"
                   : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
                   }`}
@@ -974,7 +987,8 @@ const MeditationScreen = () => {
                 setIsCustomBreathing(true);
                 resetLocalSession();
               }}
-              className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase tracking-[0.05em] transition-all ${isCustomBreathing
+              aria-pressed={isCustomBreathing}
+              className={`min-h-[40px] sm:min-h-0 whitespace-nowrap rounded-xl px-1.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-black uppercase tracking-[0.05em] transition-all ${isCustomBreathing
                 ? "bg-[#7d9667] text-white shadow-sm"
                 : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
                 }`}
@@ -986,11 +1000,12 @@ const MeditationScreen = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 mt-7">
-        <section className="rounded-[30px] bg-white/80 border border-white p-5 md:p-8 shadow-sm">
-          <div className="flex flex-col items-center justify-center min-h-[460px] text-center">
-            <div className="relative w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
+        <section className="rounded-[24px] sm:rounded-[30px] bg-white/80 border border-white p-4 sm:p-5 md:p-8 shadow-sm">
+          <div className="flex flex-col items-center justify-center min-h-[380px] md:min-h-[460px] text-center">
+            <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] flex items-center justify-center">
+              {/* The countdown uses the Silent Meditation bubble; the chosen shape takes over once breathing begins */}
               <ProgressShape
-                shape={config.shape}
+                shape={isCountingDown ? "circle" : config.shape}
                 progress={shapeCycleProgress}
                 strokeWidth={7}
                 trackColor="#e4ecdf"
@@ -998,8 +1013,8 @@ const MeditationScreen = () => {
                 className="absolute inset-0 w-full h-full"
               />
 
-              <div className={`breath-shape ${config.shape}`} style={breathScaleStyle}>
-                <span className={isCountingDown ? "text-xl md:text-2xl font-black uppercase tracking-wider text-white" : ""}>
+              <div className={`breath-shape ${isCountingDown ? "circle" : config.shape}`} style={breathScaleStyle}>
+                <span className={isCountingDown ? "text-xl md:text-2xl font-black uppercase tracking-wider select-none text-white animate-pulse" : ""}>
                   {isCountingDown
                     ? (countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin")
                     : isRunning
@@ -1065,7 +1080,7 @@ const MeditationScreen = () => {
                     setIsRunning(false);
                     setCountdownValue(5);
                   }}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-100 hover:bg-gray-200 px-6 py-3 text-sm font-bold text-gray-600 transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 min-h-[48px] rounded-2xl bg-gray-100 hover:bg-gray-200 px-6 py-3 text-sm font-bold text-gray-600 transition-all cursor-pointer"
                 >
                   <FiX />
                   <span>Cancel</span>
@@ -1074,7 +1089,7 @@ const MeditationScreen = () => {
                 <button
                   type="button"
                   onClick={isRunning ? () => setIsRunning(false) : handleStart}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 min-h-[48px] rounded-2xl bg-[#7d9667] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all cursor-pointer"
                 >
                   {isRunning ? <FiPause /> : <FiPlay />}
                   {isRunning ? "Pause" : "Start"}
@@ -1087,9 +1102,9 @@ const MeditationScreen = () => {
         <aside className="space-y-4">
           {/* Customise Breathing Card - only shown when Custom is clicked */}
           {isCustomBreathing && (
-            <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100 transition-all">
+            <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
                     Customise Breathing
                   </p>
@@ -1126,17 +1141,19 @@ const MeditationScreen = () => {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
                     Inhale
                   </span>
-                  <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                  <div className="flex items-center min-h-[44px] sm:min-h-0 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
                     <input
                       type="number"
                       min="1"
                       max="60"
                       value={customInhale}
+                      aria-label="Inhale seconds"
                       onChange={(e) => {
                         setCustomInhale(Math.max(1, parseInt(e.target.value) || 1));
                         resetLocalSession();
                       }}
-                      className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                      inputMode="numeric"
+                      className="w-full min-w-0 bg-transparent outline-none text-base sm:text-xs font-black text-gray-800"
                     />
                     <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
                   </div>
@@ -1148,17 +1165,19 @@ const MeditationScreen = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
                       {selectedTechnique === "box" ? "Hold 1" : "Hold"}
                     </span>
-                    <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                    <div className="flex items-center min-h-[44px] sm:min-h-0 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
                       <input
                         type="number"
                         min="0"
                         max="60"
                         value={customHold1}
+                        aria-label={selectedTechnique === "box" ? "First hold seconds" : "Hold seconds"}
                         onChange={(e) => {
                           setCustomHold1(Math.max(0, parseInt(e.target.value) || 0));
                           resetLocalSession();
                         }}
-                        className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                        inputMode="numeric"
+                        className="w-full min-w-0 bg-transparent outline-none text-base sm:text-xs font-black text-gray-800"
                       />
                       <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
                     </div>
@@ -1170,17 +1189,19 @@ const MeditationScreen = () => {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
                     Exhale
                   </span>
-                  <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                  <div className="flex items-center min-h-[44px] sm:min-h-0 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
                     <input
                       type="number"
                       min="1"
                       max="60"
                       value={customExhale}
+                      aria-label="Exhale seconds"
                       onChange={(e) => {
                         setCustomExhale(Math.max(1, parseInt(e.target.value) || 1));
                         resetLocalSession();
                       }}
-                      className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                      inputMode="numeric"
+                      className="w-full min-w-0 bg-transparent outline-none text-base sm:text-xs font-black text-gray-800"
                     />
                     <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
                   </div>
@@ -1192,17 +1213,19 @@ const MeditationScreen = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
                       Hold 2
                     </span>
-                    <div className="flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
+                    <div className="flex items-center min-h-[44px] sm:min-h-0 rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 focus-within:border-[#7d9667] focus-within:bg-white">
                       <input
                         type="number"
                         min="0"
                         max="60"
                         value={customHold2}
+                        aria-label="Second hold seconds"
                         onChange={(e) => {
                           setCustomHold2(Math.max(0, parseInt(e.target.value) || 0));
                           resetLocalSession();
                         }}
-                        className="w-full bg-transparent outline-none text-xs font-black text-gray-800"
+                        inputMode="numeric"
+                        className="w-full min-w-0 bg-transparent outline-none text-base sm:text-xs font-black text-gray-800"
                       />
                       <span className="text-[10px] text-gray-400 font-bold ml-1">s</span>
                     </div>
@@ -1226,7 +1249,7 @@ const MeditationScreen = () => {
             </div>
           )}
 
-          <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
+          <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
               Duration
             </p>
@@ -1236,7 +1259,8 @@ const MeditationScreen = () => {
                   key={duration.value}
                   type="button"
                   onClick={() => handleDurationChange(duration.value)}
-                  className={`rounded-2xl py-3 text-xs font-black transition-all ${durationSeconds === duration.value
+                  aria-pressed={durationSeconds === duration.value}
+                  className={`min-h-[44px] sm:min-h-0 rounded-2xl py-3 text-xs font-black transition-all ${durationSeconds === duration.value
                     ? "bg-[#7d9667] text-white"
                     : "bg-gray-50 text-gray-400 hover:text-[#7d9667]"
                     }`}
@@ -1250,28 +1274,32 @@ const MeditationScreen = () => {
                 Custom Time
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
+                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-3 sm:px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
                   <input
                     type="number"
                     min="0"
                     step="1"
                     value={customDurationMinutes}
+                    inputMode="numeric"
+                    aria-label="Custom duration minutes"
                     onChange={handleCustomMinutesChange}
                     placeholder="0"
-                    className="w-full min-w-0 bg-transparent outline-none text-sm font-bold text-gray-700 placeholder:text-gray-300"
+                    className="w-full min-w-0 bg-transparent outline-none text-base sm:text-sm font-bold text-gray-700 placeholder:text-gray-300"
                   />
                   <span className="text-xs font-bold text-gray-400">min</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
+                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-3 sm:px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
                   <input
                     type="number"
                     min="0"
                     max="59"
                     step="1"
                     value={customDurationSeconds}
+                    inputMode="numeric"
+                    aria-label="Custom duration seconds"
                     onChange={handleCustomSecondsChange}
                     placeholder="30"
-                    className="w-full min-w-0 bg-transparent outline-none text-sm font-bold text-gray-700 placeholder:text-gray-300"
+                    className="w-full min-w-0 bg-transparent outline-none text-base sm:text-sm font-bold text-gray-700 placeholder:text-gray-300"
                   />
                   <span className="text-xs font-bold text-gray-400">sec</span>
                 </div>
@@ -1284,7 +1312,7 @@ const MeditationScreen = () => {
             </div>
           </div>
 
-          <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
+          <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
               Session Controls
             </p>
@@ -1292,7 +1320,8 @@ const MeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setSoundOn(!soundOn)}
-                className="w-full flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600"
+                aria-pressed={soundOn}
+                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600"
               >
                 <span className="inline-flex items-center gap-2">
                   {soundOn ? <FiVolume2 /> : <FiVolumeX />}
@@ -1303,7 +1332,8 @@ const MeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setVibrationOn(!vibrationOn)}
-                className="w-full flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600"
+                aria-pressed={vibrationOn}
+                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600"
               >
                 <span className="inline-flex items-center gap-2">
                   <FiZap />
@@ -1318,8 +1348,8 @@ const MeditationScreen = () => {
 
       <style>{`
         .breath-shape {
-          width: 168px;
-          height: 168px;
+          width: min(168px, 60%);
+          aspect-ratio: 1 / 1;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1343,7 +1373,7 @@ const MeditationScreen = () => {
         .breath-shape.triangle {
           border-radius: 2px;
           clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-          padding-top: 40px;
+          padding-top: min(40px, 14%);
         }
 
         @keyframes countdownPulse {

@@ -428,28 +428,34 @@ const SilentMeditationScreen = () => {
   const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
   if (isSessionActive) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white p-6 md:p-10 animate-fade-in">
+      <div
+        className="fixed inset-0 z-50 h-dvh overflow-hidden flex flex-col items-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white animate-fade-in pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Silent meditation session"
+      >
 
         {/* Glow backdrop */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-[#7d9667]/15 rounded-full blur-[80px] pointer-events-none transition-transform duration-1000"
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top Info Bar */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between animate-fade-in z-50">
-          <div className="flex items-center gap-4">
+        <div className="relative w-full flex-none flex items-center justify-between gap-3 animate-fade-in z-50">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               type="button"
               onClick={() => { handleStop(); navigate(-1); }}
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
               title="Go Back"
+              aria-label="Stop session and go back"
             >
-              <FiArrowLeft size={16} />
+              <FiArrowLeft size={18} />
             </button>
-            <div className="text-left">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
+            <div className="text-left min-w-0">
+              <span className="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
                 Silent Meditation Bubble
               </span>
-              <h3 className="text-sm font-bold text-white/50">
+              <h3 className="truncate text-sm font-bold text-white/50">
                 Coherent 5s/5s Breathing Cycle
               </h3>
             </div>
@@ -457,125 +463,168 @@ const SilentMeditationScreen = () => {
           <button
             type="button"
             onClick={handleStop}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+            title="End Session"
+            aria-label="End session"
           >
             <FiSquare size={16} />
           </button>
         </div>
 
-        {/* Bubble Pacer */}
-        <div className="flex flex-col items-center justify-center flex-1 w-full max-w-lg text-center mt-12">
-          <div className="relative w-[260px] h-[260px] md:w-[320px] md:h-[320px] flex items-center justify-center">
+        <div className="sm-full-body relative flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-4">
+          {/* Bubble Pacer */}
+          <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full max-w-lg text-center">
+            <div className="sm-full-stage relative flex items-center justify-center">
 
-            {/* Outline Circular Progress */}
-            <ProgressShapeCircle
-              progress={progress}
-              strokeWidth={3}
-              className="absolute inset-0 w-full h-full"
-            />
+              {/* Outline Circular Progress */}
+              <ProgressShapeCircle
+                progress={progress}
+                strokeWidth={3}
+                className="absolute inset-0 w-full h-full"
+              />
 
-            {/* Bubble Shape with dynamic scale */}
-            <div className="w-[140px] h-[140px] md:w-[170px] md:h-[170px] rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#7d9667] to-[#a8c896]/60 shadow-[0_0_50px_rgba(125,150,103,0.3)] animate-pulse-slow"
-              style={breathScaleStyle}>
-              <span className="text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                {isRunning ? "" : "Paused"}
-              </span>
+              {/* Bubble Shape with dynamic scale */}
+              <div className="sm-full-bubble rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#7d9667] to-[#a8c896]/60 shadow-[0_0_50px_rgba(125,150,103,0.3)] animate-pulse-slow"
+                style={breathScaleStyle}>
+                <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
+                  {isRunning ? "" : "Paused"}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* <h2 className="text-6xl md:text-7xl font-black tracking-tight text-white mt-2 font-mono">
-            {formatTime(remainingSeconds)}
-          </h2> */}
-
-          {/* Progress Bar */}
-          <div className="w-full max-w-xs sm:max-w-sm mt-5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
-              <span>0%</span>
-              <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
-              <span>100%</span>
-            </div>
-            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10">
+            {/* Progress Bar */}
+            <div className="w-full max-w-xs sm:max-w-sm mt-5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-white/60 mb-1.5">
+                <span>0%</span>
+                <span className="text-[#a8c896] font-extrabold">{Math.round(progress)}%</span>
+                <span>100%</span>
+              </div>
               <div
-                className="h-full bg-[#a8c896] rounded-full transition-all duration-500"
-                style={{ width: `${progress}%` }}
-              ></div>
+                className="w-full h-2 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10"
+                role="progressbar"
+                aria-label="Session progress"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress)}
+              >
+                <div
+                  className="h-full bg-[#a8c896] rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Control Bar */}
+          <div className="sm-full-controls w-full max-w-md flex-none flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md px-3 sm:px-6 py-3 sm:py-4 rounded-3xl border border-white/10 shadow-2xl z-50">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => setSoundOn(!soundOn)}
+                className="w-11 h-11 flex items-center justify-center rounded-full text-white/60 hover:text-white transition-colors cursor-pointer"
+                title="Toggle Sound"
+                aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
+                aria-pressed={soundOn}
+              >
+                {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setVibrationOn(!vibrationOn)}
+                className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
+                title="Toggle Vibration"
+                aria-label={vibrationOn ? "Turn vibration off" : "Turn vibration on"}
+                aria-pressed={vibrationOn}
+              >
+                <FiZap size={20} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              {isRunning ? (
+                <button
+                  type="button"
+                  onClick={() => setIsRunning(false)}
+                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white text-gray-900 px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
+                >
+                  <FiPause />
+                  Pause
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsRunning(true)}
+                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-[#7d9667] text-white px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-[#6f865c] transition-all cursor-pointer"
+                >
+                  <FiPlay />
+                  Resume
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleStop}
+                className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white/10 hover:bg-white/20 text-white px-4 sm:px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
+              >
+                <FiSquare />
+                Stop
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Bottom Control Bar */}
-        <div className="w-full max-w-md flex items-center justify-between bg-white/5 backdrop-blur-md px-6 py-4 rounded-3xl border border-white/10 shadow-2xl mb-6 z-50">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setSoundOn(!soundOn)}
-              className="text-white/60 hover:text-white transition-colors cursor-pointer"
-            >
-              {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setVibrationOn(!vibrationOn)}
-              className={`transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
-            >
-              <FiZap size={20} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {isRunning ? (
-              <button
-                type="button"
-                onClick={() => setIsRunning(false)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white text-gray-900 px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
-              >
-                <FiPause />
-                Pause
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsRunning(true)}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#7d9667] text-white px-6 py-3 text-sm font-bold shadow-lg hover:bg-[#6f865c] transition-all cursor-pointer"
-              >
-                <FiPlay />
-                Resume
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleStop}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
-            >
-              <FiSquare />
-              Stop
-            </button>
-          </div>
-        </div>
+        <style>{`
+          /* Stage scales with the viewport: never wider than the screen, never taller than the space left for it */
+          .sm-full-stage {
+            width: min(260px, 80vw, calc(100dvh - 300px));
+            min-width: 150px;
+            aspect-ratio: 1 / 1;
+          }
+          @media (min-width: 768px) {
+            .sm-full-stage { width: min(320px, 80vw, calc(100dvh - 330px)); }
+          }
+          /* Short landscape phones: bubble on the left, controls on the right */
+          @media (max-height: 520px) and (orientation: landscape) {
+            .sm-full-body { flex-direction: row; gap: 1.5rem; }
+            .sm-full-stage { width: min(260px, 45vw, calc(100dvh - 150px)); min-width: 120px; }
+            .sm-full-controls { max-width: 22rem; }
+          }
+          .sm-full-bubble {
+            width: 54%;
+            aspect-ratio: 1 / 1;
+          }
+          .animate-pulse-slow {
+            animation: smPulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+          @keyframes smPulseSlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .85; }
+          }
+        `}</style>
       </div>
     );
   }
 
   // 4. Initial Configure Session Layout (Matches Breathing exercises UI)
   return (
-    <div className="min-h-[calc(100vh-130px)] rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
+    <div className="min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-3 sm:p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
 
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4 min-w-0">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mt-1 flex items-center justify-center w-10 h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
+            aria-label="Go back"
+            className="mt-1 flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-gray-50 transition-all text-gray-600 border border-gray-200 shadow-sm shrink-0"
             title="Go Back"
           >
             <FiArrowLeft size={18} />
           </button>
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
               Mental Swasthya - Wellness Platform
             </p>
-            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mt-2">
               Silent Meditation
             </h1>
             <p className="text-sm text-gray-500 mt-2">
@@ -589,11 +638,11 @@ const SilentMeditationScreen = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 mt-7">
 
         {/* Left main: The breathing bubble circle container */}
-        <section className="rounded-[30px] bg-white/80 border border-white p-5 md:p-8 shadow-sm">
-          <div className="flex flex-col items-center justify-center min-h-[460px] text-center">
+        <section className="rounded-[24px] sm:rounded-[30px] bg-white/80 border border-white p-4 sm:p-5 md:p-8 shadow-sm">
+          <div className="flex flex-col items-center justify-center min-h-[380px] md:min-h-[460px] text-center">
 
             {/* Outline Circular Progress */}
-            <div className="relative w-[280px] h-[280px] md:w-[340px] md:h-[340px] flex items-center justify-center">
+            <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] flex items-center justify-center">
               <ProgressShapeCircle
                 progress={shapeCycleProgress}
                 strokeWidth={7}
@@ -672,7 +721,7 @@ const SilentMeditationScreen = () => {
         <aside className="space-y-4">
 
           {/* Durations selector */}
-          <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
+          <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
               Duration
             </p>
@@ -686,7 +735,8 @@ const SilentMeditationScreen = () => {
                   key={dur.value}
                   type="button"
                   onClick={() => handleDurationChange(dur.value)}
-                  className={`rounded-2xl py-3 text-xs font-black transition-all ${durationSeconds === dur.value
+                  aria-pressed={durationSeconds === dur.value}
+                  className={`min-h-[44px] sm:min-h-0 rounded-2xl py-3 text-xs font-black transition-all ${durationSeconds === dur.value
                     ? "bg-[#7d9667] text-white"
                     : "bg-gray-50 text-gray-400 hover:text-[#7d9667]"
                     }`}
@@ -702,28 +752,32 @@ const SilentMeditationScreen = () => {
                 Custom Time
               </label>
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
+                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-3 sm:px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
                   <input
                     type="number"
                     min="0"
                     step="1"
                     value={customDurationMinutes}
+                    inputMode="numeric"
+                    aria-label="Custom duration minutes"
                     onChange={handleCustomMinutesChange}
                     placeholder="0"
-                    className="w-full min-w-0 bg-transparent outline-none text-sm font-bold text-gray-700 placeholder:text-gray-300"
+                    className="w-full min-w-0 bg-transparent outline-none text-base sm:text-sm font-bold text-gray-700 placeholder:text-gray-300"
                   />
                   <span className="text-xs font-bold text-gray-400">min</span>
                 </div>
-                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
+                <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-100 px-3 sm:px-4 py-3 focus-within:border-[#7d9667] focus-within:bg-white transition-all">
                   <input
                     type="number"
                     min="0"
                     max="59"
                     step="1"
                     value={customDurationSeconds}
+                    inputMode="numeric"
+                    aria-label="Custom duration seconds"
                     onChange={handleCustomSecondsChange}
                     placeholder="30"
-                    className="w-full min-w-0 bg-transparent outline-none text-sm font-bold text-gray-700 placeholder:text-gray-300"
+                    className="w-full min-w-0 bg-transparent outline-none text-base sm:text-sm font-bold text-gray-700 placeholder:text-gray-300"
                   />
                   <span className="text-xs font-bold text-gray-400">sec</span>
                 </div>
@@ -737,7 +791,7 @@ const SilentMeditationScreen = () => {
           </div>
 
           {/* Sound & Vibration control panel */}
-          <div className="rounded-[28px] bg-white p-5 shadow-sm border border-gray-100">
+          <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
               Session Controls
             </p>
@@ -745,7 +799,8 @@ const SilentMeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setSoundOn(!soundOn)}
-                className="w-full flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
+                aria-pressed={soundOn}
+                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
               >
                 <span className="inline-flex items-center gap-2">
                   {soundOn ? <FiVolume2 /> : <FiVolumeX />}
@@ -756,7 +811,8 @@ const SilentMeditationScreen = () => {
               <button
                 type="button"
                 onClick={() => setVibrationOn(!vibrationOn)}
-                className="w-full flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
+                aria-pressed={vibrationOn}
+                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
               >
                 <span className="inline-flex items-center gap-2">
                   <FiZap />
@@ -771,8 +827,8 @@ const SilentMeditationScreen = () => {
 
       <style>{`
         .breath-shape {
-          width: 168px;
-          height: 168px;
+          width: min(168px, 60%);
+          aspect-ratio: 1 / 1;
           display: flex;
           align-items: center;
           justify-content: center;

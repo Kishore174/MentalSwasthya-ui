@@ -74,6 +74,44 @@ const useReveal = () => {
   return [ref, visible];
 };
 
+/* ─── Reduced-motion preference ──────────────────────────── */
+const usePrefersReducedMotion = () => {
+  const query = "(prefers-reduced-motion: reduce)";
+  const [reduced, setReduced] = useState(
+    () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    if (!window.matchMedia) return undefined;
+    const mq = window.matchMedia(query);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange);
+    return () => (mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange));
+  }, []);
+  return reduced;
+};
+
+/* ─── Horizontal swipe handlers for touch carousels ─────── */
+const useSwipe = (onNext, onPrev) => {
+  const start = React.useRef(null);
+  return {
+    onTouchStart: (e) => {
+      const t = e.touches[0];
+      start.current = { x: t.clientX, y: t.clientY };
+    },
+    onTouchEnd: (e) => {
+      if (!start.current) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.current.x;
+      const dy = t.clientY - start.current.y;
+      start.current = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        if (dx < 0) onNext();
+        else onPrev();
+      }
+    },
+  };
+};
+
 /* ─── Reveal wrapper ─────────────────────────────────────── */
 const Reveal = ({ children, delay = 0, direction = "up" }) => {
   const [ref, visible] = useReveal();
@@ -96,14 +134,14 @@ const Reveal = ({ children, delay = 0, direction = "up" }) => {
 const Marquee = () => {
   const items = ["Breathing", "Focus", "Clarity", "Relaxation", "Resilience", "Insight", "Presence", "Balance"];
   return (
-    <div style={{
+    <div className="lp-marquee" aria-hidden="true" style={{
       overflow: "hidden",
       background: "#0f1a0d",
       padding: "14px 0",
       borderTop: "1px solid rgba(125,150,103,0.15)",
       borderBottom: "1px solid rgba(125,150,103,0.15)",
     }}>
-      <div style={{ display: "flex", animation: "marqueeScroll 22s linear infinite", whiteSpace: "nowrap" }}>
+      <div className="lp-marquee-track" style={{ display: "flex", animation: "marqueeScroll 22s linear infinite", whiteSpace: "nowrap", width: "max-content" }}>
         {[...items, ...items, ...items].map((item, i) => (
           <span key={i} style={{
             fontSize: 11, fontWeight: 600, letterSpacing: "0.22em",
@@ -127,6 +165,23 @@ const LandingPage = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [hoveredFeature, setHoveredFeature] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+
+  // Mobile menu: lock body scroll, close on Escape and when resizing up to desktop
+  useEffect(() => {
+    if (!mobileMenuOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e) => { if (e.key === "Escape") setMobileMenuOpen(false); };
+    const onResize = () => { if (window.innerWidth > 1024) setMobileMenuOpen(false); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [mobileMenuOpen]);
 
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -210,11 +265,21 @@ const LandingPage = () => {
   const [articleIndex, setArticleIndex] = useState(0);
 
   useEffect(() => {
+    if (reducedMotion) return undefined;
     const timer = setInterval(() => {
       setReviewIndex((prev) => (prev + 1) % communityReviews.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [communityReviews.length]);
+  }, [communityReviews.length, reducedMotion]);
+
+  const articleSwipe = useSwipe(
+    () => setArticleIndex((prev) => (prev + 1) % curatedArticles.length),
+    () => setArticleIndex((prev) => (prev === 0 ? curatedArticles.length - 1 : prev - 1))
+  );
+  const reviewSwipe = useSwipe(
+    () => setReviewIndex((prev) => (prev + 1) % communityReviews.length),
+    () => setReviewIndex((prev) => (prev === 0 ? communityReviews.length - 1 : prev - 1))
+  );
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -267,11 +332,17 @@ const LandingPage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (reducedMotion) return undefined;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, reducedMotion]);
+
+  const slideSwipe = useSwipe(
+    () => setCurrentSlide((prev) => (prev + 1) % slides.length),
+    () => setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1))
+  );
 
   const tools = [
     {
@@ -373,13 +444,13 @@ const LandingPage = () => {
           background: "radial-gradient(circle, rgba(100,140,80,0.18) 0%, transparent 65%)",
           top: -300, right: -250, pointerEvents: "none",
           animation: "blobDrift1 9s ease-in-out infinite",
-        }} />
+        }} className="lp-blob" />
         <div style={{
           position: "absolute", width: 500, height: 500, borderRadius: "50%",
           background: "radial-gradient(circle, rgba(60,110,45,0.14) 0%, transparent 65%)",
           bottom: -100, left: -150, pointerEvents: "none",
           animation: "blobDrift2 12s ease-in-out infinite",
-        }} />
+        }} className="lp-blob" />
 
         {/* Diagonal accent line at the bottom */}
         <svg style={{ position: "absolute", bottom: -1, left: 0, width: "100%", height: 100, pointerEvents: "none" }} preserveAspectRatio="none" viewBox="0 0 1440 100">
@@ -401,8 +472,8 @@ const LandingPage = () => {
           borderBottom: "1.5px solid rgba(168, 200, 150, 0.18)",
         }} className="navbar-container">
           {/* Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer" }} onClick={() => navigate("/")}>
-            <img src={loginicon} alt="logo" style={{
+          <div style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", minWidth: 0 }} className="navbar-brand" onClick={() => navigate("/")}>
+            <img src={loginicon} alt="Mental Swasthya logo" decoding="async" style={{
               width: 56, height: 56, borderRadius: 14,
               objectFit: "cover",
               border: "1.5px solid rgba(168,200,150,0.3)",
@@ -432,7 +503,7 @@ const LandingPage = () => {
           </div>
 
           {/* Links */}
-          <div style={{ display: "flex", gap: 28 }} className="navbar-links">
+          <nav aria-label="Primary" style={{ display: "flex", gap: 28 }} className="navbar-links">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -449,7 +520,7 @@ const LandingPage = () => {
                 {item.label}
               </button>
             ))}
-          </div>
+          </nav>
 
           {/* CTA & Mobile Menu Toggle */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -481,7 +552,11 @@ const LandingPage = () => {
 
             {/* Mobile Hamburger toggle */}
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="landing-mobile-menu"
               style={{
                 background: "none",
                 border: "none",
@@ -489,6 +564,8 @@ const LandingPage = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 8,
+                minWidth: 44,
+                minHeight: 44,
                 color: "#e8f0e3"
               }}
               className="mobile-menu-btn"
@@ -499,7 +576,14 @@ const LandingPage = () => {
 
           {/* Mobile Overlay Menu */}
           {mobileMenuOpen && (
-            <div style={{
+            <div
+              className="mobile-menu-backdrop"
+              aria-hidden="true"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+          )}
+          {mobileMenuOpen && (
+            <nav id="landing-mobile-menu" aria-label="Mobile" className="mobile-menu-panel" style={{
               position: "absolute",
               top: "100%",
               left: 0,
@@ -510,7 +594,7 @@ const LandingPage = () => {
               padding: "24px 32px",
               display: "flex",
               flexDirection: "column",
-              gap: 18,
+              gap: 6,
               zIndex: 100
             }}>
               {navItems.map((item) => (
@@ -530,7 +614,8 @@ const LandingPage = () => {
                     textTransform: "uppercase",
                     color: item.id === activeTab ? "#a8c896" : "rgba(168,200,150,0.6)",
                     textAlign: "left",
-                    padding: "8px 0"
+                    padding: "12px 0",
+                    minHeight: 44
                   }}
                 >
                   {item.label}
@@ -557,7 +642,7 @@ const LandingPage = () => {
               >
                 Get Started
               </button>
-            </div>
+            </nav>
           )}
         </div>
 
@@ -568,7 +653,7 @@ const LandingPage = () => {
           padding: "160px 48px 140px",
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
           gap: 48, alignItems: "center",
-        }} className="hero-grid-stack">
+        }} className="hero-content">
           
           {/* Hero Left */}
           <div>
@@ -585,7 +670,7 @@ const LandingPage = () => {
 
             <h1 style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "clamp(2.8rem, 6vw, 4.8rem)",
+              fontSize: "clamp(2.3rem, 6vw, 4.8rem)",
               fontWeight: 600,
               color: "#e8f0e3",
               lineHeight: 1.05,
@@ -648,12 +733,17 @@ const LandingPage = () => {
               overflow: "hidden",
               border: "1.5px solid rgba(168,200,150,0.22)",
               boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
-            }}>
+              touchAction: "pan-y",
+            }} className="hero-slideshow" {...slideSwipe}>
               {slides.map((slide, idx) => (
                 <img 
                   key={idx}
                   src={slide} 
                   alt={`Meditation illustration ${idx + 1}`} 
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  aria-hidden={currentSlide !== idx}
+                  className="hero-slide-img"
                   style={{ 
                     position: "absolute",
                     inset: 0,
@@ -679,24 +769,36 @@ const LandingPage = () => {
                 left: "50%",
                 transform: "translateX(-50%)",
                 display: "flex",
-                gap: 8,
+                gap: 0,
                 zIndex: 20,
-              }}>
+              }} className="hero-dots">
                 {slides.map((_, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setCurrentSlide(idx)}
+                    aria-label={`Show slide ${idx + 1}`}
+                    aria-current={currentSlide === idx ? "true" : undefined}
+                    className="hero-dot"
                     style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span style={{
+                      display: "block",
                       width: 8,
                       height: 8,
                       borderRadius: "50%",
                       background: currentSlide === idx ? "#a8c896" : "rgba(255, 255, 255, 0.4)",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: 0,
                       transition: "background 0.3s",
-                    }}
-                  />
+                    }} />
+                  </button>
                 ))}
               </div>
             </div>
@@ -722,14 +824,14 @@ const LandingPage = () => {
             marginBottom: 60,
             boxShadow: "0 4px 20px rgba(22,35,20,0.02)"
           }} className="section-card">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="hero-grid-stack">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48 }} className="stack-grid">
               <div>
                 <p style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667", marginBottom: 12 }}>
                   The Modern Challenge
                 </p>
                 <h2 style={{
                   fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
+                  fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)",
                   fontWeight: 600, color: "#1a2416",
                   lineHeight: 1.1, letterSpacing: "-0.02em",
                 }}>
@@ -776,7 +878,7 @@ const LandingPage = () => {
               </p>
               <h2 style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: "clamp(2.2rem, 4vw, 3.4rem)",
+                fontSize: "clamp(1.85rem, 4vw, 3.4rem)",
                 fontWeight: 600, color: "#1a2416",
                 lineHeight: 1.1, letterSpacing: "-0.02em",
               }}>
@@ -808,6 +910,7 @@ const LandingPage = () => {
                     display: "flex", flexDirection: "column",
                     minHeight: 280,
                   }}
+                  className="tool-card"
                 >
                   <div>
                     {/* Background number */}
@@ -868,7 +971,7 @@ const LandingPage = () => {
               </p>
               <h2 style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: "clamp(2.2rem, 4vw, 3.4rem)",
+                fontSize: "clamp(1.85rem, 4vw, 3.4rem)",
                 fontWeight: 600, color: "#1a2416",
                 lineHeight: 1.1, letterSpacing: "-0.02em",
               }}>
@@ -940,7 +1043,7 @@ const LandingPage = () => {
               gap: 28,
               alignItems: "center",
               borderBottom: "1.5px dashed #f0ccb9"
-            }} className="hero-grid-stack promo-banner-part">
+            }} className="stack-grid promo-banner-part promo-top">
               
               {/* Gift SVG Drawing */}
               <div style={{ display: "flex", justifyContent: "center" }}>
@@ -1009,7 +1112,7 @@ const LandingPage = () => {
               gridTemplateColumns: "1.2fr 1fr",
               gap: 40,
               alignItems: "center"
-            }} className="hero-grid-stack promo-banner-part">
+            }} className="stack-grid promo-banner-part">
               
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: "#3a2118", marginBottom: 8, letterSpacing: "0.02em" }}>
@@ -1109,7 +1212,7 @@ const LandingPage = () => {
             flexDirection: "column",
             gap: 24,
             marginBottom: 60,
-          }}>
+          }} className="daily-plan">
             <div>
               <h3 style={{
                 fontFamily: "'Cormorant Garamond', serif",
@@ -1170,14 +1273,14 @@ const LandingPage = () => {
               padding: "36px 32px",
               borderRadius: 32,
               boxShadow: "0 4px 20px rgba(22,35,20,0.05)"
-            }}>
+            }} className="articles-card">
               {/* Header with Navigation Controls */}
               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-end", gap: 16, marginBottom: 28 }}>
                 <div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#7d9667", textTransform: "uppercase", letterSpacing: "0.16em" }}>
                     WELLNESS INSIGHTS
                   </span>
-                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 700, color: "#1a2416", marginTop: 2 }}>
+                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.7rem, 5vw, 2rem)", fontWeight: 700, color: "#1a2416", marginTop: 2 }}>
                     Curated Articles
                   </h3>
                   <p style={{ fontSize: 13, color: "#6b7f63", marginTop: 4 }}>
@@ -1189,16 +1292,18 @@ const LandingPage = () => {
                   <button
                     type="button"
                     onClick={() => setArticleIndex((prev) => (prev === 0 ? curatedArticles.length - 1 : prev - 1))}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                    style={{ width: 44, height: 44, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
                     title="Previous Article"
+                    aria-label="Previous article"
                   >
                     <FiChevronLeft size={18} />
                   </button>
                   <button
                     type="button"
                     onClick={() => setArticleIndex((prev) => (prev + 1) % curatedArticles.length)}
-                    style={{ width: 36, height: 36, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                    style={{ width: 44, height: 44, borderRadius: "50%", background: "#f5faf2", border: "1px solid #dbe6d6", color: "#29401f", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
                     title="Next Article"
+                    aria-label="Next article"
                   >
                     <FiChevronRight size={18} />
                   </button>
@@ -1213,8 +1318,9 @@ const LandingPage = () => {
                 color: "#ffffff",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
                 position: "relative",
-                overflow: "hidden"
-              }}>
+                overflow: "hidden",
+                touchAction: "pan-y"
+              }} className="article-showcase" {...articleSwipe}>
                 {/* Background SVG Grid pattern */}
                 <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05, pointerEvents: "none" }}>
                   <rect width="100%" height="100%" fill="url(#agrid)" />
@@ -1243,9 +1349,9 @@ const LandingPage = () => {
 
                   <h4 style={{
                     fontFamily: "'Cormorant Garamond', serif",
-                    fontSize: "1.85rem",
+                    fontSize: "clamp(1.45rem, 4.5vw, 1.85rem)",
                     fontWeight: 700,
-                    lineHeight: 1.3,
+                    lineHeight: 1.25,
                     color: "#ffffff",
                     marginBottom: 12,
                     cursor: "pointer"
@@ -1294,20 +1400,25 @@ const LandingPage = () => {
               </div>
 
               {/* Article Indicators */}
-              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 20 }}>
+              <div style={{ display: "flex", gap: 0, justifyContent: "center", marginTop: 8 }}>
                 {curatedArticles.map((_, idx) => (
-                  <span
+                  <button
                     key={idx}
+                    type="button"
                     onClick={() => setArticleIndex(idx)}
-                    style={{
+                    aria-label={`Show article ${idx + 1}`}
+                    aria-current={articleIndex === idx ? "true" : undefined}
+                    style={{ background: "none", border: "none", padding: 0, minWidth: 28, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                  >
+                    <span style={{
+                      display: "block",
                       width: articleIndex === idx ? 24 : 8,
                       height: 8,
                       borderRadius: 4,
                       background: articleIndex === idx ? "#7d9667" : "#e2ebd9",
-                      cursor: "pointer",
                       transition: "all 0.3s"
-                    }}
-                  />
+                    }} />
+                  </button>
                 ))}
               </div>
 
@@ -1326,7 +1437,7 @@ const LandingPage = () => {
               color: "#e8f0e3",
               position: "relative",
               overflow: "hidden"
-            }}>
+            }} className="community-card">
               {/* Subtle Ambient Glow & Dot Grid */}
               <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "rgba(168,200,150,0.08)", filter: "blur(60px)", pointerEvents: "none" }} />
               <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
@@ -1340,7 +1451,7 @@ const LandingPage = () => {
                     <span style={{ fontSize: 10, fontWeight: 800, color: "#a8c896", textTransform: "uppercase", letterSpacing: "0.18em", background: "rgba(168,200,150,0.12)", border: "1px solid rgba(168,200,150,0.25)", padding: "4px 12px", borderRadius: 99 }}>
                       MEMBER STORIES & REVIEWS
                     </span>
-                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2.4rem", fontWeight: 700, color: "#e8f0e3", marginTop: 8 }}>
+                    <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "clamp(1.9rem, 6vw, 2.4rem)", fontWeight: 700, color: "#e8f0e3", marginTop: 12 }}>
                       Our Community
                     </h3>
                     <p style={{ fontSize: 13, color: "rgba(232,240,227,0.75)", marginTop: 4 }}>
@@ -1353,16 +1464,18 @@ const LandingPage = () => {
                     <button
                       type="button"
                       onClick={() => setReviewIndex((prev) => (prev === 0 ? communityReviews.length - 1 : prev - 1))}
-                      style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                      style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
                       title="Previous Review"
+                      aria-label="Previous review"
                     >
                       <FiChevronLeft size={20} />
                     </button>
                     <button
                       type="button"
                       onClick={() => setReviewIndex((prev) => (prev + 1) % communityReviews.length)}
-                      style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
+                      style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
                       title="Next Review"
+                      aria-label="Next review"
                     >
                       <FiChevronRight size={20} />
                     </button>
@@ -1377,8 +1490,9 @@ const LandingPage = () => {
                   padding: "36px 32px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 22
-                }}>
+                  gap: 22,
+                  touchAction: "pan-y"
+                }} className="review-card" {...reviewSwipe}>
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                     {/* Reviewer Name & Role */}
                     <div>
@@ -1416,7 +1530,7 @@ const LandingPage = () => {
                   </div>
 
                   {/* Review Quote Block */}
-                  <p style={{
+                  <p className="review-quote" style={{
                     fontSize: "1.15rem",
                     color: "rgba(232,240,227,0.94)",
                     lineHeight: 1.7,
@@ -1432,20 +1546,25 @@ const LandingPage = () => {
 
                 {/* Bottom Bar: Indicators & Share Feedback Action Button */}
                 <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 20, marginTop: 28 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 0, alignItems: "center", marginLeft: -6 }}>
                     {communityReviews.map((_, idx) => (
-                      <span
+                      <button
                         key={idx}
+                        type="button"
                         onClick={() => setReviewIndex(idx)}
-                        style={{
+                        aria-label={`Show review ${idx + 1}`}
+                        aria-current={reviewIndex === idx ? "true" : undefined}
+                        style={{ background: "none", border: "none", padding: "0 3px", minWidth: 28, height: 40, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+                      >
+                        <span style={{
+                          display: "block",
                           width: reviewIndex === idx ? 28 : 10,
                           height: 10,
                           borderRadius: 5,
                           background: reviewIndex === idx ? "#a8c896" : "rgba(255,255,255,0.25)",
-                          cursor: "pointer",
                           transition: "all 0.3s"
-                        }}
-                      />
+                        }} />
+                      </button>
                     ))}
                   </div>
 
@@ -1487,7 +1606,7 @@ const LandingPage = () => {
             background: "linear-gradient(180deg, #ffffff 0%, #f4faf0 100%)",
             borderTop: "1px solid rgba(125,150,103,0.08)",
             position: "relative"
-          }}>
+          }} className="contact-section">
             <div style={{ maxWidth: 1200, margin: "0 auto" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "clamp(32px, 8vw, 64px)", alignItems: "start" }} className="contact-grid">
                 
@@ -1514,8 +1633,8 @@ const LandingPage = () => {
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiPhone size={18} style={{ margin: "auto" }} />
                         </div>
-                        <div>
-                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Call Us</h4>
+                        <div style={{ minWidth: 0 }}>
+                          <h4 style={{ fontSize: "clamp(10px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Call Us</h4>
                           <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>+91 92235 50682</p>
                         </div>
                       </div>
@@ -1525,9 +1644,9 @@ const LandingPage = () => {
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiMail size={18} style={{ margin: "auto" }} />
                         </div>
-                        <div>
-                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Email Support</h4>
-                          <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>support@mentalswasthya.com</p>
+                        <div style={{ minWidth: 0 }}>
+                          <h4 style={{ fontSize: "clamp(10px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Email Support</h4>
+                          <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2, overflowWrap: "anywhere" }}>support@mentalswasthya.com</p>
                         </div>
                       </div>
 
@@ -1536,8 +1655,8 @@ const LandingPage = () => {
                         <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eef6ea", display: "flex", alignItems: "center", justifyContent: "center", color: "#7d9667", flexShrink: 0 }}>
                           <FiMapPin size={18} style={{ margin: "auto" }} />
                         </div>
-                        <div>
-                          <h4 style={{ fontSize: "clamp(9px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Office Location</h4>
+                        <div style={{ minWidth: 0 }}>
+                          <h4 style={{ fontSize: "clamp(10px, 2vw, 10.5px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#8a9a80" }}>Office Location</h4>
                           <p style={{ fontSize: "clamp(12px, 2.5vw, 14px)", fontWeight: 600, color: "#22331b", marginTop: 2 }}>Mumbai, Maharashtra, India</p>
                         </div>
                       </div>
@@ -1560,10 +1679,14 @@ const LandingPage = () => {
                       
                       {/* Name Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }} htmlFor="contact-name">
                           Your Name
                         </label>
                         <input
+                          id="contact-name"
+                          name="name"
+                          autoComplete="name"
+                          className="lp-input"
                           type="text"
                           value={contactName}
                           onChange={(e) => setContactName(e.target.value)}
@@ -1572,7 +1695,7 @@ const LandingPage = () => {
                           style={{
                             width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
+                            background: "#fbfdfa", transition: "all 0.25s",
                             fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1582,10 +1705,14 @@ const LandingPage = () => {
 
                       {/* Email Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }} htmlFor="contact-email">
                           Email Address
                         </label>
                         <input
+                          id="contact-email"
+                          name="email"
+                          autoComplete="email"
+                          className="lp-input"
                           type="email"
                           value={contactEmail}
                           onChange={(e) => setContactEmail(e.target.value)}
@@ -1594,7 +1721,7 @@ const LandingPage = () => {
                           style={{
                             width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
+                            background: "#fbfdfa", transition: "all 0.25s",
                             fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1604,10 +1731,13 @@ const LandingPage = () => {
 
                       {/* Message Field */}
                       <div>
-                        <label style={{ display: "block", fontSize: "clamp(8px, 2vw, 10px)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }}>
+                        <label style={{ display: "block", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#8a9a80", marginBottom: 8 }} htmlFor="contact-message">
                           Your Message
                         </label>
                         <textarea
+                          id="contact-message"
+                          name="message"
+                          className="lp-input"
                           value={contactMessage}
                           onChange={(e) => setContactMessage(e.target.value)}
                           placeholder="Tell us what you need help with..."
@@ -1616,7 +1746,7 @@ const LandingPage = () => {
                           style={{
                             width: "100%", padding: "clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px)", borderRadius: 12,
                             border: "1px solid rgba(125,150,103,0.2)", outline: "none",
-                            fontSize: "clamp(12px, 2.5vw, 13px)", background: "#fbfdfa", transition: "all 0.25s",
+                            background: "#fbfdfa", transition: "all 0.25s",
                             resize: "none", fontFamily: "'DM Sans', sans-serif"
                           }}
                           onFocus={(e) => { e.currentTarget.style.borderColor = "#7d9667"; e.currentTarget.style.background = "#ffffff"; }}
@@ -1631,7 +1761,7 @@ const LandingPage = () => {
                         style={{
                           width: "100%", padding: "clamp(14px, 3vw, 16px) 0", borderRadius: 14,
                           background: "#7d9667", color: "#ffffff",
-                          border: "none", cursor: "pointer", fontSize: "clamp(12px, 2.5vw, 13px)",
+                          border: "none", cursor: "pointer", fontSize: "clamp(13px, 2.5vw, 13px)", minHeight: 48,
                           fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
                           boxShadow: "0 6px 20px rgba(125,150,103,0.18)",
                           transition: "all 0.25s", marginTop: 8
@@ -1657,19 +1787,19 @@ const LandingPage = () => {
         <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 32, alignItems: "center" }} className="footer-layout">
           
           <div style={{ display: "flex", gap: 24 }} className="footer-links">
-            <button onClick={() => navigate("/")} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Home</button>
-            <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Programs</button>
-            <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Resources</button>
-            <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Community</button>
-            <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Blog</button>
-            <button onClick={() => scrollToSection("contact")} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Contact</button>
+            <button onClick={() => navigate("/")} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Home</button>
+            <button onClick={handleStart} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Programs</button>
+            <button onClick={handleStart} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Resources</button>
+            <button onClick={handleStart} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Community</button>
+            <button onClick={handleStart} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Blog</button>
+            <button onClick={() => scrollToSection("contact")} className="footer-link" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", fontSize: 12.5, fontWeight: 500, cursor: "pointer" }}>Contact</button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-end" }} className="footer-right">
             <div style={{ display: "flex", gap: 14 }}>
-              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Facebook"><FiFacebook size={16} /></button>
-              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Twitter"><FiTwitter size={16} /></button>
-              <button onClick={handleStart} style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }} title="Instagram"><FiInstagram size={16} /></button>
+              <button onClick={handleStart} className="footer-social" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }} title="Facebook" aria-label="Facebook"><FiFacebook size={16} /></button>
+              <button onClick={handleStart} className="footer-social" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }} title="Twitter" aria-label="Twitter"><FiTwitter size={16} /></button>
+              <button onClick={handleStart} className="footer-social" style={{ background: "none", border: "none", color: "rgba(168,200,150,0.45)", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }} title="Instagram" aria-label="Instagram"><FiInstagram size={16} /></button>
             </div>
             <p style={{ fontSize: 11, color: "rgba(168,200,150,0.3)", letterSpacing: "0.04em" }}>
               MentalSwasthya &copy; 2025. All Rights Reserved.
@@ -1696,6 +1826,31 @@ const LandingPage = () => {
         * { box-sizing: border-box; }
 
         /* Defaults */
+        .lp-input { font-size: 13px; }
+        .hero-dot { width: 16px; height: 24px; }
+        .hero-slide-img { will-change: opacity; }
+        .navbar-container {
+          padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+          padding-left: max(48px, env(safe-area-inset-left, 0px)) !important;
+          padding-right: max(48px, env(safe-area-inset-right, 0px)) !important;
+        }
+        .mobile-menu-panel {
+          max-height: calc(100vh - 72px);
+          max-height: calc(100dvh - 72px - env(safe-area-inset-top, 0px));
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+        .mobile-menu-backdrop {
+          position: fixed;
+          inset: 0;
+          top: 100%;
+          height: 100vh;
+          background: rgba(5, 12, 4, 0.55);
+          z-index: 99;
+        }
+        .footer-link { padding: 10px 6px; min-height: 40px; }
+        .footer-social { width: 40px; height: 40px; }
         .mobile-menu-btn {
           display: none !important;
         }
@@ -1709,7 +1864,7 @@ const LandingPage = () => {
             padding: 30px 16px 0 !important;
           }
           .navbar-container {
-            padding: 12px 18px !important;
+            padding: calc(12px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) 12px max(18px, env(safe-area-inset-left, 0px)) !important;
           }
           .navbar-logo {
             width: 42px !important;
@@ -1749,24 +1904,36 @@ const LandingPage = () => {
             border-radius: 20px !important;
           }
           .contact-section {
-            padding: 60px 20px !important;
+            padding: 56px 20px !important;
           }
           .footer-container {
-            padding: 40px 20px !important;
+            padding: 40px 20px calc(32px + env(safe-area-inset-bottom, 0px)) !important;
           }
-          .hero-grid-stack {
+          .hero-content {
             grid-template-columns: 1fr !important;
             text-align: center;
-            padding: 120px 20px 80px !important;
+            padding: calc(112px + env(safe-area-inset-top, 0px)) 20px 88px !important;
             gap: 36px !important;
           }
-          .hero-grid-stack div:first-child {
+          .hero-content > div:first-child {
             display: flex;
             flex-direction: column;
             align-items: center;
           }
-          .hero-grid-stack div:first-child p {
-            max-width: 100% !important;
+          .hero-content > div:first-child p {
+            max-width: 560px !important;
+          }
+          .stack-grid {
+            grid-template-columns: 1fr !important;
+            gap: 28px !important;
+          }
+          .promo-top {
+            text-align: center;
+            justify-items: center;
+            gap: 20px !important;
+          }
+          .promo-top > div:last-child {
+            align-items: center;
           }
           .bottom-grid-stack {
             grid-template-columns: 1fr !important;
@@ -1798,7 +1965,28 @@ const LandingPage = () => {
           }
         }
 
+        @media (max-width: 768px) {
+          .lp-input { font-size: 16px !important; }
+          .tool-card { min-height: 0 !important; }
+          .daily-plan { padding: 28px 22px !important; border-radius: 24px !important; margin-bottom: 40px !important; }
+          .articles-card { padding: 26px 18px !important; border-radius: 24px !important; }
+          .article-showcase { padding: 26px 20px !important; border-radius: 20px !important; }
+          .community-card { padding: 32px 20px !important; border-radius: 28px !important; }
+          .review-card { padding: 24px 20px !important; border-radius: 22px !important; }
+          .review-quote { font-size: 1.05rem !important; padding-left: 16px !important; }
+          #articles { margin-bottom: 40px !important; }
+          #community { margin-bottom: 40px !important; }
+          .contact-section { padding: 44px 16px !important; }
+          .footer-links { gap: 4px 12px !important; }
+        }
+
         @media (max-width: 600px) {
+          .hero-content {
+            padding: calc(104px + env(safe-area-inset-top, 0px)) 18px 80px !important;
+            gap: 32px !important;
+          }
+          .hero-dot { width: 13px; }
+          .promo-banner-part { padding: 26px 18px !important; }
           .brand-logo-text span:first-child {
             font-size: 13px !important;
             letter-spacing: 0.06em !important;
@@ -1806,6 +1994,12 @@ const LandingPage = () => {
           .brand-logo-text span:last-child {
             font-size: 8px !important;
           }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .lp-marquee { overflow-x: auto !important; scrollbar-width: none; }
+          .lp-marquee::-webkit-scrollbar { display: none; }
+          .lp-marquee-track, .lp-blob { animation: none !important; }
+          .hero-slide-img { transition: none !important; transform: none !important; }
         }
       `}</style>
     </div>

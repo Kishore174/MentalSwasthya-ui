@@ -26,7 +26,10 @@ const Mainfol = () => {
       </div>
       <div className='flex lg:flex-1 w-full flex-col min-w-0'>
         <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-        <div className='px-4 lg:px-8 pt-6 mx-auto w-full mb-5 flex-1'>
+        <div
+          id='main-content'
+          className={`px-4 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] lg:pl-8 lg:pr-8 pt-4 sm:pt-6 mx-auto w-full min-w-0 mb-5 flex-1 ${isDashboard ? 'pb-16 lg:pb-0' : ''}`}
+        >
           <Outlet />
         </div>
         <Footer />

@@ -570,14 +570,14 @@ const AudioPlaylist = ({
   };
 
   return (
-    <div className={`min-h-[calc(100vh-130px)] rounded-[32px] ${bgGradient} p-4 md:p-8 shadow-[0_18px_55px_rgba(30,48,25,0.08)]`}>
-      <div className="flex flex-col xl:flex-row gap-8">
+    <div className={`min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] ${bgGradient} p-3 sm:p-4 md:p-8 shadow-[0_18px_55px_rgba(30,48,25,0.08)]`}>
+      <div className="flex flex-col xl:flex-row gap-6 md:gap-8">
 
         {/* ─── LEFT COLUMN: PREMIUM VINYL PLAYER CARD ─── */}
-        <section className="flex-shrink-0 w-full xl:w-[380px] bg-white/80 backdrop-blur-md rounded-[32px] border border-white p-6 shadow-lg flex flex-col items-center">
+        <section className="flex-shrink-0 w-full xl:w-[380px] bg-white/80 backdrop-blur-md rounded-[24px] sm:rounded-[32px] border border-white p-5 sm:p-6 shadow-lg flex flex-col items-center">
 
           {/* Vinyl player spinner */}
-          <div className="relative w-64 h-64 md:w-72 md:h-72 mt-2 flex items-center justify-center">
+          <div className="relative w-full max-w-[16rem] aspect-square md:max-w-[18rem] mt-2 flex items-center justify-center">
 
             {/* Spinning Vinyl Record */}
             <div className={`absolute inset-0 rounded-full bg-slate-900 border-[12px] border-slate-950 flex items-center justify-center shadow-2xl overflow-hidden ${isPlaying ? 'animate-vinyl-spin' : ''}`}>
@@ -637,7 +637,8 @@ const AudioPlaylist = ({
                 max={duration || 100}
                 value={currentTime}
                 onChange={handleSeek}
-                className="flex-grow h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer"
+                aria-label="Seek track position"
+                className="flex-grow min-w-0 h-1.5 bg-gray-100 rounded-full appearance-none cursor-pointer"
                 style={{ accentColor: themeColor }}
               />
               <span className="text-[10px] font-black text-gray-400 w-10">
@@ -653,6 +654,7 @@ const AudioPlaylist = ({
               disabled={filteredTracks.length <= 1}
               className="p-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-500 disabled:opacity-40"
               title="Previous Track"
+              aria-label="Previous track"
             >
               <FiSkipBack size={20} />
             </button>
@@ -662,6 +664,7 @@ const AudioPlaylist = ({
               className={`w-16 h-16 flex items-center justify-center rounded-full ${buttonBg} text-white shadow-lg transition-all hover:scale-105`}
               style={{ boxShadow: `0 10px 20px ${themeColor}33` }}
               title={isPlaying ? "Pause" : "Play"}
+              aria-label={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? <FiPause size={24} /> : <FiPlay size={24} className="ml-1" />}
             </button>
@@ -670,18 +673,20 @@ const AudioPlaylist = ({
               disabled={filteredTracks.length <= 1}
               className="p-3 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors text-gray-500 disabled:opacity-40"
               title="Next Track"
+              aria-label="Next track"
             >
               <FiSkipForward size={20} />
             </button>
           </div>
 
           {/* Volume slider & secondary toggles */}
-          <div className="w-full mt-8 pt-6 border-t border-gray-100/60 flex items-center justify-between px-2">
-            <div className="flex items-center gap-2 flex-grow max-w-[200px]">
+          <div className="w-full mt-8 pt-6 border-t border-gray-100/60 flex items-center justify-between gap-3 px-0 sm:px-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-grow max-w-[200px]">
               <button
                 onClick={toggleMute}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 transition-colors"
                 title={isMuted ? "Unmute" : "Mute"}
+                aria-label={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted || volume === 0 ? <FiVolumeX size={18} /> : <FiVolume2 size={18} />}
               </button>
@@ -692,6 +697,7 @@ const AudioPlaylist = ({
                 step="0.05"
                 value={volume}
                 onChange={handleVolumeChange}
+                aria-label="Volume"
                 className="w-full h-1 bg-gray-100 rounded-full appearance-none cursor-pointer"
                 style={{ accentColor: themeColor }}
               />
@@ -701,9 +707,11 @@ const AudioPlaylist = ({
               {currentTrack && (
                 <button
                   onClick={() => toggleFavorite(currentTrack._id, currentTrack.isCustom)}
-                  className="p-2 border border-gray-100 rounded-xl bg-white transition-colors text-gray-400 hover:bg-gray-50 shadow-sm"
+                  className="w-10 h-10 flex items-center justify-center border border-gray-100 rounded-xl bg-white transition-colors text-gray-400 hover:bg-gray-50 shadow-sm"
                   style={{ borderColor: `${themeColor}12` }}
                   title="Favorite Track"
+                  aria-label={favorites.includes(currentTrack._id) ? "Remove from favorites" : "Add to favorites"}
+                  aria-pressed={favorites.includes(currentTrack._id)}
                 >
                   {favorites.includes(currentTrack._id)
                     ? <FaHeart className="text-red-500 text-sm" />
@@ -725,7 +733,7 @@ const AudioPlaylist = ({
                 style={{ color: themeColor }}>
                 guided recordings
               </p>
-              <h1 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mt-2 break-words">
                 {title}
               </h1>
               <p className="text-sm text-gray-500 mt-1 font-medium">
@@ -735,11 +743,11 @@ const AudioPlaylist = ({
           </div>
 
           {/* ─── Search & Advanced Filter Controls Bar ─── */}
-          <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-4 shadow-sm mb-6 space-y-3">
+          <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-3 sm:p-4 shadow-sm mb-6 space-y-3">
             
             {/* Top Row: Language / Preset Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-gray-100/60">
-              <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-3 pb-2 border-b border-gray-100/60">
+              <div className="ap-no-scrollbar flex flex-nowrap sm:flex-wrap gap-1.5 overflow-x-auto sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0 min-w-0" role="tablist" aria-label="Track filters">
                 {[
                   { id: "english", label: "English" },
                   { id: "hindi", label: "Hindi" },
@@ -755,7 +763,9 @@ const AudioPlaylist = ({
                         setLanguageFilter(filter.id);
                         setCurrentTrackIndex(0);
                       }}
-                      className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
+                      role="tab"
+                      aria-selected={isActive}
+                      className={`shrink-0 whitespace-nowrap min-h-[40px] rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
                         ? "text-white shadow-md"
                         : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
                         }`}
@@ -771,7 +781,7 @@ const AudioPlaylist = ({
               {hasActiveSearchFilters && (
                 <button
                   onClick={resetSearchFilters}
-                  className="text-[11px] font-black uppercase tracking-wider text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1"
+                  className="self-start sm:self-auto min-h-[40px] text-[11px] font-black uppercase tracking-wider text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1"
                 >
                   <FiX size={12} /> Clear Filters
                 </button>
@@ -779,23 +789,24 @@ const AudioPlaylist = ({
             </div>
 
             {/* Bottom Row: Search Box + Category Filter + Duration Filter + Sort By Filter */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4 gap-2.5 pt-1">
               
               {/* 1. Search Box Input */}
-              <div className="flex items-center gap-2 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2 focus-within:bg-white transition-all">
+              <div className="flex items-center gap-2 min-h-[44px] sm:min-h-0 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2 focus-within:bg-white transition-all">
                 <FiSearch size={15} className="text-gray-400 shrink-0" />
                 <input
                   type="text"
                   placeholder="Search title, artist, category..."
+                  aria-label="Search tracks"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
                     setCurrentTrackIndex(0);
                   }}
-                  className="w-full min-w-0 bg-transparent outline-none text-xs font-bold text-gray-700 placeholder:text-gray-400"
+                  className="w-full min-w-0 bg-transparent outline-none text-base sm:text-xs font-bold text-gray-700 placeholder:text-gray-400"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setSearchQuery("")} className="shrink-0 w-8 h-8 -mr-1.5 flex items-center justify-center text-gray-400 hover:text-gray-600" aria-label="Clear search">
                     <FiX size={13} />
                   </button>
                 )}
@@ -805,11 +816,12 @@ const AudioPlaylist = ({
               <div className="relative">
                 <select
                   value={selectedCategoryFilter}
+                  aria-label="Filter by category"
                   onChange={(e) => {
                     setSelectedCategoryFilter(e.target.value);
                     setCurrentTrackIndex(0);
                   }}
-                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                  className="w-full min-h-[44px] sm:min-h-0 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-base sm:text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
                 >
                   <option value="all">Category: All</option>
                   <option value="Meditation">Category: Meditation</option>
@@ -826,11 +838,12 @@ const AudioPlaylist = ({
               <div className="relative">
                 <select
                   value={selectedDurationFilter}
+                  aria-label="Filter by duration"
                   onChange={(e) => {
                     setSelectedDurationFilter(e.target.value);
                     setCurrentTrackIndex(0);
                   }}
-                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                  className="w-full min-h-[44px] sm:min-h-0 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-base sm:text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
                 >
                   <option value="all">Duration: All</option>
                   <option value="short">Short (&lt; 3 mins)</option>
@@ -844,8 +857,9 @@ const AudioPlaylist = ({
               <div className="relative">
                 <select
                   value={sortByFilter}
+                  aria-label="Sort tracks"
                   onChange={(e) => setSortByFilter(e.target.value)}
-                  className="w-full rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
+                  className="w-full min-h-[44px] sm:min-h-0 rounded-2xl bg-gray-50 border border-gray-200 px-3.5 py-2.5 text-base sm:text-xs font-bold text-gray-700 outline-none focus:bg-white transition-all appearance-none cursor-pointer pr-8"
                 >
                   <option value="favorites">Sort: Favorites First</option>
                   <option value="title">Sort: Title (A - Z)</option>
@@ -860,7 +874,7 @@ const AudioPlaylist = ({
 
           {/* INLINE PERSONAL UPLOAD FORM (Only rendered when "Personal Upload" tab is active) */}
           {languageFilter === "custom" && (
-            <div className="bg-white/95 rounded-[28px] border p-5 md:p-6 shadow-md mb-6 animate-scale-up"
+            <div className="bg-white/95 rounded-[24px] sm:rounded-[28px] border p-4 sm:p-5 md:p-6 shadow-md mb-6 animate-scale-up"
               style={{ borderColor: `${themeColor}22` }}>
               <h2 className="text-base font-black text-gray-800 mb-4 flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: themeColor }}></span>
@@ -921,7 +935,7 @@ const AudioPlaylist = ({
                     value={uploadTitle}
                     onChange={(e) => setUploadTitle(e.target.value)}
                     placeholder="e.g. My Custom Session"
-                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all"
+                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-base sm:text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all"
                     style={{ focusBorderColor: themeColor }}
                     required
                   />
@@ -935,7 +949,7 @@ const AudioPlaylist = ({
                   <select
                     value={uploadCategory}
                     onChange={(e) => setUploadCategory(e.target.value)}
-                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all cursor-pointer"
+                    className="w-full rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-base sm:text-xs font-bold text-gray-700 focus:outline-none focus:bg-white transition-all cursor-pointer"
                   >
                     <option value="Meditation">Meditation</option>
                     <option value="Breathing">Breathing</option>
@@ -951,7 +965,7 @@ const AudioPlaylist = ({
                   <button
                     type="submit"
                     disabled={isUploading}
-                    className="rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]"
+                    className="w-full sm:w-auto min-h-[44px] rounded-xl px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 min-w-[140px]"
                     style={{ backgroundColor: themeColor, boxShadow: `0 4px 12px ${themeColor}33` }}
                   >
                     {isUploading ? "Processing..." : "Save Track"}
@@ -973,14 +987,93 @@ const AudioPlaylist = ({
           )}
 
           {/* Tracks Table */}
-          <div className="bg-white/60 backdrop-blur-md rounded-[28px] border border-white overflow-hidden shadow-sm flex-grow">
+          <div className="bg-white/60 backdrop-blur-md rounded-[24px] sm:rounded-[28px] border border-white overflow-hidden shadow-sm flex-grow">
+            {/* Mobile: compact card list */}
+            {filteredTracks.length > 0 && (
+              <ul className="md:hidden divide-y divide-gray-100/50">
+                {filteredTracks.map((track, idx) => {
+                  const isCurrent = currentTrack?._id === track._id;
+                  const isFav = favorites.includes(track._id);
+                  const isActivePlaying = isCurrent && isPlaying;
+                  return (
+                    <li
+                      key={track._id}
+                      onClick={() => playTrack(idx)}
+                      className="flex items-center gap-2.5 py-3 pl-3 pr-2 cursor-pointer transition-all active:bg-white/60"
+                      style={isCurrent ? { backgroundColor: `${themeColor}0c` } : {}}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isCurrent) handlePlayPause(); else playTrack(idx);
+                        }}
+                        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center border border-gray-100 bg-white shadow-sm"
+                        aria-label={isActivePlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      >
+                        {isActivePlaying ? (
+                          <FiPause style={{ color: themeColor }} size={15} />
+                        ) : (
+                          <FiPlay style={{ color: themeColor }} size={15} className="ml-0.5" />
+                        )}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-black truncate"
+                          style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
+                          {track.title}
+                        </p>
+                        <p className="text-xs text-gray-400 font-bold mt-0.5 truncate">
+                          {track.artist || 'Unknown'}
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 text-xs font-bold text-gray-500 tabular-nums">
+                        {isActivePlaying ? (
+                          <span className="flex items-end justify-center gap-[2.5px] h-3 w-4" aria-hidden="true">
+                            <span className="w-[2.5px] rounded-full animate-eq-bar-1" style={{ backgroundColor: themeColor }}></span>
+                            <span className="w-[2.5px] rounded-full animate-eq-bar-2" style={{ backgroundColor: themeColor }}></span>
+                            <span className="w-[2.5px] rounded-full animate-eq-bar-3" style={{ backgroundColor: themeColor }}></span>
+                          </span>
+                        ) : (
+                          track.duration ? formatTime(track.duration) : '--:--'
+                        )}
+                      </span>
+
+                      <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(track._id, track.isCustom)}
+                          className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 transition-colors"
+                          aria-label={isFav ? `Remove ${track.title} from favorites` : `Add ${track.title} to favorites`}
+                          aria-pressed={isFav}
+                        >
+                          {isFav ? <FaHeart className="text-red-500 text-sm" /> : <FaRegHeart className="text-sm" />}
+                        </button>
+                        {track.isCustom && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleTrackDelete(track._id, track.isCustom, e)}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                            aria-label={`Delete ${track.title}`}
+                          >
+                            <FiTrash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="hidden md:table w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100">
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-14 text-center">#</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400">Track Info</th>
-                    <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-28 text-center">Category</th>
+                    <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-28 text-center xl:hidden 2xl:table-cell">Category</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 w-24 text-center">Duration</th>
                     <th className="py-4 px-5 text-xs font-black uppercase tracking-wider text-gray-400 text-center w-36">Actions</th>
                   </tr>
@@ -1020,7 +1113,7 @@ const AudioPlaylist = ({
                         {/* Title & Artist */}
                         <td className="py-4 px-5">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                               <p className="text-sm font-black transition-colors"
                                 style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
                                 {track.title}
@@ -1038,7 +1131,7 @@ const AudioPlaylist = ({
                         </td>
 
                         {/* Category Badge */}
-                        <td className="py-4 px-5 text-center">
+                        <td className="py-4 px-5 text-center xl:hidden 2xl:table-cell">
                           <span className={`inline-block text-[10px] font-black uppercase tracking-[0.05em] px-2.5 py-1 rounded-full ${track.isCustom
                             ? 'bg-purple-50 text-purple-600 border border-purple-100'
                             : track.language === 'hindi'
@@ -1061,6 +1154,7 @@ const AudioPlaylist = ({
                               onClick={() => toggleFavorite(track._id, track.isCustom)}
                               className="p-2 border border-gray-100 rounded-xl bg-white shadow-sm transition-colors text-gray-400 hover:text-red-500"
                               title="Favorite"
+                              aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
                             >
                               {isFav ? <FaHeart className="text-red-500 text-sm" /> : <FaRegHeart className="text-sm" />}
                             </button>
@@ -1070,6 +1164,7 @@ const AudioPlaylist = ({
                                 onClick={(e) => handleTrackDelete(track._id, track.isCustom, e)}
                                 className="p-2 border border-gray-100 rounded-xl bg-white hover:bg-red-50 shadow-sm transition-all text-gray-400 hover:text-red-500"
                                 title="Delete Track"
+                                aria-label="Delete track"
                               >
                                 <FiTrash2 size={13} />
                               </button>
@@ -1168,6 +1263,10 @@ const AudioPlaylist = ({
         }
         .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
         .animate-scale-up { animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Horizontal pill row without visible scrollbar */
+        .ap-no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .ap-no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
     </div>
   );

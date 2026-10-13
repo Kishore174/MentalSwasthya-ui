@@ -123,12 +123,12 @@ const SubscriptionScreen = () => {
     <div className="space-y-6 text-[#22331b] pb-10">
       
       {/* ─── Header Banner ─── */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9">
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
         <p className="relative text-[11px] font-black uppercase tracking-[0.16em] text-[#7d9667]">
           Pricing & Subscriptions
         </p>
-        <h1 className="relative text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-3">
+        <h1 className="relative text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#22331b] mt-3">
           Manage Your Subscription & Rewards
         </h1>
         <p className="text-sm text-[#66785c] mt-3 max-w-2xl leading-6">
@@ -137,21 +137,21 @@ const SubscriptionScreen = () => {
       </section>
 
       {/* ─── SECTION 1: INTRODUCTORY OFFER BANNER ─── */}
-      <div className="rounded-[28px] bg-gradient-to-r from-[#1b3420] via-[#2d4d33] to-[#45694b] text-white p-6 md:p-7 shadow-lg border border-emerald-800/40 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-5">
+      <div className="rounded-[28px] bg-gradient-to-r from-[#1b3420] via-[#2d4d33] to-[#45694b] text-white p-5 sm:p-6 md:p-7 shadow-lg border border-emerald-800/40 relative overflow-hidden flex flex-col md:flex-row items-stretch md:items-center justify-between gap-5">
         <div className="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
         
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 flex-shrink-0 shadow-inner">
-            <FiPercent size={28} />
+        <div className="flex items-start sm:items-center gap-3 sm:gap-4 relative z-10 min-w-0">
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 flex-shrink-0 shadow-inner">
+            <FiPercent className="w-5 h-5 sm:w-7 sm:h-7" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="bg-amber-400 text-gray-900 font-extrabold text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full">
                 Limited Time Offer
               </span>
               <span className="text-xs font-semibold text-emerald-200">New & Existing Users</span>
             </div>
-            <h2 className="text-xl md:text-2xl font-black mt-1">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black mt-1 leading-snug">
               Introductory Offer: 7 Days FREE Trial + 20% Discount
             </h2>
             <p className="text-xs text-emerald-100/80 mt-1 max-w-xl">
@@ -162,7 +162,7 @@ const SubscriptionScreen = () => {
 
         <button
           onClick={() => handleCycleChange("annual")}
-          className="relative z-10 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2 flex-shrink-0"
+          className="relative z-10 w-full md:w-auto justify-center min-h-[44px] px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-gray-900 font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2 flex-shrink-0"
         >
           <FiStar className="fill-gray-900" size={14} />
           Claim Offer
@@ -170,11 +170,11 @@ const SubscriptionScreen = () => {
       </div>
 
       {/* ─── SECTION 2: ACTIVE SUBSCRIPTION RUNNING STATUS CARD ─── */}
-      <div className="rounded-[28px] bg-white border border-[#dde8d5] p-6 md:p-8 shadow-[0_10px_35px_rgba(80,105,67,0.05)] space-y-6">
+      <div className="rounded-[28px] bg-white border border-[#dde8d5] p-4 sm:p-6 md:p-8 shadow-[0_10px_35px_rgba(80,105,67,0.05)] space-y-5 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-3 w-3">
+            <div className="flex items-start sm:items-center gap-2">
+              <span className="relative flex h-3 w-3 shrink-0 mt-0.5 sm:mt-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
               </span>
@@ -182,7 +182,7 @@ const SubscriptionScreen = () => {
                 Active Subscription Running Status
               </span>
             </div>
-            <h2 className="text-2xl font-black text-[#22331b] mt-1">
+            <h2 className="text-xl sm:text-2xl font-black text-[#22331b] mt-1">
               {activePlan.name} ({billingCycle === "annual" ? "Yearly Running" : "Monthly Running"})
             </h2>
           </div>
@@ -196,30 +196,30 @@ const SubscriptionScreen = () => {
         </div>
 
         {/* Running Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Current Plan</p>
-            <p className="text-base font-black text-[#22331b] mt-1">{activePlan.name}</p>
+            <p className="text-sm sm:text-base font-black text-[#22331b] mt-1">{activePlan.name}</p>
             <span className="text-[11px] text-[#7d9667] font-semibold">{activePlan.badgeText}</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Billing Running Cycle</p>
-            <p className="text-base font-black text-[#22331b] mt-1 capitalize">{billingCycle} Billing</p>
+            <p className="text-sm sm:text-base font-black text-[#22331b] mt-1 capitalize">{billingCycle} Billing</p>
             <span className="text-[11px] text-gray-500 font-medium">${activePrice} / month</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Auto-Renewal Date</p>
-            <p className="text-base font-black text-[#22331b] mt-1">{formattedRenewDate}</p>
+            <p className="text-sm sm:text-base font-black text-[#22331b] mt-1">{formattedRenewDate}</p>
             <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
               <FiClock size={11} /> Auto-renew enabled
             </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referral Reward Credit</p>
-            <p className="text-base font-black text-amber-600 mt-1">2 Months Free Applied</p>
+            <p className="text-sm sm:text-base font-black text-amber-600 mt-1">2 Months Free Applied</p>
             <span className="text-[11px] text-gray-500 font-medium">1 Referral Reward Pending</span>
           </div>
         </div>
@@ -358,37 +358,39 @@ const SubscriptionScreen = () => {
       <div className="space-y-6 pt-4">
         
         {/* Billing Switcher Toggle */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-[#dde8d5] shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 bg-white p-4 rounded-2xl border border-[#dde8d5] shadow-sm">
           <div>
-            <h2 className="text-xl font-black text-[#22331b]">Monthly & Yearly Subscription Plans</h2>
+            <h2 className="text-lg sm:text-xl font-black text-[#22331b]">Monthly & Yearly Subscription Plans</h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Select your preferred billing cycle to view current running status and options.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#f0f4ed] p-2 rounded-full border border-[#7d9667]/20">
+          <div className="grid grid-cols-2 sm:flex items-center gap-1.5 sm:gap-3 bg-[#f0f4ed] p-1.5 sm:p-2 rounded-full border border-[#7d9667]/20 shrink-0" role="group" aria-label="Billing cycle">
             <button 
               onClick={() => handleCycleChange("monthly")}
-              className={`text-xs font-black uppercase tracking-wider px-4 py-2 rounded-full transition-all ${
+              aria-pressed={billingCycle === "monthly"}
+              className={`min-h-[40px] text-[11px] sm:text-xs font-black uppercase tracking-wider px-3 sm:px-4 py-2 rounded-full transition-all whitespace-nowrap ${
                 billingCycle === "monthly" ? "bg-[#7d9667] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"
               }`}
             >
-              Monthly Plans
+              Monthly<span className="hidden sm:inline"> Plans</span>
             </button>
             <button 
               onClick={() => handleCycleChange("annual")}
-              className={`text-xs font-black uppercase tracking-wider px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${
+              aria-pressed={billingCycle === "annual"}
+              className={`min-h-[40px] text-[11px] sm:text-xs font-black uppercase tracking-wider px-3 sm:px-4 py-2 rounded-full transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${
                 billingCycle === "annual" ? "bg-[#7d9667] text-white shadow-sm" : "text-gray-500 hover:text-gray-800"
               }`}
             >
-              Yearly Plans
-              <span className="bg-amber-400 text-gray-900 font-extrabold text-[8px] px-1.5 py-0.5 rounded-full tracking-widest uppercase">Save 20%</span>
+              <span>Yearly<span className="hidden sm:inline"> Plans</span></span>
+              <span className="shrink-0 bg-amber-400 text-gray-900 font-extrabold text-[8px] px-1.5 py-0.5 rounded-full tracking-widest uppercase">Save 20%</span>
             </button>
           </div>
         </div>
 
         {/* 2-Column Plan Comparison Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto gap-4 sm:gap-6">
           {plans.map((plan) => {
             const isCurrent = currentTier === plan.id;
             const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.annualPrice;
@@ -397,7 +399,7 @@ const SubscriptionScreen = () => {
             return (
               <div
                 key={plan.id}
-                className={`rounded-[32px] bg-white border p-6 flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md relative overflow-hidden ${
+                className={`rounded-[28px] sm:rounded-[32px] bg-white border p-5 sm:p-6 min-w-0 flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-md relative overflow-hidden ${
                   isCurrent
                     ? "border-[#7d9667] ring-2 ring-[#7d9667]/30 bg-gradient-to-br from-white to-[#eef6ea]/20"
                     : "border-gray-200 hover:border-gray-300"
@@ -411,8 +413,8 @@ const SubscriptionScreen = () => {
                 )}
 
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${plan.iconColor}`}>
+                  <div className={`flex items-center gap-3 mb-4 ${isCurrent ? "pt-5 sm:pt-0" : ""}`}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shrink-0 ${plan.iconColor}`}>
                       <Icon size={22} />
                     </div>
                     <div>
@@ -426,9 +428,9 @@ const SubscriptionScreen = () => {
                   <p className="text-xs text-gray-500 leading-relaxed mb-4">{plan.desc}</p>
 
                   {/* Price */}
-                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between mb-5">
+                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex flex-wrap items-center justify-between gap-2 mb-5">
                     <div>
-                      <span className="text-3xl font-black text-[#22331b]">${price}</span>
+                      <span className="text-2xl sm:text-3xl font-black text-[#22331b]">${price}</span>
                       <span className="text-xs font-bold text-gray-400 ml-1">/ month</span>
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#7d9667] bg-[#eef6ea] px-2.5 py-1 rounded-md border border-[#7d9667]/10">

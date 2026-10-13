@@ -50,7 +50,7 @@ const ResetPasswordPage = () => {
 
   return (
     <div
-      className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden"
+      className="min-h-screen supports-[height:100dvh]:min-h-dvh relative flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-hidden"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* Background Split Screen */}
@@ -67,19 +67,18 @@ const ResetPasswordPage = () => {
       </div>
 
       {/* Main Card */}
-      <div className="w-full max-w-[960px] bg-white rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row min-h-[520px]">
+      <div className="w-full max-w-[960px] bg-white rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-gray-200/40 relative z-10 flex flex-col md:flex-row md:min-h-[520px]">
         {/* Left panel: Branding */}
-        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center items-center px-6 py-7 sm:p-8 md:p-12 border-b md:border-b-0 md:border-r border-gray-100 select-none">
           <img
             src={loginicon}
             alt="logo"
-            className="w-48 h-48 object-cover rounded-3xl border border-gray-150 shadow-md mb-6"
+            className="w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 object-cover rounded-2xl sm:rounded-3xl border border-gray-150 shadow-md mb-4 md:mb-6"
           />
           <h1
-            className="text-[#0a331c] tracking-tight font-medium text-center"
+            className="text-[#0a331c] tracking-tight font-medium text-center text-[2.125rem] sm:text-[2.5rem]"
             style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "2.5rem",
               lineHeight: "1.1",
             }}
           >
@@ -91,8 +90,8 @@ const ResetPasswordPage = () => {
         </div>
 
         {/* Right panel: Reset Password Form */}
-        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center p-8 md:p-12 relative text-white">
-          <h2 className="text-3xl font-bold tracking-tight text-white mb-2">
+        <div className="w-full md:w-1/2 bg-[#0a331c] flex flex-col justify-center px-5 py-7 sm:p-8 md:p-12 relative text-white">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
             Reset Password
           </h2>
           <p className="text-xs text-[#8fb39c] font-medium mb-6">
@@ -108,7 +107,7 @@ const ResetPasswordPage = () => {
               <button
                 type="button"
                 onClick={() => navigate("/login")}
-                className="mt-2 text-white underline font-bold"
+                className="mt-1 min-h-[44px] text-white underline font-bold"
               >
                 Back to Login
               </button>
@@ -116,24 +115,30 @@ const ResetPasswordPage = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                <label htmlFor="reset-password" className="block text-xs font-bold text-[#8fb39c] tracking-wide">
                   New Password
                 </label>
                 <div className="relative">
-                  <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <FiLock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
+                    id="reset-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     minLength={8}
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
+                    aria-controls="reset-password"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c]"
                   >
                     {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
@@ -141,24 +146,30 @@ const ResetPasswordPage = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#8fb39c] tracking-wide">
+                <label htmlFor="reset-confirm-password" className="block text-xs font-bold text-[#8fb39c] tracking-wide">
                   Confirm New Password
                 </label>
                 <div className="relative">
-                  <FiLock className="absolute left-4 top-3.5 text-gray-400/80" />
+                  <FiLock aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
+                    id="reset-confirm-password"
+                    name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     required
                     minLength={8}
                     placeholder="Re-enter new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-11"
+                    className="w-full rounded-xl bg-[#062413] border border-[#144729] px-11 py-3 text-base md:text-sm outline-none focus:border-[#8fb39c] text-white placeholder-gray-500 transition-all pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-4 top-3.5 text-gray-400 hover:text-white"
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    aria-pressed={showConfirmPassword}
+                    aria-controls="reset-confirm-password"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c]"
                   >
                     {showConfirmPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                   </button>
@@ -176,12 +187,13 @@ const ResetPasswordPage = () => {
 
               <p className="text-center text-xs font-semibold text-[#8fb39c] mt-5 select-none">
                 Remember your password?{" "}
-                <span
+                <button
+                  type="button"
                   onClick={() => navigate("/login")}
-                  className="text-white hover:underline cursor-pointer font-bold"
+                  className="inline-block -my-3 -mx-1 px-1 py-3 rounded-md text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#8fb39c] cursor-pointer font-bold"
                 >
                   Sign in
-                </span>
+                </button>
               </p>
             </form>
           )}

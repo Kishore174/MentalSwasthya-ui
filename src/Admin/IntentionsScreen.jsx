@@ -175,7 +175,7 @@ const IntentionsScreen = () => {
     <div style={{ fontFamily: "'DM Sans', sans-serif", color: "#22331b" }} className="space-y-6 pb-10">
       
       {/* ─── Hero Banner matching Dashboard lines & aesthetics ─── */}
-      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-7 md:p-9 z-20">
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9 z-20">
         <div className="absolute inset-0 rounded-[28px] overflow-hidden pointer-events-none">
           <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />
           <div className="absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-sky-200/20" />
@@ -185,7 +185,7 @@ const IntentionsScreen = () => {
         </p>
         <div className="relative mt-3 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-[#22331b]">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#22331b]">
               Your daily intentions
             </h1>
             <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
@@ -196,10 +196,9 @@ const IntentionsScreen = () => {
       </section>
 
       {/* ─── TOP SECTION: 2-Column Main Writer ─── */}
-      <div style={{
+      <div className="gap-5 sm:gap-6" style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-        gap: 24,
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(320px, 100%), 1fr))",
         alignItems: "stretch"
       }}>
         
@@ -211,9 +210,8 @@ const IntentionsScreen = () => {
         }}>
           {/* Welcome Header */}
           <div style={{ padding: "8px 4px" }}>
-            <h2 style={{
+            <h2 className="text-[1.75rem] sm:text-[2.1rem]" style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "2.1rem",
               fontWeight: 700,
               color: "#1e3019",
               lineHeight: 1.2
@@ -227,12 +225,11 @@ const IntentionsScreen = () => {
           </div>
 
           {/* Inspirational Quote Card */}
-          <div style={{
+          <div className="px-5 py-6 sm:px-7 sm:py-8" style={{
             position: "relative",
             background: "linear-gradient(145deg, #faf7f0 0%, #f3ede2 100%)",
             border: "1px solid #e5dccb",
             borderRadius: 24,
-            padding: "32px 28px",
             boxShadow: "0 10px 28px rgba(100,90,70,0.06)",
             flex: 1,
             display: "flex",
@@ -288,12 +285,12 @@ const IntentionsScreen = () => {
         </div>
 
         {/* ─── RIGHT COLUMN: WRITING SPACE (JOURNAL & INTENTION WRITING) ─── */}
-        <div style={{
+        <div className="px-4 pt-5 pb-6 sm:px-6 sm:pt-6 sm:pb-7" style={{
           position: "relative",
+          minWidth: 0,
           background: "#ffffff",
           border: "2px solid #d4c8b2",
           borderRadius: 24,
-          padding: "24px 24px 28px",
           boxShadow: "0 12px 32px rgba(80,70,50,0.08)",
           display: "flex",
           flexDirection: "column"
@@ -315,26 +312,28 @@ const IntentionsScreen = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 10,
             paddingLeft: 12,
             paddingBottom: 12,
             borderBottom: "1px dashed #dcd3be",
             marginBottom: 14
           }}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#8a9a80" }}>
                 WRITING SPACE
               </p>
-              <h3 style={{
+              <h3 className="text-[1.15rem] sm:text-[1.3rem]" style={{
                 fontFamily: "'Cormorant Garamond', serif",
-                fontSize: "1.3rem",
                 fontWeight: 700,
                 color: "#29401f",
-                marginTop: 2
+                marginTop: 2,
+                lineHeight: 1.25
               }}>
                 JOURNAL & INTENTION WRITING
               </h3>
             </div>
-            <div style={{
+            <div aria-hidden="true" style={{
+              flexShrink: 0,
               width: 34,
               height: 34,
               borderRadius: 10,
@@ -354,9 +353,12 @@ const IntentionsScreen = () => {
             <button
               type="button"
               onClick={() => setWritingTab("reflection")}
+              aria-pressed={writingTab === "reflection"}
               style={{
                 flex: 1,
-                padding: "8px 12px",
+                minWidth: 0,
+                minHeight: 44,
+                padding: "8px 10px",
                 borderRadius: 12,
                 fontSize: 11.5,
                 fontWeight: 700,
@@ -373,9 +375,12 @@ const IntentionsScreen = () => {
             <button
               type="button"
               onClick={() => setWritingTab("journal")}
+              aria-pressed={writingTab === "journal"}
               style={{
                 flex: 1,
-                padding: "8px 12px",
+                minWidth: 0,
+                minHeight: 44,
+                padding: "8px 10px",
                 borderRadius: 12,
                 fontSize: 11.5,
                 fontWeight: 700,
@@ -474,15 +479,17 @@ const IntentionsScreen = () => {
                   boxShadow: "inset 0 1px 4px rgba(0,0,0,0.02)"
                 }}>
                   <textarea
+                    id="intention-reflection"
+                    aria-label="Reflection on yesterday's intention"
                     value={reflectionText}
                     onChange={(e) => setReflectionText(e.target.value)}
                     placeholder="Add your reflections on all outcomes..."
+                    className="text-base sm:text-[13px]"
                     style={{
                       width: "100%",
                       minHeight: 85,
                       border: "none",
                       outline: "none",
-                      fontSize: 13,
                       fontFamily: "'DM Sans', sans-serif",
                       color: "#293822",
                       resize: "none",
@@ -498,8 +505,11 @@ const IntentionsScreen = () => {
                   <button
                     type="button"
                     onClick={() => setReflectionOutcome("fully_realized")}
+                    aria-pressed={reflectionOutcome === "fully_realized"}
                     style={{
-                      padding: "10px",
+                      minWidth: 0,
+                      minHeight: 44,
+                      padding: "8px",
                       borderRadius: 14,
                       border: "1px solid",
                       borderColor: reflectionOutcome === "fully_realized" ? "#10b981" : "#e5e7eb",
@@ -511,7 +521,8 @@ const IntentionsScreen = () => {
                       transition: "all 0.2s"
                     }}
                   >
-                    <span style={{
+                    <span aria-hidden="true" style={{
+                      flexShrink: 0,
                       width: 22,
                       height: 22,
                       borderRadius: "50%",
@@ -542,8 +553,11 @@ const IntentionsScreen = () => {
                   <button
                     type="button"
                     onClick={() => setReflectionOutcome("progress_made")}
+                    aria-pressed={reflectionOutcome === "progress_made"}
                     style={{
-                      padding: "10px",
+                      minWidth: 0,
+                      minHeight: 44,
+                      padding: "8px",
                       borderRadius: 14,
                       border: "1px solid",
                       borderColor: reflectionOutcome === "progress_made" ? "#f59e0b" : "#e5e7eb",
@@ -555,7 +569,8 @@ const IntentionsScreen = () => {
                       transition: "all 0.2s"
                     }}
                   >
-                    <span style={{
+                    <span aria-hidden="true" style={{
+                      flexShrink: 0,
                       width: 22,
                       height: 22,
                       borderRadius: "50%",
@@ -586,8 +601,11 @@ const IntentionsScreen = () => {
                   <button
                     type="button"
                     onClick={() => setReflectionOutcome("pivot_shifted")}
+                    aria-pressed={reflectionOutcome === "pivot_shifted"}
                     style={{
-                      padding: "10px",
+                      minWidth: 0,
+                      minHeight: 44,
+                      padding: "8px",
                       borderRadius: 14,
                       border: "1px solid",
                       borderColor: reflectionOutcome === "pivot_shifted" ? "#f97316" : "#e5e7eb",
@@ -599,7 +617,8 @@ const IntentionsScreen = () => {
                       transition: "all 0.2s"
                     }}
                   >
-                    <span style={{
+                    <span aria-hidden="true" style={{
+                      flexShrink: 0,
                       width: 22,
                       height: 22,
                       borderRadius: "50%",
@@ -630,8 +649,11 @@ const IntentionsScreen = () => {
                   <button
                     type="button"
                     onClick={() => setReflectionOutcome("not_met")}
+                    aria-pressed={reflectionOutcome === "not_met"}
                     style={{
-                      padding: "10px",
+                      minWidth: 0,
+                      minHeight: 44,
+                      padding: "8px",
                       borderRadius: 14,
                       border: "1px solid",
                       borderColor: reflectionOutcome === "not_met" ? "#f43f5e" : "#e5e7eb",
@@ -643,7 +665,8 @@ const IntentionsScreen = () => {
                       transition: "all 0.2s"
                     }}
                   >
-                    <span style={{
+                    <span aria-hidden="true" style={{
+                      flexShrink: 0,
                       width: 22,
                       height: 22,
                       borderRadius: "50%",
@@ -681,6 +704,7 @@ const IntentionsScreen = () => {
                       color: "#ffffff",
                       border: "none",
                       borderRadius: 99,
+                      minHeight: 40,
                       padding: "8px 32px",
                       fontSize: 12,
                       fontWeight: 700,
@@ -699,12 +723,11 @@ const IntentionsScreen = () => {
           ) : (
             /* TAB 2: TODAY'S JOURNAL & INTENTION WRITER (Lined Notebook Paper) */
             <form onSubmit={handleSave} style={{ flex: 1, display: "flex", flexDirection: "column", paddingLeft: 12 }}>
-              <div style={{
+              <div className="px-3.5 py-4 sm:px-[18px]" style={{
                 position: "relative",
                 background: "#fffdf9",
                 border: "1px solid #ebd9be",
                 borderRadius: 16,
-                padding: "16px 18px",
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
@@ -728,6 +751,9 @@ const IntentionsScreen = () => {
 
                 {/* Lined Textarea */}
                 <textarea
+                  id="intention-journal"
+                  aria-label="Today's intention"
+                  className="text-base sm:text-[14.5px]"
                   value={intentionText}
                   onChange={(e) => setIntentionText(e.target.value)}
                   placeholder="My deep intention for today is to move through the morning calmly, to take a proper break, and to express my gratitude to the people I work with..."
@@ -738,7 +764,6 @@ const IntentionsScreen = () => {
                     border: "none",
                     outline: "none",
                     background: "transparent",
-                    fontSize: 14.5,
                     fontFamily: "'DM Sans', sans-serif",
                     lineHeight: "28px",
                     color: "#293822",
@@ -758,6 +783,7 @@ const IntentionsScreen = () => {
                   justifyContent: "center",
                   gap: 8,
                   marginTop: 16,
+                  minHeight: 44,
                   padding: "13px 24px",
                   borderRadius: 14,
                   background: "linear-gradient(135deg, #7d9667 0%, #688252 100%)",
@@ -783,13 +809,11 @@ const IntentionsScreen = () => {
       </div>
 
       {/* ─── BOTTOM SECTION: INSPIRATION KIT (DAILY PROMPTS & INSPIRATION) ─── */}
-      <section style={{
+      <section className="px-4 py-6 sm:px-7 sm:py-8 !mt-6 sm:!mt-9" style={{
         background: "linear-gradient(145deg, #faf9f4 0%, #f4f0e6 100%)",
         border: "1px solid #e2d8c3",
         borderRadius: 28,
-        padding: "32px 28px",
-        boxShadow: "0 12px 35px rgba(80,70,50,0.06)",
-        marginTop: 36
+        boxShadow: "0 12px 35px rgba(80,70,50,0.06)"
       }}>
         {/* Header */}
         <div style={{
@@ -828,12 +852,12 @@ const IntentionsScreen = () => {
             </span>
           </div>
 
-          <h2 style={{
+          <h2 className="text-[1.6rem] sm:text-[2rem]" style={{
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: "2rem",
             fontWeight: 700,
             color: "#22331b",
-            marginTop: 6
+            marginTop: 6,
+            lineHeight: 1.2
           }}>
             DAILY PROMPTS & INSPIRATION
           </h2>
@@ -843,11 +867,10 @@ const IntentionsScreen = () => {
         </div>
 
         {/* ── Spotlight Featured Prompt Card ── */}
-        <div style={{
+        <div className="p-4 sm:px-[26px] sm:py-6" style={{
           background: "#ffffff",
           border: "1.5px solid #d8e5d2",
           borderRadius: 22,
-          padding: "24px 26px",
           boxShadow: "0 8px 24px rgba(80,105,67,0.06)",
           marginBottom: 24,
           display: "flex",
@@ -881,6 +904,7 @@ const IntentionsScreen = () => {
                 fontSize: 12,
                 fontWeight: 700,
                 borderRadius: 10,
+                minHeight: 40,
                 padding: "6px 14px",
                 cursor: "pointer",
                 transition: "all 0.2s"
@@ -892,9 +916,8 @@ const IntentionsScreen = () => {
             </button>
           </div>
 
-          <p style={{
+          <p className="text-[1.2rem] sm:text-[1.35rem]" style={{
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: "1.35rem",
             color: "#1e3019",
             lineHeight: 1.5,
             fontWeight: 600,
@@ -916,6 +939,7 @@ const IntentionsScreen = () => {
                 fontSize: 12,
                 fontWeight: 700,
                 borderRadius: 12,
+                minHeight: 44,
                 padding: "9px 18px",
                 border: "none",
                 cursor: "pointer",
@@ -930,7 +954,7 @@ const IntentionsScreen = () => {
         {/* ── Curated Prompt Kits Grid ── */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))",
           gap: 16
         }}>
           {PROMPT_KITS.map((kit, idx) => {
@@ -939,11 +963,20 @@ const IntentionsScreen = () => {
               <div
                 key={idx}
                 onClick={() => handleApplyPromptToJournal(kit.template)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Use template: ${kit.title}`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleApplyPromptToJournal(kit.template);
+                  }
+                }}
+                className="p-4 sm:px-[22px] sm:py-5"
                 style={{
                   background: "#ffffff",
                   border: `1px solid ${kit.borderColor}`,
                   borderRadius: 20,
-                  padding: "20px 22px",
                   cursor: "pointer",
                   display: "flex",
                   flexDirection: "column",
@@ -963,7 +996,8 @@ const IntentionsScreen = () => {
               >
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{
+                    <div aria-hidden="true" style={{
+                      flexShrink: 0,
                       width: 36,
                       height: 36,
                       borderRadius: 12,
