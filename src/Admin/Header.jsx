@@ -46,6 +46,7 @@ const routeTitles = {
   '/app/subscription': { title: 'Subscription Plans', subtitle: 'Unlock unlimited access to all features' },
   '/app/gift-cards': { title: 'Gift Cards', subtitle: 'Share the gift of mindfulness with loved ones' },
   '/app/contact': { title: 'Contact Support', subtitle: 'We are here to help and guide you' },
+  '/app/profile': { title: 'My Profile', subtitle: 'Manage your personal wellness settings and weekly off schedule' },
   '/app/users': { title: 'User Management', subtitle: 'Manage application users and permissions' },
 };
 
@@ -381,6 +382,15 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
                 {/* Profile Options */}
                 <div className="p-2">
+                  <Link
+                    to="/app/profile"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#3b4e31] hover:bg-[#f0f6ec] hover:text-[#29401f] rounded-xl transition-colors"
+                  >
+                    <FiUser className="text-[#66785c] text-sm" />
+                    <span>My Profile</span>
+                  </Link>
+
                   <Link
                     to="/app/achievements"
                     onClick={() => setIsProfileOpen(false)}

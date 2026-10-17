@@ -303,7 +303,7 @@ const LandingPage = () => {
 
   const copyReferralCode = () => {
     navigator.clipboard.writeText("SHARE_JOY24");
-    toast.success("Referral code copied! Enter this during sign up for 3 months free.");
+    toast.success("Gift code copied! Enter this during sign up for 3 months free.");
   };
 
   const navItems = [
@@ -1119,14 +1119,14 @@ const LandingPage = () => {
                   Share the love, get more free!
                 </h4>
                 <p style={{ fontSize: 12.5, color: "#6e5d57", lineHeight: 1.6 }}>
-                  If your loved ones register using your referral code, you will get an additional <strong style={{ color: "#d36a3d" }}>1 more month</strong> subscription absolutely free.
+                  If your loved ones register using your gift code, you will get an additional <strong style={{ color: "#d36a3d" }}>1 more month</strong> subscription absolutely free.
                 </p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#6e5d57", uppercase: "true", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
-                    Your Referral Code:
+                    Your Gift Code:
                   </span>
                   <div style={{
                     display: "flex",

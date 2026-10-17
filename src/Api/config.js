@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getDeviceId } from "../utils/device";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "https://api.mentalswasthya.com/api";
@@ -83,6 +84,7 @@ axiosInstance.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers["x-device-id"] = getDeviceId();
     return config;
   },
   (error) => Promise.reject(error)
@@ -93,6 +95,19 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error?.response?.status;
+
+    if (error?.response?.data?.code === "DEVICE_SWITCHED") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        sessionStorage.setItem(
+          "device_switched_msg",
+          "You have been signed out because your account was logged in on another device (One-Device Policy)."
+        );
+        window.location.href = "/login";
+      }
+      return Promise.reject(error);
+    }
 
     if (
       status === 401 &&

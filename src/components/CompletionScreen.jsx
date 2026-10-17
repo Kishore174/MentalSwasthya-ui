@@ -78,12 +78,15 @@ export default function CompletionScreen({
   const handleDone = () => (onDone ? onDone() : flash("Returning to dashboard…"));
   const handleTomorrow = () => (onReset ? onReset() : flash("See you tomorrow."));
 
+  const [pausedAutoClose, setPausedAutoClose] = useState(false);
+
   useEffect(() => {
+    if (pausedAutoClose) return;
     const autoCloseTimer = setTimeout(() => {
       if (onDone) onDone();
-    }, 5000);
+    }, 15000);
     return () => clearTimeout(autoCloseTimer);
-  }, [onDone]);
+  }, [onDone, pausedAutoClose]);
 
   const nextRewardAt = referralCount >= 3 ? null : referralCount + 1;
 
@@ -106,12 +109,56 @@ export default function CompletionScreen({
         @keyframes ms-fill {
           from { width: 0%; }
         }
+
+        /* ── Share Attention Animations ──────────────────────── */
+        @keyframes ms-share-pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(125, 150, 103, 0.6), 0 4px 12px rgba(30, 48, 25, 0.15);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 0 10px rgba(125, 150, 103, 0), 0 8px 22px rgba(125, 150, 103, 0.4);
+            transform: scale(1.045);
+          }
+        }
+
+        @keyframes ms-share-soft-bounce {
+          0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-4px);
+          }
+          60% {
+            transform: translateY(-2px);
+          }
+        }
+
+        @keyframes ms-glowing-ring {
+          0%, 100% {
+            border-color: #8fa779;
+            box-shadow: 0 0 0 1px rgba(125, 150, 103, 0.35), 0 2px 8px rgba(125, 150, 103, 0.1);
+          }
+          50% {
+            border-color: #4a6b47;
+            box-shadow: 0 0 0 3px rgba(74, 107, 71, 0.4), 0 4px 16px rgba(74, 107, 71, 0.25);
+          }
+        }
+
         .ms-mount { animation: ms-rise 0.6s cubic-bezier(0.16,1,0.3,1) both; }
         .ms-aura-anim { animation: ms-aura 1.8s cubic-bezier(0.16,1,0.3,1) both; }
         .ms-track-fill { animation: ms-fill 1s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
 
+        .ms-share-btn-attention {
+          animation: ms-share-pulse-glow 2.2s ease-in-out infinite, ms-share-soft-bounce 4.4s ease-in-out infinite;
+        }
+
+        .ms-share-nudge-glow {
+          animation: ms-glowing-ring 2.8s ease-in-out infinite;
+        }
+
         @media (prefers-reduced-motion: reduce) {
-          .ms-mount, .ms-aura-anim, .ms-track-fill { animation: none !important; }
+          .ms-mount, .ms-aura-anim, .ms-track-fill, .ms-share-btn-attention, .ms-share-nudge-glow { animation: none !important; }
         }
       `}</style>
 
@@ -192,13 +239,15 @@ export default function CompletionScreen({
           <button
             type="button"
             onClick={handleShare}
-            className="w-full min-h-[44px] mt-4 rounded-xl bg-[#f7faf5] hover:bg-[#eef4e8] transition-colors px-4 py-3 flex items-center justify-between border border-[#e6efe0] text-left"
+            onMouseEnter={() => setPausedAutoClose(true)}
+            className="w-full min-h-[44px] mt-4 rounded-xl bg-gradient-to-r from-[#f5faf0] via-[#edf6e8] to-[#f5faf0] hover:from-[#edf5e6] hover:to-[#e4efe0] transition-all px-4 py-3 flex items-center justify-between border-2 border-[#b5cca8] text-left shadow-sm hover:shadow ms-share-nudge-glow group cursor-pointer"
           >
-            <span className="text-[12.5px] text-[#5c6f52]">
+            <span className="text-[12.5px] text-[#33462b] font-medium flex items-center gap-2">
+              <span className="text-base">🌿</span>
               Know someone who could use five calm minutes?
             </span>
-            <span className="text-[12.5px] font-semibold text-[#7d9667] flex items-center gap-1 shrink-0 ml-3">
-              Share <Share2 size={13} />
+            <span className="ms-share-btn-attention text-[12px] font-bold text-white bg-[#0a331c] group-hover:bg-[#14281e] px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 ml-3 shadow-md border border-[#7d9667]/50">
+              Share <Share2 size={12} className="text-[#a8d392]" />
             </span>
           </button>
 
@@ -259,16 +308,23 @@ export default function CompletionScreen({
                     <button
                       type="button"
                       onClick={copyReferralLink}
-                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-[#1e382b] hover:bg-[#14281e] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
+                      onMouseEnter={() => setPausedAutoClose(true)}
+                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-[#2e3b29] hover:bg-[#1f281b] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
                     >
                       <Copy size={13} /> Copy
                     </button>
                     <button
                       type="button"
                       onClick={shareReferralLink}
-                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-white hover:bg-[#f2f6ee] text-[#3a4d31] font-semibold text-xs transition-colors border border-[#dbe7d3] flex items-center justify-center gap-1.5 whitespace-nowrap"
+                      onMouseEnter={() => setPausedAutoClose(true)}
+                      className="ms-share-btn-attention relative flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-lg bg-gradient-to-r from-[#0a331c] to-[#1c472d] hover:from-[#062413] hover:to-[#133520] text-white font-bold text-xs transition-all duration-300 border-2 border-[#7d9667] flex items-center justify-center gap-1.5 whitespace-nowrap shadow-md cursor-pointer"
                     >
-                      <Share2 size={13} /> Share
+                      <span className="relative flex h-2 w-2 mr-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#b8e2a2] opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#b8e2a2]"></span>
+                      </span>
+                      <Share2 size={13} className="text-[#cde8ba]" />
+                      <span>Share</span>
                     </button>
                   </div>
                 </div>

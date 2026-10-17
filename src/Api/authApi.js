@@ -29,3 +29,13 @@ export const verifyEmail = (data) => {
 export const resendVerification = (data) => {
   return axiosInstance.post("/auth/individual/resend-verification", data);
 };
+
+// VERIFY 2FA (NEW DEVICE AUTHORIZATION)
+export const verify2FA = (data) => {
+  return axiosInstance.post("/auth/individual/verify-2fa", data);
+};
+
+// RESEND 2FA CODE
+export const resend2FA = (data) => {
+  return axiosInstance.post("/auth/individual/resend-2fa", data);
+};

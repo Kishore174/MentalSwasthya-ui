@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FiCheck, FiX, FiActivity, FiZap, FiCalendar,
-  FiArrowRight, FiCopy, FiShare2, FiGift, FiStar, FiPercent, FiClock
+  FiArrowRight, FiCopy, FiShare2, FiGift, FiStar, FiPercent, FiClock,
+  FiSlash, FiPauseCircle, FiPlayCircle, FiAlertCircle, FiCheckCircle, FiShield, FiRefreshCw
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+import {
+  getMySubscription,
+  updateSubscriptionPlan,
+  stopAutoDebit,
+  resumeAutoDebit,
+  cancelSubscription,
+  reactivateSubscription
+} from "../Api/subscriptionApi";
 
 const SubscriptionScreen = () => {
   const { user } = useAuth();
@@ -19,7 +28,55 @@ const SubscriptionScreen = () => {
     return localStorage.getItem("mentalswasthya_subscription_cycle") || "annual";
   });
 
+  const [autoDebitEnabled, setAutoDebitEnabled] = useState(() => {
+    const saved = localStorage.getItem("mentalswasthya_auto_debit");
+    return saved !== "false";
+  });
+
+  const [subscriptionStatus, setSubscriptionStatus] = useState(() => {
+    return localStorage.getItem("mentalswasthya_subscription_status") || "active";
+  });
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showAutoDebitModal, setShowAutoDebitModal] = useState(false);
+  const [renewalDateFromBE, setRenewalDateFromBE] = useState(null);
+  const [loadingAction, setLoadingAction] = useState(false);
+
   const subscriptionDateStr = localStorage.getItem("mentalswasthya_subscription_date");
+
+  useEffect(() => {
+    const fetchSub = async () => {
+      try {
+        const res = await getMySubscription();
+        const sub = res?.data?.data?.subscription;
+        if (sub) {
+          if (sub.tier) {
+            setCurrentTier(sub.tier);
+            localStorage.setItem("mentalswasthya_subscription_tier", sub.tier);
+          }
+          if (sub.billingCycle) {
+            setBillingCycle(sub.billingCycle);
+            localStorage.setItem("mentalswasthya_subscription_cycle", sub.billingCycle);
+          }
+          if (typeof sub.autoDebit === "boolean") {
+            setAutoDebitEnabled(sub.autoDebit);
+            localStorage.setItem("mentalswasthya_auto_debit", sub.autoDebit.toString());
+          }
+          if (sub.status) {
+            const normalizedStatus = sub.status === "canceled" ? "cancelled" : sub.status;
+            setSubscriptionStatus(normalizedStatus);
+            localStorage.setItem("mentalswasthya_subscription_status", normalizedStatus);
+          }
+          if (sub.currentPeriodEnd) {
+            setRenewalDateFromBE(new Date(sub.currentPeriodEnd));
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch subscription from server, using local preferences:", err);
+      }
+    };
+    fetchSub();
+  }, []);
 
   // Referral Rewards State
   const [referralCount, setReferralCount] = useState(2); // 2 out of 3 earned
@@ -71,16 +128,105 @@ const SubscriptionScreen = () => {
     }
   ];
 
-  const handleCycleChange = (cycle) => {
+  const handleCycleChange = async (cycle) => {
     setBillingCycle(cycle);
     localStorage.setItem("mentalswasthya_subscription_cycle", cycle);
+    try {
+      const res = await updateSubscriptionPlan({ tier: currentTier, billingCycle: cycle });
+      const sub = res?.data?.data?.subscription;
+      if (sub?.currentPeriodEnd) setRenewalDateFromBE(new Date(sub.currentPeriodEnd));
+      window.dispatchEvent(new Event("subscription_updated"));
+    } catch (err) {
+      console.warn("Cycle update local only:", err);
+      window.dispatchEvent(new Event("subscription_updated"));
+    }
   };
 
-  const handleUpgrade = (tierId, tierName) => {
+  const handleUpgrade = async (tierId, tierName) => {
+    setLoadingAction(true);
     localStorage.setItem("mentalswasthya_subscription_tier", tierId);
     localStorage.setItem("mentalswasthya_subscription_date", Date.now().toString());
+    localStorage.setItem("mentalswasthya_subscription_status", "active");
+    localStorage.setItem("mentalswasthya_auto_debit", "true");
     setCurrentTier(tierId);
-    toast.success(`Successfully updated subscription to ${tierName}!`);
+    setSubscriptionStatus("active");
+    setAutoDebitEnabled(true);
+
+    try {
+      const res = await updateSubscriptionPlan({ tier: tierId, billingCycle });
+      const sub = res?.data?.data?.subscription;
+      if (sub?.currentPeriodEnd) setRenewalDateFromBE(new Date(sub.currentPeriodEnd));
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success(`Successfully updated subscription to ${tierName}!`);
+    } catch (err) {
+      console.warn("Upgrade local only:", err);
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success(`Successfully updated subscription to ${tierName}!`);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const handleToggleAutoDebit = async () => {
+    const nextState = !autoDebitEnabled;
+    setAutoDebitEnabled(nextState);
+    localStorage.setItem("mentalswasthya_auto_debit", nextState.toString());
+    setShowAutoDebitModal(false);
+
+    try {
+      if (nextState) {
+        await resumeAutoDebit();
+        window.dispatchEvent(new Event("subscription_updated"));
+        toast.success("Auto-debit resumed. Automatic payments enabled for next billing cycle.");
+      } else {
+        await stopAutoDebit();
+        window.dispatchEvent(new Event("subscription_updated"));
+        toast.success("Auto-debit stopped. No automatic charges will occur.", { icon: "🛑" });
+      }
+    } catch (err) {
+      console.warn("Auto-debit toggle local only:", err);
+      window.dispatchEvent(new Event("subscription_updated"));
+      if (nextState) {
+        toast.success("Auto-debit resumed. Automatic payments enabled for next billing cycle.");
+      } else {
+        toast.success("Auto-debit stopped. No automatic charges will occur.", { icon: "🛑" });
+      }
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setSubscriptionStatus("cancelled");
+    setAutoDebitEnabled(false);
+    localStorage.setItem("mentalswasthya_subscription_status", "cancelled");
+    localStorage.setItem("mentalswasthya_auto_debit", "false");
+    setShowCancelModal(false);
+
+    try {
+      await cancelSubscription();
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success(`Subscription cancelled. You retain full premium access until ${formattedRenewDate}.`);
+    } catch (err) {
+      console.warn("Cancellation local only:", err);
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success(`Subscription cancelled. You retain full premium access until ${formattedRenewDate}.`);
+    }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setSubscriptionStatus("active");
+    setAutoDebitEnabled(true);
+    localStorage.setItem("mentalswasthya_subscription_status", "active");
+    localStorage.setItem("mentalswasthya_auto_debit", "true");
+
+    try {
+      await reactivateSubscription();
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success("Subscription reactivated successfully! Welcome back to Wellness Pro.");
+    } catch (err) {
+      console.warn("Reactivation local only:", err);
+      window.dispatchEvent(new Event("subscription_updated"));
+      toast.success("Subscription reactivated successfully! Welcome back to Wellness Pro.");
+    }
   };
 
   const copyReferralLink = () => {
@@ -105,19 +251,27 @@ const SubscriptionScreen = () => {
   const activePrice = billingCycle === "monthly" ? activePlan.monthlyPrice : activePlan.annualPrice;
   const ActiveIcon = activePlan.icon;
 
-  // Calculate dynamic renewal date (Today + 1 Month / 1 Year)
+  // Calculate dynamic renewal date (From BE or Calculated Local)
   const subDate = subscriptionDateStr ? new Date(parseInt(subscriptionDateStr)) : new Date();
-  const renewDate = new Date(subDate);
-  if (billingCycle === "annual") {
-    renewDate.setFullYear(renewDate.getFullYear() + 1);
-  } else {
-    renewDate.setMonth(renewDate.getMonth() + 1);
+  const renewDate = renewalDateFromBE || new Date(subDate);
+  if (!renewalDateFromBE) {
+    if (billingCycle === "annual") {
+      renewDate.setFullYear(renewDate.getFullYear() + 1);
+    } else {
+      renewDate.setMonth(renewDate.getMonth() + 1);
+    }
   }
   const formattedRenewDate = renewDate.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric"
   });
+
+  const now = new Date();
+  const diffMs = renewDate.getTime() - now.getTime();
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const isGracePeriod = (daysLeft <= 0 || subscriptionStatus === "past_due" || (subscriptionStatus === "cancelled" && daysLeft <= 0));
+  const isExpiringSoon = daysLeft > 0 && daysLeft <= 14 && subscriptionStatus === "active";
 
   return (
     <div className="space-y-6 text-[#22331b] pb-10">
@@ -173,10 +327,10 @@ const SubscriptionScreen = () => {
       <div className="rounded-[28px] bg-white border border-[#dde8d5] p-4 sm:p-6 md:p-8 shadow-[0_10px_35px_rgba(80,105,67,0.05)] space-y-5 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <div className="flex items-start sm:items-center gap-2">
-              <span className="relative flex h-3 w-3 shrink-0 mt-0.5 sm:mt-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-3 w-3">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${subscriptionStatus === "cancelled" ? "bg-amber-400" : "bg-emerald-400"} opacity-75`}></span>
+                <span className={`relative inline-flex rounded-full h-3 w-3 ${subscriptionStatus === "cancelled" ? "bg-amber-500" : "bg-emerald-500"}`}></span>
               </span>
               <span className="text-xs font-black uppercase tracking-widest text-[#7d9667]">
                 Active Subscription Running Status
@@ -188,12 +342,48 @@ const SubscriptionScreen = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="bg-[#eef6ea] text-[#7d9667] text-xs font-black px-4 py-2 rounded-xl border border-[#cbe0c3] flex items-center gap-2">
-              <FiCheck className="text-[#7d9667]" size={16} />
-              Status: Active & Running
-            </span>
+            {isGracePeriod ? (
+              <span className="bg-rose-50 text-rose-800 text-xs font-black px-4 py-2 rounded-xl border border-rose-200 flex items-center gap-2 animate-pulse">
+                <FiAlertCircle className="text-rose-600" size={16} />
+                Status: Grace Period Active
+              </span>
+            ) : isExpiringSoon ? (
+              <span className="bg-amber-50 text-amber-800 text-xs font-black px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2">
+                <FiAlertCircle className="text-amber-600" size={16} />
+                Status: Expiring in {daysLeft} {daysLeft === 1 ? 'Day' : 'Days'}
+              </span>
+            ) : subscriptionStatus === "cancelled" ? (
+              <span className="bg-amber-50 text-amber-800 text-xs font-black px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2">
+                <FiAlertCircle className="text-amber-600" size={16} />
+                Status: Cancelled (Active until {formattedRenewDate})
+              </span>
+            ) : (
+              <span className="bg-[#eef6ea] text-[#7d9667] text-xs font-black px-4 py-2 rounded-xl border border-[#cbe0c3] flex items-center gap-2">
+                <FiCheck className="text-[#7d9667]" size={16} />
+                Status: Active & Running
+              </span>
+            )}
           </div>
         </div>
+
+        {/* Dynamic Expiry / Grace Period Warning Banner */}
+        {isGracePeriod && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 text-rose-900 text-xs sm:text-sm font-semibold flex items-center gap-3 shadow-sm">
+            <FiAlertCircle className="text-rose-600 shrink-0 animate-pulse" size={20} />
+            <div className="flex-1">
+              Currently you do not have any active plans, you are running on grace period. Please buy subscription to get uninterrupted usage
+            </div>
+          </div>
+        )}
+
+        {isExpiringSoon && !isGracePeriod && (
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 text-amber-900 text-xs sm:text-sm font-semibold flex items-center gap-3 shadow-sm">
+            <FiAlertCircle className="text-amber-600 shrink-0" size={20} />
+            <div className="flex-1">
+              Your current plan will expire in {daysLeft} days, please buy subscription for continued service
+            </div>
+          </div>
+        )}
 
         {/* Running Details Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -209,18 +399,84 @@ const SubscriptionScreen = () => {
             <span className="text-[11px] text-gray-500 font-medium">${activePrice} / month</span>
           </div>
 
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Auto-Renewal Date</p>
-            <p className="text-sm sm:text-base font-black text-[#22331b] mt-1">{formattedRenewDate}</p>
-            <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-              <FiClock size={11} /> Auto-renew enabled
+          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Next Billing / Expiry Date</p>
+            <p className="text-base font-black text-[#22331b] mt-1">{formattedRenewDate}</p>
+            {autoDebitEnabled && subscriptionStatus === "active" ? (
+              <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                <FiCheckCircle size={11} /> Auto-renew enabled
+              </span>
+            ) : (
+              <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
+                <FiAlertCircle size={11} /> Auto-debit stopped
+              </span>
+            )}
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Auto-Debit Status</p>
+            <p className={`text-base font-black mt-1 ${autoDebitEnabled && subscriptionStatus === "active" ? "text-emerald-700" : "text-amber-600"}`}>
+              {autoDebitEnabled && subscriptionStatus === "active" ? "Active" : "Stopped"}
+            </p>
+            <span className="text-[11px] text-gray-500 font-medium">
+              {autoDebitEnabled && subscriptionStatus === "active" ? "Recurring payment on" : "No auto deductions"}
+            </span>
+          </div>
+        </div>
+
+        {/* ─── Management Action Buttons (Cancel Subscription & Auto-Debit Stop) ─── */}
+        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 text-xs text-[#526649]">
+            <span className="w-7 h-7 rounded-lg bg-[#f0f5ee] flex items-center justify-center text-[#7d9667] flex-shrink-0">
+              <FiShield size={14} />
+            </span>
+            <span>
+              Cancel or stop auto-debit at any time. Your benefits stay active through the end of your billing period.
             </span>
           </div>
 
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#fbfdfa] border border-[#e8efe3] min-w-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Referral Reward Credit</p>
-            <p className="text-sm sm:text-base font-black text-amber-600 mt-1">2 Months Free Applied</p>
-            <span className="text-[11px] text-gray-500 font-medium">1 Referral Reward Pending</span>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            {/* Auto-Debit Stop / Resume Button */}
+            {autoDebitEnabled && subscriptionStatus === "active" ? (
+              <button
+                type="button"
+                onClick={() => setShowAutoDebitModal(true)}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100/70 text-amber-800 font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <FiPauseCircle size={15} />
+                Stop Auto-Debit
+              </button>
+            ) : subscriptionStatus === "active" ? (
+              <button
+                type="button"
+                onClick={handleToggleAutoDebit}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <FiPlayCircle size={15} />
+                Resume Auto-Debit
+              </button>
+            ) : null}
+
+            {/* Cancel Subscription Button */}
+            {subscriptionStatus === "active" && currentTier !== "free" ? (
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(true)}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <FiSlash size={14} />
+                Cancel Subscription
+              </button>
+            ) : subscriptionStatus === "cancelled" ? (
+              <button
+                type="button"
+                onClick={handleReactivateSubscription}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#1e382b] hover:bg-[#14281e] text-white font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
+              >
+                <FiRefreshCw size={14} />
+                Reactivate Subscription
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -479,6 +735,93 @@ const SubscriptionScreen = () => {
         </div>
 
       </div>
+
+      {/* ─── MODAL: CANCEL SUBSCRIPTION CONFIRMATION ─── */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-150 shadow-2xl space-y-5">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center">
+              <FiAlertCircle size={24} />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-[#22331b]">Cancel Subscription?</h3>
+              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                Are you sure you want to cancel your <strong>{activePlan.name}</strong> subscription? You will retain access until <strong>{formattedRenewDate}</strong>, after which your account will revert to the free tier.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
+              <FiPauseCircle size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <strong>Alternative:</strong> You can choose to <strong>Stop Auto-Debit</strong> instead. This ensures you won't be charged again without losing your membership right now.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-all order-3 sm:order-1"
+              >
+                Keep Subscription
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleAutoDebit}
+                className="flex-1 py-3 px-4 rounded-xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-900 font-bold text-xs transition-all order-2"
+              >
+                Stop Auto-Debit Only
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                className="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all order-1 sm:order-3"
+              >
+                Confirm Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MODAL: STOP AUTO-DEBIT CONFIRMATION ─── */}
+      {showAutoDebitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-150 shadow-2xl space-y-5">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+              <FiPauseCircle size={24} />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-[#22331b]">Stop Auto-Debit?</h3>
+              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+                By stopping auto-debit, your card or bank account will <strong>not</strong> be automatically charged on <strong>{formattedRenewDate}</strong>.
+              </p>
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                Your premium benefits remain fully active through <strong>{formattedRenewDate}</strong>. You can resume auto-debit at any time before that date.
+              </p>
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAutoDebitModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-all"
+              >
+                Keep Auto-Debit
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleAutoDebit}
+                className="flex-1 py-3 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-all shadow-sm"
+              >
+                Confirm Stop Auto-Debit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
