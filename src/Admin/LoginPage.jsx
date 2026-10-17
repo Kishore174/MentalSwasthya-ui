@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiEye, FiEyeOff, FiMail, FiArrowRight, FiGift, FiRefreshCw, FiLock, FiKey, FiShield, FiSmartphone } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiMail, FiArrowRight, FiGift, FiRefreshCw, FiLock, FiKey, FiShield, FiSmartphone, FiUser } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import loginicon from "../Assets/logo.jpg";
