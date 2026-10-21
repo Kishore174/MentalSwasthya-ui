@@ -16,6 +16,9 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import CompletionScreen from "../components/CompletionScreen";
+import { getTodayProgress, recordBreathingToday } from "../utils/dailyProgress";
+import { isPremium, PREMIUM_MESSAGE } from "../utils/plan";
+import { toast } from "react-hot-toast";
 import { playBell } from "../utils/audioUtils";
 import {
   completeBreathingSession,
@@ -226,6 +229,7 @@ const ProgressShape = ({
   trackColor = "#e4ecdf",
   progressColor = "#7d9667",
   className = "absolute inset-0 w-full h-full",
+  showBall = false,
 }) => {
   const pathRef = useRef(null);
   const [totalLength, setTotalLength] = useState(0);
@@ -267,6 +271,17 @@ const ProgressShape = ({
   // Use continuous progress for alternating draw/erase snake effect
   const dashOffset = length * (1 - progress / 100);
 
+  // A ball travels once around the outline per breathing cycle, so it always stays on the shape.
+  let ball = null;
+  if (showBall && pathRef.current && typeof pathRef.current.getPointAtLength === "function") {
+    const cycleFrac = (((progress / 100) % 1) + 1) % 1;
+    try {
+      ball = pathRef.current.getPointAtLength(length * cycleFrac);
+    } catch (e) {
+      ball = null;
+    }
+  }
+
   return (
     <svg className={className} viewBox="0 0 120 120">
       <path
@@ -289,6 +304,17 @@ const ProgressShape = ({
         strokeDashoffset={dashOffset}
         style={{ transition: progress === 0 ? "none" : "stroke-dashoffset 0.1s linear" }}
       />
+      {ball && (
+        <circle
+          cx={ball.x}
+          cy={ball.y}
+          r={5.5}
+          fill="#ffffff"
+          stroke="#a8c896"
+          strokeWidth={2}
+          style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.9))" }}
+        />
+      )}
     </svg>
   );
 };
@@ -320,6 +346,50 @@ const MeditationScreen = () => {
   const [customHold1, setCustomHold1] = useState(4);
   const [customExhale, setCustomExhale] = useState(4);
   const [customHold2, setCustomHold2] = useState(4);
+
+  // Up to 3 saved custom sets per method (triangle / box / circle); saving a 4th overwrites the oldest.
+  const MAX_SAVED_SETS = 3;
+  const SETS_KEY = "ms_custom_breath_sets";
+  const [savedSets, setSavedSets] = useState(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(SETS_KEY) || "{}");
+      return v && typeof v === "object" ? v : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  const persistSets = (next) => {
+    setSavedSets(next);
+    try {
+      localStorage.setItem(SETS_KEY, JSON.stringify(next));
+    } catch (e) { /* storage unavailable: keep in memory only */ }
+  };
+
+  const saveCurrentSet = () => {
+    const entry = {
+      id: Date.now(),
+      inhale: Math.max(1, parseInt(customInhale) || 1),
+      hold1: Math.max(0, parseInt(customHold1) || 0),
+      exhale: Math.max(1, parseInt(customExhale) || 1),
+      hold2: Math.max(0, parseInt(customHold2) || 0),
+    };
+    const current = savedSets[selectedTechnique] || [];
+    const next = [...current, entry].slice(-MAX_SAVED_SETS); // drop the oldest beyond 3
+    persistSets({ ...savedSets, [selectedTechnique]: next });
+  };
+
+  const loadSet = (entry) => {
+    setCustomInhale(entry.inhale);
+    setCustomHold1(entry.hold1);
+    setCustomExhale(entry.exhale);
+    setCustomHold2(entry.hold2);
+    resetLocalSession();
+  };
+
+  const deleteSet = (id) => {
+    persistSets({ ...savedSets, [selectedTechnique]: (savedSets[selectedTechnique] || []).filter((e) => e.id !== id) });
+  };
 
   const customPreset = useMemo(() => {
     const inh = Math.max(1, parseInt(customInhale) || 1);
@@ -380,7 +450,9 @@ const MeditationScreen = () => {
 
   const cycleSeconds = config.phases.reduce((total, phase) => total + phase.seconds, 0);
   const totalCycles = Math.max(1, Math.ceil(durationSeconds / cycleSeconds));
-  const progress = durationSeconds ? Math.min(100, (elapsedSeconds / durationSeconds) * 100) : 0;
+  // Always finish the breathing cycle in progress: the session runs for whole cycles only.
+  const sessionSeconds = totalCycles * cycleSeconds;
+  const progress = sessionSeconds ? Math.min(100, (elapsedSeconds / sessionSeconds) * 100) : 0;
 
   const { activePhaseIndex, currentPhase, phaseProgress, shapeCycleProgress } = useMemo(() => {
     if (!cycleSeconds || cycleSeconds <= 0) {
@@ -425,14 +497,14 @@ const MeditationScreen = () => {
     const pName = (currentPhase?.name || "").toLowerCase();
     let scale = 1.0;
     if (pName.includes("inhale")) {
-      scale = 0.85 + 0.3 * phaseProgress;
+      scale = 0.6 + 0.22 * phaseProgress;
     } else if (pName.includes("exhale")) {
-      scale = 1.15 - 0.3 * phaseProgress;
+      scale = 0.82 - 0.22 * phaseProgress;
     } else if (pName.includes("hold")) {
       const isAfterInhale =
         activePhaseIndex > 0 &&
         (config.phases[activePhaseIndex - 1]?.name || "").toLowerCase().includes("inhale");
-      scale = isAfterInhale ? 1.15 : 0.85;
+      scale = isAfterInhale ? 0.82 : 0.6;
     }
     return {
       transform: `scale(${scale.toFixed(3)})`,
@@ -469,23 +541,24 @@ const MeditationScreen = () => {
       lastTick = now;
 
       setElapsedSeconds((current) => {
-        const nextElapsed = Math.min(current + delta, durationSeconds);
-        setRemainingSeconds(Math.max(durationSeconds - nextElapsed, 0));
+        const nextElapsed = Math.min(current + delta, sessionSeconds);
+        setRemainingSeconds(Math.max(sessionSeconds - nextElapsed, 0));
         return nextElapsed;
       });
     }, 50);
 
     return () => clearInterval(interval);
-  }, [durationSeconds, isCompleted, isRunning]);
+  }, [sessionSeconds, isCompleted, isRunning]);
 
   useEffect(() => {
-    setCyclesCompleted(calculateCompletedCycles(elapsedSeconds, durationSeconds, cycleSeconds, totalCycles));
-  }, [cycleSeconds, durationSeconds, elapsedSeconds, totalCycles]);
+    setCyclesCompleted(calculateCompletedCycles(elapsedSeconds, sessionSeconds, cycleSeconds, totalCycles));
+  }, [cycleSeconds, sessionSeconds, elapsedSeconds, totalCycles]);
 
   useEffect(() => {
-    if (elapsedSeconds < durationSeconds || !sessionId || completedRef.current) return;
+    if (elapsedSeconds < sessionSeconds || !sessionId || completedRef.current) return;
 
     completedRef.current = true;
+    recordBreathingToday(sessionSeconds);
     setIsRunning(false);
     setIsCompleted(true);
     if (soundOn) playBell('double'); // Final double bell
@@ -496,12 +569,18 @@ const MeditationScreen = () => {
     }
 
     completeBreathingSession(sessionId, {
-      cyclesCompleted: calculateCompletedCycles(durationSeconds, durationSeconds, cycleSeconds, totalCycles),
-      completedSeconds: Math.floor(durationSeconds),
+      cyclesCompleted: calculateCompletedCycles(sessionSeconds, sessionSeconds, cycleSeconds, totalCycles),
+      completedSeconds: Math.floor(sessionSeconds),
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
-  }, [elapsedSeconds, durationSeconds, sessionId, cycleSeconds, totalCycles, soundOn]);
+  }, [elapsedSeconds, sessionSeconds, sessionId, cycleSeconds, totalCycles, soundOn]);
+
+  // After a finished session, send the user to the dashboard to pick their next tool
+  // (the dashboard guides them to the last page if they don't pick anything within a few seconds).
+  useEffect(() => {
+    if (isCompleted) navigate("/app", { state: { fromTool: true }, replace: true });
+  }, [isCompleted, navigate]);
 
   useEffect(() => {
     if (!isCountingDown) return undefined;
@@ -671,29 +750,7 @@ const MeditationScreen = () => {
   };
 
   if (isCompleted) {
-    let intentionsCount = 0;
-    try {
-      intentionsCount = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]").length;
-    } catch (e) { }
-
-    let playHistory = [];
-    try {
-      playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
-    } catch (e) { }
-
-    const medPlays = playHistory.filter(item => item.playlistType === "/meditation");
-    const affPlays = playHistory.filter(item => item.playlistType === "/affirmation");
-
-    const medMinutes = Math.round(medPlays.reduce((sum, item) => sum + (item.duration || 180), 0) / 60);
-    const totalPlayMinutes = Math.round(playHistory.reduce((sum, item) => sum + (item.duration || 120), 0) / 60);
-
-    const stepStatus = {
-      intention: intentionsCount > 0 ? `${intentionsCount} done` : "Done",
-      breathing: `${Math.round(durationSeconds / 60) || 4} min`,
-      meditation1: medMinutes > 0 ? `${medMinutes} min` : "10 min",
-      meditation2: totalPlayMinutes > 0 ? `${totalPlayMinutes} min` : "5 min",
-      affirmation: affPlays.length > 0 ? `${affPlays.length} done` : "Done",
-    };
+    const stepStatus = getTodayProgress();
 
     const handleDone = () => {
       resetLocalSession();
@@ -718,6 +775,45 @@ const MeditationScreen = () => {
     );
   }
 
+  // Big full-screen "Ready, 3, 2, 1" countdown before every breathing exercise
+  if (isCountingDown) {
+    const countdownText = countdownValue === 5 ? "Settle" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? String(countdownValue) : "Begin";
+    return (
+      <div
+        className="fixed inset-0 z-50 h-dvh flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Breathing session starting"
+      >
+        <button
+          type="button"
+          onClick={handleStop}
+          aria-label="Cancel and go back"
+          className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10"
+        >
+          <FiArrowLeft size={18} />
+        </button>
+        <style>{`
+          @keyframes countdownPulse {
+            0% { transform: scale(0.65); opacity: 0; }
+            50% { transform: scale(1.12); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .animate-countdown { animation: countdownPulse 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        `}</style>
+        <p className="text-xs sm:text-sm font-black uppercase tracking-[0.3em] text-[#a8c896]">Get ready</p>
+        <div
+          key={countdownValue}
+          aria-live="assertive"
+          className="animate-countdown mt-4 font-black leading-none text-[#e8f5dd] text-[32vw] sm:text-[22vw] lg:text-[18rem]"
+          style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? undefined : "clamp(3rem, 14vw, 8rem)" }}
+        >
+          {countdownText}
+        </div>
+      </div>
+    );
+  }
+
   // Full screen session view triggers ONLY after countdown timer completes and session is actively running
   const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
 
@@ -734,30 +830,28 @@ const MeditationScreen = () => {
           style={{ transform: `translate(-50%, -50%) scale(${isRunning ? 1.2 : 0.9})` }}></div>
 
         {/* Top bar with minimal info and stop/exit button */}
-        <div className="relative w-full flex-none flex items-center justify-between gap-3 animate-fade-in z-50">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <button
-              type="button"
-              onClick={() => { handleStop(); navigate(-1); }}
-              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
-              title="Go Back"
-              aria-label="Stop session and go back"
-            >
-              <FiArrowLeft size={18} />
-            </button>
-            <div className="text-left min-w-0">
-              <span className="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
-                {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
-              </span>
-              <h3 className="text-sm font-bold text-white/50">
-                Cycle {Math.min(cyclesCompleted + 1, totalCycles)} of {totalCycles}
-              </h3>
-            </div>
+        <div className="relative w-full flex-none grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-3 animate-fade-in z-50">
+          <button
+            type="button"
+            onClick={() => { handleStop(); navigate(-1); }}
+            className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
+            title="Go Back"
+            aria-label="Stop session and go back"
+          >
+            <FiArrowLeft size={18} />
+          </button>
+          <div className="text-center min-w-0">
+            <span className="block text-[10px] font-black uppercase tracking-[0.15em] leading-snug text-[#a8c896] break-words">
+              {config.label} Preset: {config.displayTechnique.replace(" Breathing", "")}
+            </span>
+            <h3 className="text-sm font-bold text-white/50">
+              Cycle {Math.min(cyclesCompleted + 1, totalCycles)} of {totalCycles}
+            </h3>
           </div>
           <button
             type="button"
             onClick={handleStop}
-            className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
+            className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
             title="Exit Full View"
             aria-label="Exit full view"
           >
@@ -777,6 +871,7 @@ const MeditationScreen = () => {
                 trackColor="rgba(255,255,255,0.06)"
                 progressColor="#a8c896"
                 className="absolute inset-0 w-full h-full"
+                showBall
               />
 
               {/* Breathing shape with animated scale */}
@@ -811,59 +906,28 @@ const MeditationScreen = () => {
           </div>
 
           {/* Bottom bar with controls */}
-          <div className="bs-full-controls w-full max-w-md flex-none flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md px-3 sm:px-6 py-3 sm:py-4 rounded-3xl border border-white/10 shadow-2xl animate-fade-in z-50">
-            <div className="flex items-center gap-1 sm:gap-2">
+          <div className="bs-full-controls w-full max-w-md flex-none flex items-center justify-center py-2 animate-fade-in z-50">
+            {isRunning ? (
               <button
                 type="button"
-                onClick={() => setSoundOn(!soundOn)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-white/60 hover:text-white transition-colors cursor-pointer"
-                title="Toggle Sound"
-                aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
-                aria-pressed={soundOn}
+                onClick={() => setIsRunning(false)}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white text-gray-900 shadow-xl hover:bg-gray-100 transition-all cursor-pointer"
+                title="Pause"
+                aria-label="Pause session"
               >
-                {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
+                <FiPause size={26} />
               </button>
+            ) : (
               <button
                 type="button"
-                onClick={() => setVibrationOn(!vibrationOn)}
-                className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
-                title="Toggle Vibration"
-                aria-label={vibrationOn ? "Turn vibration off" : "Turn vibration on"}
-                aria-pressed={vibrationOn}
+                onClick={() => setIsRunning(true)}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-[#7d9667] text-white shadow-xl shadow-[#7d9667]/30 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
+                title="Resume"
+                aria-label="Resume session"
               >
-                <FiZap size={20} />
+                <FiPlay size={26} className="ml-1" />
               </button>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              {isRunning ? (
-                <button
-                  type="button"
-                  onClick={() => setIsRunning(false)}
-                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white text-gray-900 px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
-                >
-                  <FiPause />
-                  Pause
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsRunning(true)}
-                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-[#7d9667] text-white px-4 sm:px-6 py-3 text-sm font-bold shadow-lg shadow-[#7d9667]/25 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
-                >
-                  <FiPlay />
-                  Resume
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={handleStop}
-                className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white/10 hover:bg-white/20 text-white px-4 sm:px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
-              >
-                <FiSquare />
-                Stop
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
@@ -939,7 +1003,7 @@ const MeditationScreen = () => {
               Guided Breathing Session
             </h1>
             <p className="text-sm text-gray-500 mt-2">
-              Improve mental health with science backed wellness tools for individuals and organizations.
+              Regulate your autonomic nervous system using clinically backed breath-pacing protocols.
             </p>
           </div>
         </div>
@@ -962,6 +1026,7 @@ const MeditationScreen = () => {
             ))}
           </div>
 
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 mt-2 hidden lg:block">Preset Patterns</p>
           <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1 bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-gray-100/50 shadow-sm mt-1" role="group" aria-label="Breathing pattern">
             {presets[selectedTechnique].map((preset, index) => (
               <button
@@ -984,6 +1049,11 @@ const MeditationScreen = () => {
             <button
               type="button"
               onClick={() => {
+                if (!isPremium()) {
+                  toast(PREMIUM_MESSAGE, { icon: "🔒" });
+                  navigate("/app/subscription");
+                  return;
+                }
                 setIsCustomBreathing(true);
                 resetLocalSession();
               }}
@@ -993,16 +1063,16 @@ const MeditationScreen = () => {
                 : "text-gray-400 hover:text-[#7d9667] hover:bg-gray-50/50"
                 }`}
             >
-              Custom
+              {isPremium() ? "Custom" : "🔒 Custom"}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 mt-7">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 mt-7 lg:items-stretch">
         <section className="rounded-[24px] sm:rounded-[30px] bg-white/80 border border-white p-4 sm:p-5 md:p-8 shadow-sm">
           <div className="flex flex-col items-center justify-center min-h-[380px] md:min-h-[460px] text-center">
-            <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] flex items-center justify-center">
+            <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] lg:max-w-[440px] flex items-center justify-center">
               {/* The countdown uses the Silent Meditation bubble; the chosen shape takes over once breathing begins */}
               <ProgressShape
                 shape={isCountingDown ? "circle" : config.shape}
@@ -1099,14 +1169,14 @@ const MeditationScreen = () => {
           </div>
         </section>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 lg:flex lg:flex-col lg:[&>*:last-child]:flex-1">
           {/* Customise Breathing Card - only shown when Custom is clicked */}
           {isCustomBreathing && (
             <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100 transition-all">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
-                    Customise Breathing
+                    Customise Patterns
                   </p>
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-[#eef6ea] text-[#7d9667]">
                     {selectedTechnique === "box"
@@ -1246,12 +1316,62 @@ const MeditationScreen = () => {
                       (parseInt(customHold1) || 0) +
                       (parseInt(customExhale) || 0)}
               </p>
+
+              {/* Saved custom sets (max 3 per method) */}
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+                    Saved sets ({(savedSets[selectedTechnique] || []).length}/{MAX_SAVED_SETS})
+                  </p>
+                  <button
+                    type="button"
+                    onClick={saveCurrentSet}
+                    className="min-h-[36px] px-3 rounded-lg bg-[#7d9667] hover:bg-[#6f865c] text-white text-[11px] font-black uppercase tracking-wide"
+                  >
+                    Save this set
+                  </button>
+                </div>
+                {(savedSets[selectedTechnique] || []).length === 0 ? (
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    Save up to {MAX_SAVED_SETS} sets. Saving more replaces the oldest one.
+                  </p>
+                ) : (
+                  <ul className="mt-2 space-y-1.5">
+                    {(savedSets[selectedTechnique] || []).map((entry) => {
+                      const parts = selectedTechnique === "box"
+                        ? [entry.inhale, entry.hold1, entry.exhale, entry.hold2]
+                        : selectedTechnique === "circle"
+                          ? [entry.inhale, entry.exhale]
+                          : [entry.inhale, entry.hold1, entry.exhale];
+                      return (
+                        <li key={entry.id} className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => loadSet(entry)}
+                            className="flex-1 min-h-[40px] text-left px-3 rounded-lg bg-gray-50 hover:bg-[#eef6ea] border border-gray-100 text-xs font-black text-gray-700"
+                          >
+                            {parts.join("-")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteSet(entry.id)}
+                            aria-label={`Delete saved set ${parts.join("-")}`}
+                            className="w-10 h-10 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 text-lg leading-none"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
 
           <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
-              Duration
+              Time Control
             </p>
             <div className="grid grid-cols-3 gap-2 mt-4">
               {durations.map((duration) => (

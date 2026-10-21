@@ -18,7 +18,6 @@ import {
   FiMusic,
   FiLayers,
   FiGift,
-  FiCopy,
   FiShare2,
   FiClock,
   FiMail,
@@ -37,7 +36,6 @@ import hero5 from "../Assets/landing_hero_new/hero5.jpg";
 import hero6 from "../Assets/landing_hero_new/hero6.jpg";
 import hero7 from "../Assets/landing_hero_new/hero7.jpg";
 import hero8 from "../Assets/landing_hero_new/hero8.jpg";
-import hero9 from "../Assets/landing_hero_new/hero9.jpg";
 import hero10 from "../Assets/landing_hero_new/hero10.jpg";
 import hero11 from "../Assets/landing_hero_new/hero11.jpg";
 import hero12 from "../Assets/landing_hero_new/hero12.jpg";
@@ -48,9 +46,7 @@ import hero16 from "../Assets/landing_hero_new/hero16.jpg";
 import hero17 from "../Assets/landing_hero_new/hero17.jpg";
 import hero18 from "../Assets/landing_hero_new/hero18.jpg";
 import hero19 from "../Assets/landing_hero_new/hero19.jpg";
-import hero20 from "../Assets/landing_hero_new/hero20.jpg";
 import hero21 from "../Assets/landing_hero_new/hero21.jpg";
-import hero22 from "../Assets/landing_hero_new/hero22.jpg";
 
 /* ─── Font injection ─────────────────────────────────────── */
 const fontLink = document.createElement("link");
@@ -230,6 +226,17 @@ const LandingPage = () => {
 
   const curatedArticles = [
     {
+      id: 0,
+      category: "Meditation Research",
+      readTime: "3 min read",
+      title: "Can 7 Minutes of Meditation Make a Difference? What New Research Reveals",
+      message: "Recent neuroscience research shows that even a short daily meditation practice can produce meaningful changes in focus, stress and mood.",
+      date: "October 2026",
+      tagColor: "#2b93b3",
+      bgGradient: "linear-gradient(135deg, #17405a 0%, #0a1d2b 100%)",
+      url: "https://share.google/yEJ3fGalcXM7RusU"
+    },
+    {
       id: 1,
       category: "Mindfulness & Breathing",
       readTime: "4 min read",
@@ -301,9 +308,23 @@ const LandingPage = () => {
     navigate("/login");
   };
 
-  const copyReferralCode = () => {
-    navigator.clipboard.writeText("SHARE_JOY24");
-    toast.success("Gift code copied! Enter this during sign up for 3 months free.");
+  const copyReferralCode = async () => {
+    const link = `${window.location.origin}/login`;
+    const text = `Hey,\nI came across the "Mental Swasthya" platform, which offers wellness tools that truly help you find peace of mind. Register using the link below and get 14 days free!\n\n${link}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Mental Swasthya", text });
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Invite link copied! Share it with your friends.");
+    } catch (e) {
+      toast.error("Couldn't copy the link automatically.");
+    }
   };
 
   const navItems = [
@@ -325,9 +346,9 @@ const LandingPage = () => {
   };
 
   const slides = [
-    hero1, hero2, hero3, hero4, hero5, hero6, hero7, hero8, hero9, hero10,
-    hero11, hero12, hero13, hero14, hero15, hero16, hero17, hero18, hero19, hero20,
-    hero21, hero22
+    hero1, hero2, hero3, hero4, hero5, hero6, hero7, hero8, hero10,
+    hero11, hero12, hero13, hero14, hero15, hero16, hero17, hero18, hero19,
+    hero21
   ];
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -1063,20 +1084,10 @@ const LandingPage = () => {
                 <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: "#d36a3d", textTransform: "uppercase" }}>
                   Special Offer
                 </span>
-                <h3 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
-                  fontSize: "clamp(1.8rem, 3.5vw, 2.4rem)",
-                  fontWeight: 600,
-                  color: "#3a2118",
-                  lineHeight: 1.1,
-                  margin: "4px 0 8px"
-                }}>
-                  Get 1 Months FREE
-                </h3>
-                <p style={{ fontSize: 13.5, color: "#6e5d57", lineHeight: 1.5 }}>
-                  Sign up now and get your first 1 month's subscription absolutely <strong style={{ color: "#d36a3d" }}>free</strong> as an introductory offer!
+                <p style={{ fontSize: 15, color: "#6e5d57", lineHeight: 1.6, marginTop: 6 }}>
+                  Get your <strong style={{ color: "#d36a3d" }}>14 days</strong> subscription absolutely <strong style={{ color: "#d36a3d" }}>free</strong> as an introductory offer!
                 </p>
-                
+
                 <button
                   onClick={handleStart}
                   style={{
@@ -1119,52 +1130,11 @@ const LandingPage = () => {
                   Share the love, get more free!
                 </h4>
                 <p style={{ fontSize: 12.5, color: "#6e5d57", lineHeight: 1.6 }}>
-                  If your loved ones register using your gift code, you will get an additional <strong style={{ color: "#d36a3d" }}>1 more month</strong> subscription absolutely free.
+                  If your loved ones register using your shared link, you will get an additional <strong style={{ color: "#d36a3d" }}>1 more month</strong> subscription absolutely free (for 3 successful registrations).
                 </p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#6e5d57", uppercase: "true", letterSpacing: "0.06em", display: "block", marginBottom: 6 }}>
-                    Your Gift Code:
-                  </span>
-                  <div style={{
-                    display: "flex",
-                    alignItems: "center",
-                    background: "#ffffff",
-                    border: "1.5px solid #ebd9cf",
-                    borderRadius: 12,
-                    padding: "4px 4px 4px 14px",
-                    justifyContent: "space-between"
-                  }}>
-                    <span style={{ fontMono: "true", fontSize: 13, fontWeight: 700, color: "#3a2118", letterSpacing: "0.04em" }}>
-                      SHARE_JOY24
-                    </span>
-                    <button
-                      onClick={copyReferralCode}
-                      style={{
-                        background: "#fdf3ee",
-                        border: "1px solid #ebd9cf",
-                        borderRadius: 8,
-                        padding: "6px 12px",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: "#d36a3d",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        transition: "all 0.2s"
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#ebd9cf"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "#fdf3ee"; }}
-                    >
-                      <FiCopy size={12} />
-                      Copy Code
-                    </button>
-                  </div>
-                </div>
-
                 <button
                   onClick={copyReferralCode}
                   style={{
@@ -1376,7 +1346,11 @@ const LandingPage = () => {
 
                     <button
                       type="button"
-                      onClick={handleStart}
+                      onClick={() => {
+                        const articleUrl = curatedArticles[articleIndex].url;
+                        if (articleUrl) window.open(articleUrl, "_blank", "noopener,noreferrer");
+                        else handleStart();
+                      }}
                       style={{
                         padding: "10px 22px",
                         borderRadius: 14,

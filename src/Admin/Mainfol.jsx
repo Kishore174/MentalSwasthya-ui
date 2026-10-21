@@ -5,6 +5,7 @@ import Header from './Header'
 import Footer from './Footer'
 import FeedbackWidget from '../components/FeedbackWidget'
 import SubscriptionAlertBanner from '../components/SubscriptionAlertBanner'
+import AppTour from '../components/AppTour'
 
 const Mainfol = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -37,6 +38,7 @@ const Mainfol = () => {
         <Footer />
       </div>
       {isDashboard && <FeedbackWidget />}
+      {isDashboard && !location.state?.fromTool && <AppTour />}
     </div>
   )
 }

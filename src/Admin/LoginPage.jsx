@@ -46,6 +46,15 @@ const LoginPage = () => {
     return null;
   };
 
+  // After a fresh login, plain "/app" (or "/") redirects must still pass through the splash → About
+  // onboarding. Only specific deep links (e.g. /app/meditation from a reminder email) skip it.
+  const getPostLoginUrl = () => {
+    const target = getTargetUrl();
+    const path = (target || "").split(/[?#]/)[0].replace(/\/+$/, "");
+    if (!target || path === "" || path === "/app" || path === "/login") return "/splash";
+    return target;
+  };
+
   const [authMode, setAuthMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -170,8 +179,7 @@ const LoginPage = () => {
         if (token) { 
           login(token, user); 
           toast.success("Account created. Welcome!"); 
-          const target = getTargetUrl();
-          navigate(target || "/splash", { replace: true }); 
+          navigate(getPostLoginUrl(), { replace: true }); 
           return; 
         }
         toast.success("Account created. Please verify your email.");
@@ -194,8 +202,7 @@ const LoginPage = () => {
         if (token) {
           login(token, user);
           toast.success("Email verified successfully! Welcome to Mental Swasthya.");
-          const target = getTargetUrl();
-          navigate(target || "/splash", { replace: true });
+          navigate(getPostLoginUrl(), { replace: true });
           return;
         }
         toast.success("Email verified successfully! Please sign in.");
@@ -261,8 +268,7 @@ const LoginPage = () => {
         if (token) {
           login(token, user);
           toast.success("Device authorized! Signed in successfully.");
-          const target = getTargetUrl();
-          navigate(target || "/splash", { replace: true });
+          navigate(getPostLoginUrl(), { replace: true });
           return;
         }
         toast.success("Device authorized! Please sign in.");
@@ -288,8 +294,7 @@ const LoginPage = () => {
       if (!token) throw new Error("No token in response");
       login(token, user);
       toast.success("Welcome back!");
-      const target = getTargetUrl();
-      navigate(target || "/splash", { replace: true });
+      navigate(getPostLoginUrl(), { replace: true });
     } catch (err) {
       console.error(err);
       const data = err?.response?.data;
@@ -589,6 +594,35 @@ const LoginPage = () => {
                   Email Verification
                 </span>
               </div>
+
+              {/* 3-step sign-up progress. Step 3 (Aadhaar age verification) is optional for now and does not block access. */}
+              <ol className="mb-5 space-y-2" aria-label="Sign-up steps">
+                {[
+                  { n: 1, title: "Sign-up completed", note: "Your account has been created.", state: "done" },
+                  { n: 2, title: "Email verification", note: "Enter the code sent to your email.", state: "current" },
+                  { n: 3, title: "Aadhaar age verification", note: "Coming soon. You can skip this for now.", state: "later" },
+                ].map((step) => (
+                  <li key={step.n} className="flex items-start gap-2.5">
+                    <span
+                      className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        step.state === "done"
+                          ? "bg-emerald-400 text-[#0a331c]"
+                          : step.state === "current"
+                            ? "bg-white text-[#0a331c] ring-2 ring-[#8fb39c]"
+                            : "bg-[#144729] text-[#8fb39c]"
+                      }`}
+                    >
+                      {step.state === "done" ? "✓" : step.n}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block text-xs font-bold ${step.state === "later" ? "text-gray-400" : "text-white"}`}>
+                        Step {step.n}: {step.title}
+                      </span>
+                      <span className="block text-[11px] text-gray-400">{step.note}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
 
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-2">
                 Verify Your Email

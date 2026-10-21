@@ -320,7 +320,7 @@ const GiftCardsScreen = () => {
       setGiftedCards(updatedList);
       localStorage.setItem("mentalswasthya_gifted_cards", JSON.stringify(updatedList));
 
-      toast.success(`Purchase successful! Voucher ${code} gifted to ${giftData.recipient}`);
+      toast.success(`Gift card ${code} sent to ${giftData.recipient}`, { style: { fontSize: "12px", padding: "6px 10px", maxWidth: "260px" } });
       handleDownloadCard();
       setGiftData({
         recipient: "",
@@ -382,7 +382,7 @@ const GiftCardsScreen = () => {
         <div className="lg:col-span-3 space-y-6">
           
           {/* Purchase form */}
-          <form onSubmit={handleBuy} className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5 min-w-0">
+          <form onSubmit={handleBuy} className="rounded-3xl bg-white border-2 border-[#7d9667] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5 min-w-0">
             <h3 className="text-lg sm:text-xl font-black text-[#22331b]">Configure Gift Card</h3>
 
             {/* 1. Plan Type Selector: Regular vs Premium */}

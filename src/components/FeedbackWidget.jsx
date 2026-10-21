@@ -3,7 +3,7 @@ import { FiMessageSquare, FiX, FiCheck, FiHeart, FiStar } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 const MOOD_LEVELS = [
-  { level: 1, val: 1.0, emoji: "😡", label: "Needs Work", color: "#ef4444", bg: "#fef2f2", ring: "#fca5a5" },
+  { level: 1, val: 1.0, emoji: "😞", label: "Needs Work", color: "#ef4444", bg: "#fef2f2", ring: "#fca5a5" },
   { level: 2, val: 2.0, emoji: "🙁", label: "Fair", color: "#f97316", bg: "#fff7ed", ring: "#fdba74" },
   { level: 3, val: 3.0, emoji: "😐", label: "Good", color: "#eab308", bg: "#fefce8", ring: "#fde047" },
   { level: 4, val: 4.0, emoji: "🙂", label: "Great", color: "#84cc16", bg: "#f7fee7", ring: "#bef264" },
@@ -278,7 +278,7 @@ const FeedbackWidget = () => {
 
                 {/* ─── 5-Step Interactive Mood Level Selector Cards ─── */}
                 <div className="grid grid-cols-5 gap-1.5 w-full">
-                  {MOOD_LEVELS.map((item) => {
+                  {[...MOOD_LEVELS].reverse().map((item) => {
                     const isSelected = currentLevelObj.level === item.level;
                     return (
                       <button
@@ -309,6 +309,24 @@ const FeedbackWidget = () => {
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Colour scale with a pointer under the selected face (best on the left, as in the face scale above) */}
+                <div className="relative w-full h-4 -mt-1" aria-hidden="true">
+                  <div
+                    className="absolute inset-x-[10%] top-1.5 h-1.5 rounded-full"
+                    style={{ background: "linear-gradient(to right, #22c55e, #84cc16, #eab308, #f97316, #ef4444)" }}
+                  />
+                  <span
+                    className="absolute top-0 w-0 h-0 transition-all duration-300"
+                    style={{
+                      left: `${10 + ((5 - currentLevelObj.level) / 4) * 80}%`,
+                      transform: "translateX(-50%)",
+                      borderLeft: "6px solid transparent",
+                      borderRight: "6px solid transparent",
+                      borderTop: `8px solid ${currentLevelObj.color}`,
+                    }}
+                  />
                 </div>
 
                 {/* ─── Remarks Textarea Field (Like Message Field) ─── */}

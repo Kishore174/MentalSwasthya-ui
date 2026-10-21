@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiGift as Gift, FiCopy as Copy, FiShare2 as Share2, FiCheck as Check, FiZap as Sparkles } from "react-icons/fi";
 
 /**
@@ -13,7 +14,6 @@ const STEPS = [
   { key: "intention", label: "Intention", icon: "📄" },
   { key: "breathing", label: "Breathing", icon: "🌬️" },
   { key: "meditation1", label: "Meditation", icon: "🧘" },
-  { key: "meditation2", label: "Meditation", icon: "🧘" },
   { key: "affirmation", label: "Affirmation", icon: "✨" },
 ];
 
@@ -32,6 +32,7 @@ export default function CompletionScreen({
   refLink = "mentalswasthya.com/ref/MS-REF2026",
   apiMessage = ""
 }) {
+  const navigate = useNavigate();
   const [localApiMessage, setLocalApiMessage] = useState(apiMessage);
   const [mounted, setMounted] = useState(false);
   const msgTimer = useRef(null);
@@ -57,26 +58,29 @@ export default function CompletionScreen({
   };
 
   const shareReferralLink = async () => {
-    const inviteMsg = `Hey, \nI came across the "Mental Swasthya" platform, that offers a variety of wellness tools which truly helps you to find peace of mind. \n\nIt is simple, helpful, and perfect for daily relaxation.\n\nI hope you enjoy using it!\n\nClick the below link to register\nhttps://${refLink}`;
+    setPausedAutoClose(true);
+    const inviteMsg = `Hey, \nI came across the "Mental Swasthya" platform, that offers a variety of wellness tools which truly helps you to find peace of mind. \n\nIt is simple, helpful, and perfect for daily relaxation.\n\nI hope you enjoy using it!\n\nRegister using the link below and get 14 days of Premium free!\nhttps://${refLink}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "Mental Swasthya",
-          text: inviteMsg,
-          url: `https://${refLink}`,
-        });
+        // The link is already part of the message text; passing `url` too would duplicate it.
+        await navigator.share({ title: "Mental Swasthya", text: inviteMsg });
         return;
-      } catch {
-        /* user cancelled — fall through to copy */
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // user closed the share sheet
+        /* share unsupported / failed — fall through to copy */
       }
     }
-    copyReferralLink();
+    try {
+      await navigator.clipboard.writeText(inviteMsg);
+      flash("Invite message copied — paste it to a friend.");
+    } catch {
+      flash("Couldn't share automatically — copy the link above.");
+    }
   };
 
-  const handleShare = () => shareReferralLink();
   const handleDone = () => (onDone ? onDone() : flash("Returning to dashboard…"));
-  const handleTomorrow = () => (onReset ? onReset() : flash("See you tomorrow."));
+  const handleTomorrow = () => navigate("/");
 
   const [pausedAutoClose, setPausedAutoClose] = useState(false);
 
@@ -91,7 +95,7 @@ export default function CompletionScreen({
   const nextRewardAt = referralCount >= 3 ? null : referralCount + 1;
 
   return (
-    <div className="fixed inset-0 z-50 h-dvh flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] px-3 sm:px-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 md:py-6 overflow-y-auto overscroll-contain">
+    <div onTouchStart={() => setPausedAutoClose(true)} className="fixed inset-0 z-50 h-dvh flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] px-3 sm:px-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 md:py-6 overflow-y-auto overscroll-contain">
       <style>{`
         ${FONT_IMPORT}
         .ms-serif { font-family: 'Fraunces', serif; }
@@ -163,7 +167,7 @@ export default function CompletionScreen({
       `}</style>
 
       <div
-        className={`ms-sans w-full max-w-2xl rounded-[24px] sm:rounded-[28px] bg-white shadow-[0_20px_60px_-15px_rgba(30,48,25,0.18)] border border-[#e7f0e2] my-auto overflow-hidden ${
+        className={`ms-sans w-full max-w-2xl lg:max-w-4xl rounded-[24px] sm:rounded-[28px] bg-white shadow-[0_20px_60px_-15px_rgba(30,48,25,0.18)] border border-[#e7f0e2] my-auto overflow-hidden ${
           mounted ? "ms-mount" : "opacity-0"
         }`}
       >
@@ -213,8 +217,8 @@ export default function CompletionScreen({
         <div className="px-4 sm:px-6 md:px-10 pb-6 sm:pb-8">
           {/* ── Session timeline ── */}
           <div className="rounded-2xl bg-[#f7faf5] border border-[#e6efe0] px-2 sm:px-4 py-4 sm:py-5 -mt-1">
-            <div className="relative grid grid-cols-5 gap-0.5 sm:gap-1">
-              <div className="absolute left-[10%] right-[10%] top-[18px] h-px bg-[#cfe0c6]" />
+            <div className="relative grid grid-cols-4 gap-0.5 sm:gap-1">
+              <div className="absolute left-[12.5%] right-[12.5%] top-[18px] h-px bg-[#cfe0c6]" />
               {STEPS.map((s) => (
                 <div key={s.key} className="relative flex flex-col items-center text-center">
                   <div className="w-9 h-9 rounded-full bg-white border border-[#cfe0c6] flex items-center justify-center text-sm shadow-sm">
@@ -235,22 +239,6 @@ export default function CompletionScreen({
             </div>
           </div>
 
-          {/* ── Share nudge ───────────────────────────────── */}
-          <button
-            type="button"
-            onClick={handleShare}
-            onMouseEnter={() => setPausedAutoClose(true)}
-            className="w-full min-h-[44px] mt-4 rounded-xl bg-gradient-to-r from-[#f5faf0] via-[#edf6e8] to-[#f5faf0] hover:from-[#edf5e6] hover:to-[#e4efe0] transition-all px-4 py-3 flex items-center justify-between border-2 border-[#b5cca8] text-left shadow-sm hover:shadow ms-share-nudge-glow group cursor-pointer"
-          >
-            <span className="text-[12.5px] text-[#33462b] font-medium flex items-center gap-2">
-              <span className="text-base">🌿</span>
-              Know someone who could use five calm minutes?
-            </span>
-            <span className="ms-share-btn-attention text-[12px] font-bold text-white bg-[#0a331c] group-hover:bg-[#14281e] px-3 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0 ml-3 shadow-md border border-[#7d9667]/50">
-              Share <Share2 size={12} className="text-[#a8d392]" />
-            </span>
-          </button>
-
           {/* ── Referral program ─────────────────────────── */}
           <div className="rounded-2xl border border-[#e1ebd9] mt-4 p-4 sm:p-5 md:p-6">
             <div className="flex items-center gap-2">
@@ -260,7 +248,7 @@ export default function CompletionScreen({
               <h3 className="ms-serif text-[1.2rem] text-[#1e3019]">Give a month, get a month</h3>
             </div>
             <p className="text-[12.5px] text-[#5c6f52] leading-relaxed mt-2">
-              Every friend who joins with your link gets a free month of Premium — and so do you, up to three months.
+              Every friend who joins with your link gets 14 days of Premium free. Once 3 friends register successfully, you get 1 more month free.
             </p>
 
             {/* Reward track */}
@@ -337,11 +325,20 @@ export default function CompletionScreen({
                 </p>
               </div>
             )}
+            {!nextRewardAt && (
+              <p className="text-[12.5px] text-[#5c6f52] text-center mt-3 leading-relaxed">
+                If you enjoy using <strong>Mental Swasthya</strong>, please share it with your friends and family.
+              </p>
+            )}
           </div>
 
-          {(localApiMessage || apiMessage) && (
-            <p className="text-xs text-[#7d9667] text-center mt-4">{localApiMessage || apiMessage}</p>
-          )}
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-xs text-[#7d9667] text-center mt-4 min-h-[1rem]"
+          >
+            {localApiMessage || apiMessage}
+          </p>
 
           {/* ── Actions ───────────────────────────────────── */}
           <div className="flex flex-col sm:flex-row gap-3 mt-6">

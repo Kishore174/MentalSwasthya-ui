@@ -1,3 +1,4 @@
+import { useLifetimeXp, getXpRing } from "../utils/xp";
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import {
@@ -60,6 +61,10 @@ const ProfileScreen = () => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [weeklyOff, setWeeklyOff] = useState(["SUN"]);
   const [appStartOption, setAppStartOption] = useState("first_login_of_day");
+
+  // Lifetime XP drives the avatar ring colour (1000 Bronze … 5000 Diamond)
+  const lifetimeXp = useLifetimeXp();
+  const xpRing = getXpRing(lifetimeXp);
 
   // Streak State
   const [streakData, setStreakData] = useState({
@@ -242,7 +247,11 @@ const ProfileScreen = () => {
 
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
           {/* Avatar Icon */}
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#7d9667] to-[#405933] flex items-center justify-center text-3xl font-extrabold text-white shadow-lg border-2 border-white/20 shrink-0">
+          <div
+            className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#7d9667] to-[#405933] flex items-center justify-center text-3xl font-extrabold text-white shadow-lg border-2 border-white/20 shrink-0"
+            style={xpRing ? { boxShadow: `0 0 0 5px ${xpRing.color}, 0 8px 24px rgba(0,0,0,0.25)` } : undefined}
+            title={xpRing ? `${xpRing.name} ring · ${lifetimeXp} XP` : `${lifetimeXp} XP · reach 1000 XP for the Bronze ring`}
+          >
             {getInitials(name)}
           </div>
 

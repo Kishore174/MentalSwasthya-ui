@@ -18,84 +18,98 @@ fontLink.href =
 fontLink.rel = "stylesheet";
 if (!document.head.querySelector('[href*="Cormorant"]')) document.head.appendChild(fontLink);
 
+// Items are shown in this order; a divider is drawn between groups.
 const menuItems = [
   {
     name: "Dashboard",
     path: "/app",
     icon: MdOutlineDashboard,
     roles: ["admin", "individual", "user"],
+    group: 0,
   },
   {
-    name: "Daily Intention",
+    name: "Daily Intentions Logging",
     path: "/app/intentions",
     icon: FiBookOpen,
     roles: ["admin", "individual", "user"],
+    group: 1,
   },
   {
-    name: "About Us",
-    path: "/app/about",
-    icon: MdBook,
-    roles: ["admin", "individual", "user"],
-  },
-  {
-    name: "Breathing",
+    name: "Breathe",
     path: "/app/meditation",
     icon: MdSelfImprovement,
     roles: ["admin", "individual", "user"],
+    group: 1,
+  },
+  {
+    name: "Meditation",
+    path: "/app/meditation-playlist",
+    icon: MdQueueMusic,
+    roles: ["admin", "individual", "user"],
+    group: 1,
   },
   {
     name: "Silent Meditation",
     path: "/app/silent-meditation",
     icon: MdSelfImprovement,
     roles: ["admin", "individual", "user"],
+    group: 1,
   },
   {
-    name: "Affirmations",
+    name: "Affirmation",
     path: "/app/affirmations",
     icon: MdQueueMusic,
     roles: ["admin", "individual", "user"],
+    group: 1,
   },
   {
-    name: "Meditation Playlist",
-    path: "/app/meditation-playlist",
-    icon: MdQueueMusic,
-    roles: ["admin", "individual", "user"],
+    name: "Profile",
+    path: "/app/profile",
+    icon: FiUser,
+    roles: ["admin", "individual", "user", "employee", "org_admin", "super_admin"],
+    group: 2,
   },
   {
-    name: "My Achievements",
+    name: "Achievements",
     path: "/app/achievements",
     icon: FiAward,
     roles: ["admin", "individual", "user"],
+    group: 2,
   },
   {
-    name: "Buy Subscription",
-    path: "/app/subscription",
-    icon: FiCreditCard,
-    roles: ["admin", "individual", "user"],
-  },
-  {
-    name: "Gift Cards",
+    name: "Buy a Gift Card",
     path: "/app/gift-cards",
     icon: FiGift,
     roles: ["admin", "individual", "user"],
+    group: 2,
+  },
+  {
+    name: "Buy a Subscription",
+    path: "/app/subscription",
+    icon: FiCreditCard,
+    roles: ["admin", "individual", "user"],
+    group: 2,
+  },
+  {
+    name: "About Us",
+    path: "/app/about",
+    icon: MdBook,
+    roles: ["admin", "individual", "user"],
+    group: 3,
   },
   {
     name: "Contact Us",
     path: "/app/contact",
     icon: FiMail,
     roles: ["admin", "individual", "user"],
-  },
-  {
-    name: "My Profile",
-    path: "/app/profile",
-    icon: FiUser,
-    roles: ["admin", "individual", "user", "employee", "org_admin", "super_admin"],
+    group: 3,
   },
   {
     name: "Users",
     path: "/app/users",
     icon: MdPeopleOutline,
     roles: ["admin"],
+    group: 4,
   },
 ];
 
@@ -346,9 +360,12 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           position: "relative", zIndex: 1,
           display: "flex", flexDirection: "column", gap: 2,
         }}>
-          {filteredMenu.map(({ name, path, icon: Icon }, idx) => (
+          {filteredMenu.map(({ name, path, icon: Icon, group }, idx) => (
+            <React.Fragment key={name}>
+            {idx > 0 && filteredMenu[idx - 1].group !== group && (
+              <div role="separator" style={{ height: 1, margin: "8px 8px", background: "#dde8d5", flexShrink: 0 }} />
+            )}
             <NavLink
-              key={name}
               to={path}
               end={path === "/app"}
               onClick={() => window.innerWidth < 1024 && setIsSidebarOpen(false)}
@@ -386,6 +403,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
                 </>
               )}
             </NavLink>
+            </React.Fragment>
           ))}
         </nav>
 
@@ -408,7 +426,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
               className="logout-icon"
               style={{ fontSize: 16, color: "#8a9a80", transition: "color 0.2s" }}
             />
-            <span>Sign Out</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

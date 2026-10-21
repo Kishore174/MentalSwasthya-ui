@@ -19,6 +19,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../context/AuthContext";
 import { getBreathingHistory } from "../Api/breathingApi";
+import Confetti from "../components/Confetti";
 
 const CornerOrnament = ({ position }) => {
   const posMap = {
@@ -642,6 +643,21 @@ const AchievementsScreen = () => {
     };
   }, [history]);
 
+  // Confetti the first time a milestone (bronze, silver, ...) is genuinely reached with real session data
+  const [showConfetti, setShowConfetti] = useState(false);
+  useEffect(() => {
+    if (!history.length) return;
+    try {
+      const celebrated = JSON.parse(localStorage.getItem("ms_milestones_celebrated") || "[]");
+      const reached = [1, 5, 10, 20, 50].filter((n) => history.length >= n);
+      const fresh = reached.filter((n) => !celebrated.includes(n));
+      if (fresh.length) {
+        localStorage.setItem("ms_milestones_celebrated", JSON.stringify([...celebrated, ...fresh]));
+        setShowConfetti(true);
+      }
+    } catch (e) { /* storage unavailable: skip celebration */ }
+  }, [history]);
+
   const badgeConfigs = {
     first_intention: {
       themeColor: "#d97706", // Bronze (Amber)
@@ -717,6 +733,7 @@ const AchievementsScreen = () => {
 
   return (
     <div className="space-y-6 text-[#22331b]">
+      {showConfetti && <Confetti onDone={() => setShowConfetti(false)} />}
       {/* Header Banner */}
       <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#f5faf2] via-white to-[#eef7fb] border border-[#e1eadb] shadow-[0_18px_50px_rgba(80,105,67,0.08)] p-5 sm:p-7 md:p-9">
         <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#7d9667]/10" />

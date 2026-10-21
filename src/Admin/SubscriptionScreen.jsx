@@ -431,7 +431,7 @@ const SubscriptionScreen = () => {
               <FiShield size={14} />
             </span>
             <span>
-              Cancel or stop auto-debit at any time. Your benefits stay active through the end of your billing period.
+              Cancel subscription or stop auto-debit at any time. Your benefits stay active through the end of your billing period.
             </span>
           </div>
 

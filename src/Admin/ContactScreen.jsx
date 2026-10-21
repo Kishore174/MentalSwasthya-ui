@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle, FiChevronDown } from "react-icons/fi";
+import { FiMail, FiPhone, FiMapPin, FiSend, FiCheckCircle, FiChevronDown, FiShield } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
+
+// Grievance Redressal details required under the DPDP Act.
+// Update the officer name / email / response time here if they differ from the defaults.
+const GRIEVANCE = {
+  officer: "Grievance Officer, Mental Swasthya",
+  email: "support@mentalswasthya.com",
+  phone: "+91 92235 50682",
+  response: "We acknowledge grievances within 48 hours and aim to resolve them within 15 days.",
+};
 
 const ContactScreen = () => {
   const { user } = useAuth();
@@ -65,6 +74,43 @@ const ContactScreen = () => {
           Have feedback, need support, or just want to share your mindfulness journey?
           We would love to hear from you!
         </p>
+      </section>
+
+      {/* Grievance Redressal (DPDP Act) */}
+      <section
+        id="grievance-redressal"
+        aria-labelledby="grievance-heading"
+        className="rounded-[24px] border-2 border-[#7d9667]/40 bg-[#f5faf2] p-5 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-start"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-[#e3efdb] text-[#4f6b3c] flex items-center justify-center flex-shrink-0">
+          <FiShield size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 id="grievance-heading" className="text-lg font-black text-[#22331b]">
+            Grievance Redressal
+          </h2>
+          <p className="text-sm text-[#66785c] mt-1 leading-6">
+            In line with the Digital Personal Data Protection (DPDP) Act, you can raise any concern about how your
+            personal data is handled with our Grievance Officer.
+          </p>
+          <dl className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Officer</dt>
+              <dd className="font-bold text-[#22331b] break-words">{GRIEVANCE.officer}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email</dt>
+              <dd className="font-bold text-[#22331b] break-words [overflow-wrap:anywhere]">
+                <a href={`mailto:${GRIEVANCE.email}`} className="underline">{GRIEVANCE.email}</a>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Phone</dt>
+              <dd className="font-bold text-[#22331b]">{GRIEVANCE.phone}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-gray-500 mt-3">{GRIEVANCE.response}</p>
+        </div>
       </section>
 
       {/* Main Grid */}

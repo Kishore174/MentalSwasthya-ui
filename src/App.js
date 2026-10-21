@@ -21,6 +21,8 @@ import GiftCardsScreen from "./Admin/GiftCardsScreen";
 import AchievementsScreen from "./Admin/AchievementsScreen";
 import SilentMeditationScreen from "./Admin/SilentMeditationScreen";
 import ProfileScreen from "./Admin/ProfileScreen";
+import SessionCompletePage from "./Admin/SessionCompletePage";
+import CookieBanner from "./components/CookieBanner";
 import { Toaster } from "react-hot-toast";
 
 const HomeRoute = () => {
@@ -34,6 +36,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Toaster position="top-right" reverseOrder={false} />
+        <CookieBanner />
         <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/login" element={<LoginPage />} />
@@ -58,6 +61,7 @@ function App() {
               <Route path="gift-cards" element={<GiftCardsScreen />} />
               <Route path="achievements" element={<AchievementsScreen />} />
               <Route path="profile" element={<ProfileScreen />} />
+              <Route path="complete" element={<SessionCompletePage />} />
               {/* <Route path="users" element={<Users />} /> */}
             </Route>
           </Route>

@@ -83,6 +83,10 @@ const SilentMeditationScreen = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(180);
   const [medCompleted, setMedCompleted] = useState(false);
+
+  useEffect(() => {
+    if (medCompleted) navigate("/app", { state: { fromTool: true }, replace: true });
+  }, [medCompleted, navigate]);
   const [apiMessage, setApiMessage] = useState("");
 
   // Trackers for logs summary
@@ -231,6 +235,12 @@ const SilentMeditationScreen = () => {
     setIsRunning(false);
     if (soundOn) playBell('double');
     const finalDuration = elapsedSeconds;
+    try {
+      const todayKey = new Date().toDateString();
+      const saved = JSON.parse(localStorage.getItem("ms_daily_silent") || "{}");
+      const base = saved.date === todayKey ? saved.seconds || 0 : 0;
+      localStorage.setItem("ms_daily_silent", JSON.stringify({ date: todayKey, seconds: base + finalDuration }));
+    } catch (e) { /* storage unavailable */ }
 
     // Fetch stats for completion summary cards
     try {
@@ -452,9 +462,6 @@ const SilentMeditationScreen = () => {
               <FiArrowLeft size={18} />
             </button>
             <div className="text-left min-w-0">
-              <span className="block truncate text-[10px] font-black uppercase tracking-[0.2em] text-[#a8c896]">
-                Silent Meditation Bubble
-              </span>
               <h3 className="truncate text-sm font-bold text-white/50">
                 Coherent 5s/5s Breathing Cycle
               </h3>
@@ -560,14 +567,6 @@ const SilentMeditationScreen = () => {
                   Resume
                 </button>
               )}
-              <button
-                type="button"
-                onClick={handleStop}
-                className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white/10 hover:bg-white/20 text-white px-4 sm:px-6 py-3 text-sm font-bold border border-white/10 transition-all cursor-pointer"
-              >
-                <FiSquare />
-                Stop
-              </button>
             </div>
           </div>
         </div>
@@ -627,8 +626,11 @@ const SilentMeditationScreen = () => {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mt-2">
               Silent Meditation
             </h1>
+            <p className="text-sm font-semibold text-[#7d9667] mt-1">
+              Observe your natural breathing rhythm
+            </p>
             <p className="text-sm text-gray-500 mt-2">
-              Improve mental health with science backed wellness tools for individuals and organizations.
+              Enjoy the beauty of quiet & develop deep intrinsic focus through unguided mindfulness.
             </p>
           </div>
         </div>

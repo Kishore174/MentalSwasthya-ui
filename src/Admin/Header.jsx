@@ -1,3 +1,4 @@
+import { useLifetimeXp, getXpRing } from "../utils/xp";
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { MdMenu } from 'react-icons/md';
@@ -36,12 +37,12 @@ const formatRelativeTime = (dateString) => {
 
 const routeTitles = {
   '/app': { title: 'Dashboard', subtitle: 'Overview of your mental wellness journey' },
-  '/app/intentions': { title: 'Intention', subtitle: 'Overview of your daily mindful intentions' },
+  '/app/intentions': { title: 'Daily Intentions Logging', subtitle: 'Start your day with purpose. Check in with yourself, set clear goals, and take a gentle look back at your progress' },
   '/app/about': { title: 'About Mental Swasthya', subtitle: 'Empowering holistic health and mindfulness' },
-  '/app/meditation': { title: 'Breathing Exercises', subtitle: 'Find peace and center through guided breathwork' },
-  '/app/silent-meditation': { title: 'Silent Meditation', subtitle: 'Calm presence through steady silent breathing' },
-  '/app/affirmations': { title: 'Positive Affirmations', subtitle: 'Daily uplifting thoughts for growth & peace' },
-  '/app/meditation-playlist': { title: 'Meditation Playlist', subtitle: 'Calming audio tracks for inner tranquility' },
+  '/app/meditation': { title: 'Breathing Exercises', subtitle: 'Regulate your autonomic nervous system using clinically backed breath-pacing protocols' },
+  '/app/silent-meditation': { title: 'Silent Meditation', subtitle: 'Enjoy the beauty of quiet & develop deep intrinsic focus through unguided mindfulness' },
+  '/app/affirmations': { title: 'Affirmation Audios', subtitle: 'Be kind to yourself with uplifting audio tracks & listen to positive loops' },
+  '/app/meditation-playlist': { title: 'Meditation', subtitle: 'An inward journey toward mindfulness, deep relaxation, and mental clarity' },
   '/app/achievements': { title: 'My Achievements', subtitle: 'Track your milestones and wellness rewards' },
   '/app/subscription': { title: 'Subscription Plans', subtitle: 'Unlock unlimited access to all features' },
   '/app/gift-cards': { title: 'Gift Cards', subtitle: 'Share the gift of mindfulness with loved ones' },
@@ -52,6 +53,7 @@ const routeTitles = {
 
 const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { user, logout } = useAuth();
+  const xpRing = getXpRing(useLifetimeXp());
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -340,9 +342,13 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                   src={user.avatar || user.profileImage}
                   alt={user?.name || 'Profile'}
                   className="w-8 h-8 rounded-full object-cover border border-[#b8caa9]"
+                  style={xpRing ? { boxShadow: `0 0 0 2px ${xpRing.color}` } : undefined}
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7d9667] to-[#526543] text-white flex items-center justify-center font-bold text-xs shadow-inner">
+                <div
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7d9667] to-[#526543] text-white flex items-center justify-center font-bold text-xs shadow-inner"
+                  style={xpRing ? { boxShadow: `0 0 0 2px ${xpRing.color}` } : undefined}
+                >
                   {getInitials(user?.name)}
                 </div>
               )}

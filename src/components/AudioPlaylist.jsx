@@ -1,8 +1,10 @@
+import { isPremium, PREMIUM_MESSAGE } from "../utils/plan";
+import { toast } from "react-hot-toast";
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRepeat, FiShuffle,
   FiVolume2, FiVolumeX, FiPlus, FiTrash2, FiFolder, FiInfo, FiCheck,
-  FiSearch, FiSliders, FiFilter, FiClock, FiX
+  FiSearch, FiSliders, FiFilter, FiClock, FiX, FiUser, FiLock
 } from 'react-icons/fi';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { axiosInstance } from '../Api/config';
@@ -265,6 +267,22 @@ const AudioPlaylist = ({
   }, [allCombinedTracks, languageFilter, searchQuery, selectedCategoryFilter, selectedDurationFilter, sortByFilter, favorites]);
 
   const currentTrack = filteredTracks[currentTrackIndex] || null;
+
+  // Page selection for long track lists
+  const PAGE_SIZE = 10;
+  const [trackPage, setTrackPage] = useState(0);
+  const totalTrackPages = Math.max(1, Math.ceil(filteredTracks.length / PAGE_SIZE));
+  const pageStart = Math.min(trackPage, totalTrackPages - 1) * PAGE_SIZE;
+  const pagedTracks = filteredTracks.slice(pageStart, pageStart + PAGE_SIZE);
+
+  useEffect(() => {
+    setTrackPage(0);
+  }, [filteredTracks.length, languageFilter]);
+
+  // Follow the playing track onto its page (next / previous / autoplay)
+  useEffect(() => {
+    setTrackPage(Math.floor(currentTrackIndex / PAGE_SIZE));
+  }, [currentTrackIndex]);
 
   // Handle setting audio source dynamically
   useEffect(() => {
@@ -747,12 +765,20 @@ const AudioPlaylist = ({
             
             {/* Top Row: Language / Preset Filter Tabs */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-3 pb-2 border-b border-gray-100/60">
-              <div className="ap-no-scrollbar flex flex-nowrap sm:flex-wrap gap-1.5 overflow-x-auto sm:overflow-visible -mx-3 px-3 sm:mx-0 sm:px-0 min-w-0" role="tablist" aria-label="Track filters">
+              <div className="flex flex-wrap gap-1.5 min-w-0" role="tablist" aria-label="Track filters">
                 {[
                   { id: "english", label: "English" },
                   { id: "hindi", label: "Hindi" },
                   ...(showMusicTab ? [{ id: "music", label: "🎵 Music" }] : []),
-                  { id: "custom", label: "📁 Personal Upload" },
+                  {
+                    id: "custom",
+                    label: (
+                      <span className="inline-flex items-center gap-1.5">
+                        {isPremium() ? <FiUser size={14} aria-hidden="true" /> : <FiLock size={14} aria-hidden="true" />}
+                        Personal
+                      </span>
+                    ),
+                  },
                   { id: "favorites", label: `❤️ Favorites (${favorites.length})` }
                 ].map(filter => {
                   const isActive = languageFilter === filter.id;
@@ -760,12 +786,16 @@ const AudioPlaylist = ({
                     <button
                       key={filter.id}
                       onClick={() => {
+                        if (filter.id === "custom" && !isPremium()) {
+                          toast(PREMIUM_MESSAGE, { icon: "🔒" });
+                          return;
+                        }
                         setLanguageFilter(filter.id);
                         setCurrentTrackIndex(0);
                       }}
                       role="tab"
                       aria-selected={isActive}
-                      className={`shrink-0 whitespace-nowrap min-h-[40px] rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
+                      className={`whitespace-nowrap min-h-[40px] rounded-xl px-3 sm:px-4 py-2 text-[11px] sm:text-xs font-black uppercase tracking-[0.05em] transition-all ${isActive
                         ? "text-white shadow-md"
                         : "bg-white/40 text-gray-400 hover:text-gray-700 hover:bg-white"
                         }`}
@@ -991,7 +1021,8 @@ const AudioPlaylist = ({
             {/* Mobile: compact card list */}
             {filteredTracks.length > 0 && (
               <ul className="md:hidden divide-y divide-gray-100/50">
-                {filteredTracks.map((track, idx) => {
+                {pagedTracks.map((track, pageIdx) => {
+                  const idx = pageStart + pageIdx;
                   const isCurrent = currentTrack?._id === track._id;
                   const isFav = favorites.includes(track._id);
                   const isActivePlaying = isCurrent && isPlaying;
@@ -1079,7 +1110,8 @@ const AudioPlaylist = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100/50">
-                  {filteredTracks.map((track, idx) => {
+                  {pagedTracks.map((track, pageIdx) => {
+                    const idx = pageStart + pageIdx;
                     const isCurrent = currentTrack?._id === track._id;
                     const isFav = favorites.includes(track._id);
                     return (
@@ -1189,6 +1221,39 @@ const AudioPlaylist = ({
               )}
             </div>
           </div>
+
+          {totalTrackPages > 1 && (
+            <nav aria-label="Track pages" className="flex items-center justify-center gap-1.5 mt-4 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setTrackPage((p) => Math.max(0, p - 1))}
+                disabled={trackPage === 0}
+                className="min-h-[40px] px-3 rounded-xl bg-white/70 text-xs font-black text-gray-500 disabled:opacity-40"
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalTrackPages }, (_, n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTrackPage(n)}
+                  aria-current={n === trackPage ? "page" : undefined}
+                  className={`min-h-[40px] min-w-[40px] rounded-xl text-xs font-black ${n === trackPage ? "text-white shadow-md" : "bg-white/70 text-gray-500"}`}
+                  style={n === trackPage ? { backgroundColor: themeColor } : undefined}
+                >
+                  {n + 1}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setTrackPage((p) => Math.min(totalTrackPages - 1, p + 1))}
+                disabled={trackPage >= totalTrackPages - 1}
+                className="min-h-[40px] px-3 rounded-xl bg-white/70 text-xs font-black text-gray-500 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </nav>
+          )}
         </section>
       </div>
 

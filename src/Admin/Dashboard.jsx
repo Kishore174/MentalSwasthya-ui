@@ -8,6 +8,9 @@ import {
 import { FaLungs, FaRegCommentDots, FaRegLightbulb } from "react-icons/fa";
 import { MdSelfImprovement } from "react-icons/md";
 import { getBreathingHistory } from "../Api/breathingApi";
+import { getUserStreak } from "../Api/userApi";
+import { getFreezeAllowance } from "../utils/plan";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const getHistoryPayload = (response) => {
   const payload = response?.data?.data || response?.data || {};
@@ -210,9 +213,6 @@ const XP_ACTIVITIES = [
   { key: "affirmation", label: "Affirmations", xp: 20, color: "#4a7f2e", tint: "#eef5ea", Icon: FaRegCommentDots },
 ];
 
-// Clockwise from 12 o'clock
-const XP_DONUT_ORDER = ["breathing", "affirmation", "meditation", "intention"];
-
 const DAILY_XP_GOAL = XP_ACTIVITIES.reduce((sum, activity) => sum + activity.xp, 0);
 
 const DailyXpCard = ({ counts }) => {
@@ -224,19 +224,6 @@ const DailyXpCard = ({ counts }) => {
   });
   const totalXp = rows.reduce((sum, row) => sum + row.earned, 0);
   const activeRow = rows.find((row) => row.key === activeKey);
-
-  const radius = 78;
-  const circumference = 2 * Math.PI * radius;
-  const earnedRows = XP_DONUT_ORDER.map((key) => rows.find((row) => row.key === key)).filter((row) => row.earned > 0);
-  const gap = earnedRows.length > 1 ? 2.5 : 0;
-
-  let offset = 0;
-  const segments = earnedRows.map((row) => {
-    const length = (row.earned / totalXp) * circumference;
-    const segment = { ...row, length, start: offset };
-    offset += length;
-    return segment;
-  });
 
   const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key));
 
@@ -256,44 +243,87 @@ const DailyXpCard = ({ counts }) => {
       </div>
 
       <div className="relative grid grid-cols-1 md:grid-cols-2 items-center gap-6 md:gap-8 pt-5 sm:pt-6">
-        {/* Donut */}
-        <div className="relative w-full max-w-[280px] sm:max-w-[300px] mx-auto aspect-square">
-          <svg viewBox="0 0 200 200" className="w-full h-full" role="img"
-            aria-label={`Today's XP: ${totalXp} total. ${rows.map((row) => `${row.label} ${row.earned} XP`).join(", ")}.`}>
-            <circle cx="100" cy="100" r={radius} fill="none" stroke="#eef2ea" strokeWidth="30" />
-            <g transform="rotate(-90 100 100)">
-              {segments.map((segment) => (
-                <circle
-                  key={segment.key}
-                  cx="100"
-                  cy="100"
-                  r={radius}
-                  fill="none"
-                  stroke={segment.color}
-                  strokeWidth={activeKey === segment.key ? 34 : 30}
-                  strokeDasharray={`${Math.max(segment.length - gap, 0.01)} ${circumference}`}
-                  strokeDashoffset={-(segment.start + gap / 2)}
-                  opacity={activeKey && activeKey !== segment.key ? 0.35 : 1}
-                  className="cursor-pointer"
-                  style={{ transition: "opacity 0.2s ease, stroke-width 0.2s ease, stroke-dasharray 0.8s ease" }}
-                  onMouseEnter={() => setActiveKey(segment.key)}
-                  onMouseLeave={() => setActiveKey(null)}
-                  onClick={() => toggleActive(segment.key)}
-                />
-              ))}
-            </g>
-          </svg>
+        {/* Four-slice XP wheel: one quadrant per practice, filled when earned today */}
+        <div className="w-full max-w-[340px] mx-auto">
+          {(() => {
+            const cx = 100, cy = 100, rOut = 94, rIn = 46;
+            const pt = (r, deg) => {
+              const rad = ((deg - 90) * Math.PI) / 180;
+              return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+            };
+            const sector = (start, end) => {
+              const [x1, y1] = pt(rOut, start), [x2, y2] = pt(rOut, end);
+              const [x3, y3] = pt(rIn, end), [x4, y4] = pt(rIn, start);
+              return `M${x1} ${y1} A${rOut} ${rOut} 0 0 1 ${x2} ${y2} L${x3} ${y3} A${rIn} ${rIn} 0 0 0 ${x4} ${y4} Z`;
+            };
+            // clockwise from 12 o'clock; text anchors for the outside labels
+            const quads = [
+              { key: "breathing", start: 0, end: 90 },
+              { key: "affirmation", start: 90, end: 180 },
+              { key: "meditation", start: 180, end: 270 },
+              { key: "intention", start: 270, end: 360 },
+            ].map((q) => ({ ...q, row: rows.find((r) => r.key === q.key) }));
+            const byKey = (k) => quads.find((q) => q.key === k).row;
+            const OutsideLabel = ({ row, align }) => (
+              <div className={`flex flex-col ${align === "right" ? "items-end text-right" : "items-start text-left"}`}>
+                <span className="text-xs sm:text-sm font-bold text-[#22331b]">{row.label}</span>
+                <span className="text-base mt-0.5" style={{ color: row.color }}><row.Icon aria-hidden="true" /></span>
+              </div>
+            );
+            return (
+              <>
+                <div className="flex justify-between px-1">
+                  <OutsideLabel row={byKey("intention")} align="left" />
+                  <OutsideLabel row={byKey("breathing")} align="right" />
+                </div>
+                <div className="relative w-full aspect-square -my-2">
+                  <svg viewBox="0 0 200 200" className="w-full h-full" role="img"
+                    aria-label={`Today's XP: ${totalXp} total. ${rows.map((row) => `${row.label} ${row.earned} XP`).join(", ")}.`}>
+                    {quads.map(({ key, start, end, row }) => {
+                      const mid = (start + end) / 2;
+                      const [tx, ty] = pt((rOut + rIn) / 2, mid);
+                      const done = row.earned > 0;
+                      const dim = activeKey && activeKey !== key;
+                      return (
+                        <g
+                          key={key}
+                          className="cursor-pointer"
+                          opacity={dim ? 0.45 : 1}
+                          onMouseEnter={() => setActiveKey(key)}
+                          onMouseLeave={() => setActiveKey(null)}
+                          onClick={() => toggleActive(key)}
+                          style={{ transition: "opacity 0.2s ease" }}
+                        >
+                          <path d={sector(start + 0.6, end - 0.6)} fill={row.color} fillOpacity={done ? 1 : 0.28} stroke="#ffffff" strokeWidth="1.5" />
+                          <text x={tx} y={ty - 1} textAnchor="middle" fontSize="16" fontWeight="800" fill={done ? "#ffffff" : "#22331b"}>
+                            {row.earned}
+                          </text>
+                          <text x={tx} y={ty + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill={done ? "#ffffff" : "#475569"}>
+                            {row.xp} XP
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
 
-          {/* Center readout (shows the hovered / tapped practice) */}
-          <div className="absolute inset-[24%] rounded-full bg-white shadow-[0_6px_24px_rgba(80,105,67,0.14)] border border-[#eef2ea] flex flex-col items-center justify-center text-center pointer-events-none" aria-live="polite">
-            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-[#66785c]">
-              {activeRow ? activeRow.label : "Daily Total"}
-            </span>
-            <span className="text-3xl sm:text-4xl font-black leading-none text-[#22331b] mt-1">
-              {activeRow ? activeRow.earned : totalXp}
-            </span>
-            <span className="text-xs font-bold text-[#66785c] mt-0.5">XP</span>
-          </div>
+                  {/* Centre readout (shows the hovered / tapped practice) */}
+                  <div className="absolute inset-[30%] rounded-full bg-white shadow-[0_6px_24px_rgba(80,105,67,0.18)] border border-[#eef2ea] flex flex-col items-center justify-center text-center pointer-events-none" aria-live="polite">
+                    <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-[#66785c] leading-tight">
+                      {activeRow ? activeRow.label : "Daily Total"}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black leading-none text-[#22331b] mt-0.5">
+                      {activeRow ? activeRow.earned : totalXp}
+                    </span>
+                    <span className="text-[10px] font-bold text-[#66785c]">XP</span>
+                  </div>
+                </div>
+                <div className="flex justify-between px-1">
+                  <OutsideLabel row={byKey("meditation")} align="left" />
+                  <OutsideLabel row={byKey("affirmation")} align="right" />
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Legend + values (direct labels and table view in one) */}
@@ -604,10 +634,67 @@ const MilestoneAchievementsCard = () => {
   );
 };
 
+// Semi-circle gauge: streak freezes left (of the plan allowance) beside the current streak number.
+const StreakFreezeGauge = ({ streak, freezesLeft, freezeCap }) => {
+  const cap = Math.max(freezeCap, freezesLeft, 1);
+  const pct = Math.min(freezesLeft / cap, 1);
+  const arcLen = Math.PI * 40; // semicircle of radius 40
+  return (
+    <div className="flex items-center justify-center gap-5 sm:gap-8 rounded-2xl bg-[#f7faf5] border border-[#e6efe0] px-4 py-4">
+      <div className="relative w-32 h-[72px]" role="img" aria-label={`${freezesLeft} of ${cap} streak freezes available`}>
+        <svg viewBox="0 0 100 55" className="w-full h-full">
+          <path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="#e5ebe0" strokeWidth="9" strokeLinecap="round" />
+          <path
+            d="M10 50 A40 40 0 0 1 90 50"
+            fill="none"
+            stroke="#2b93b3"
+            strokeWidth="9"
+            strokeLinecap="round"
+            strokeDasharray={`${arcLen * pct} ${arcLen}`}
+            style={{ transition: "stroke-dasharray 0.8s ease" }}
+          />
+        </svg>
+        <div className="absolute inset-x-0 bottom-0 flex flex-col items-center leading-none">
+          <span className="text-xl font-black text-[#22331b]">{freezesLeft}</span>
+          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide mt-0.5">/ {cap} freezes</span>
+        </div>
+      </div>
+      <div className="text-left">
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Streak Freeze</p>
+        <p className="text-2xl font-black text-[#8a5a1f] mt-1 flex items-center gap-1.5">
+          <span aria-hidden="true">🔥</span>
+          {streak}
+          <span className="text-xs font-bold text-gray-400">day streak</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Arrived right after finishing a wellness tool: if the user doesn't pick anything within 4 seconds,
+  // guide them to the last page (today's progress + share). Any interaction cancels it.
+  useEffect(() => {
+    if (!location.state?.fromTool) return undefined;
+    const cancel = () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      navigate("/app/complete", { replace: true });
+    }, 4000);
+    const events = ["pointerdown", "keydown", "wheel", "touchstart"];
+    events.forEach((ev) => window.addEventListener(ev, cancel, { once: true, passive: true }));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((ev) => window.removeEventListener(ev, cancel));
+    };
+  }, [location.state, navigate]);
+
   const [history, setHistory] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState("today");
   const [selectedDate, setSelectedDate] = useState("");
+  const [streakInfo, setStreakInfo] = useState({ current: 0, freezesLeft: 0, freezeCap: getFreezeAllowance() });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -626,6 +713,19 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchHistory();
+
+    getUserStreak()
+      .then((res) => {
+        const data = res?.data?.data || {};
+        const streak = data.streak || data;
+        const left = streak.streakFreezes ?? streak.freezesAvailable ?? streak.freezeCount ?? streak.freezes ?? 0;
+        setStreakInfo({
+          current: streak.currentStreak ?? 0,
+          freezesLeft: Number(left) || 0,
+          freezeCap: Number(streak.freezeLimit ?? streak.maxFreezes) || getFreezeAllowance(),
+        });
+      })
+      .catch(() => { /* streak is optional on the dashboard; keep defaults */ });
     
     try {
       const todayStr = new Date().toDateString();
@@ -792,77 +892,127 @@ const Dashboard = () => {
     };
   }, [completedHistory]);
 
-  const weeklyData = useMemo(() => {
-    const counts = [0, 0, 0, 0, 0, 0, 0];
-    const loginCounts = [0, 0, 0, 0, 0, 0, 0];
+  // Web application usage, bucketed to match the selected period:
+  // weekdays (today / weeks), days of the month (months), months (3 months / year) or years (all time).
+  const usageChart = useMemo(() => {
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const shortDays = ["S", "M", "T", "W", "T", "F", "S"];
-
     const range = getPeriodDateRange(selectedPeriod);
+    const now = new Date();
 
-    const isInRange = (dateValue) => {
-      if (!dateValue) return false;
-      if (selectedDate) return toDateInputValue(dateValue) === selectedDate;
+    let mode = "weekday";
+    if (!selectedDate) {
+      if (selectedPeriod === "this_month" || selectedPeriod === "last_month") mode = "monthday";
+      else if (selectedPeriod === "last_3_months" || selectedPeriod === "this_year") mode = "month";
+      else if (selectedPeriod === "all") mode = "year";
+    }
+
+    const toDate = (v) => {
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    // Collect every usage event as { date, minutes, login }
+    const events = [];
+    completedHistory.forEach((session) => {
+      const d = toDate(session.completedAt || session.createdAt);
+      if (d) events.push({ d, minutes: (session.completedSeconds || session.duration || 0) / 60 });
+    });
+    try {
+      JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]").forEach((session) => {
+        const d = toDate(session.timestamp);
+        if (d) events.push({ d, minutes: (session.duration || 0) / 60 });
+      });
+    } catch (e) { }
+    try {
+      JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]").forEach((item) => {
+        const d = toDate(item.date || item.timestamp);
+        if (d) events.push({ d, minutes: 1 });
+      });
+    } catch (e) { }
+    try {
+      JSON.parse(localStorage.getItem("mentalswasthya_login_days") || "[]").forEach((dateStr) => {
+        const d = toDate(dateStr);
+        if (d) events.push({ d, minutes: 0, login: true });
+      });
+    } catch (e) { }
+
+    const inRange = (d) => {
+      if (selectedDate) return toDateInputValue(d) === selectedDate;
       if (!range) return true;
-      const d = new Date(dateValue);
       return d >= range.start && d <= range.end;
     };
 
-    // 1. Parse breathing
-    completedHistory.forEach((session) => {
-      const dateValue = session.completedAt || session.createdAt;
-      if (isInRange(dateValue)) {
-        const day = new Date(dateValue).getDay();
-        const durationSecs = session.completedSeconds || session.duration || 0;
-        counts[day] += durationSecs / 60;
-      }
+    // Build the buckets
+    let buckets = [];
+    let bucketIndex;
+    let xAxisLabel = "Days";
+    if (mode === "weekday") {
+      buckets = shortDays.map((label, i) => ({ label, fullDay: dayNames[i] }));
+      bucketIndex = (d) => d.getDay();
+    } else if (mode === "monthday") {
+      const ref = range ? range.start : now;
+      const daysInMonth = new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate();
+      buckets = Array.from({ length: daysInMonth }, (_, i) => ({
+        label: [1, 10, 20, 30].includes(i + 1) ? String(i + 1) : "",
+        fullDay: `${MONTHS[ref.getMonth()]} ${i + 1}`,
+      }));
+      bucketIndex = (d) => d.getDate() - 1;
+    } else if (mode === "month") {
+      xAxisLabel = "Months";
+      const startMonth = selectedPeriod === "this_year" ? 0 : range.start.getMonth();
+      const startYear = range.start.getFullYear();
+      const total =
+        selectedPeriod === "this_year"
+          ? 12
+          : (now.getFullYear() - startYear) * 12 + now.getMonth() - startMonth + 1;
+      buckets = Array.from({ length: total }, (_, i) => {
+        const m = (startMonth + i) % 12;
+        const y = startYear + Math.floor((startMonth + i) / 12);
+        return { label: MONTHS[m][0], fullDay: `${MONTHS[m]} ${y}` };
+      });
+      bucketIndex = (d) => (d.getFullYear() - startYear) * 12 + d.getMonth() - startMonth;
+    } else {
+      xAxisLabel = "Year";
+      const years = events.map((e) => e.d.getFullYear());
+      const firstYear = Math.min(now.getFullYear(), ...years);
+      buckets = Array.from({ length: now.getFullYear() - firstYear + 1 }, (_, i) => ({
+        label: String(firstYear + i).slice(-2),
+        fullDay: String(firstYear + i),
+      }));
+      bucketIndex = (d) => d.getFullYear() - firstYear;
+    }
+
+    const counts = buckets.map(() => 0);
+    const logins = buckets.map(() => false);
+    events.forEach(({ d, minutes, login }) => {
+      if (!inRange(d)) return;
+      const i = bucketIndex(d);
+      if (i < 0 || i >= buckets.length) return;
+      counts[i] += minutes;
+      if (login) logins[i] = true;
     });
 
-    // 2. Parse play history
-    try {
-      const playHistory = JSON.parse(localStorage.getItem("mentalswasthya_play_history") || "[]");
-      playHistory.forEach((session) => {
-        if (isInRange(session.timestamp)) {
-          const day = new Date(session.timestamp).getDay();
-          const durationSecs = session.duration || 0;
-          counts[day] += durationSecs / 60;
-        }
-      });
-    } catch (e) { }
-
-    // 3. Parse intentions (count as 1 minute)
-    try {
-      const intentions = JSON.parse(localStorage.getItem("mentalSwasthya:intentions") || "[]");
-      intentions.forEach((item) => {
-        const dateValue = item.date || item.timestamp;
-        if (isInRange(dateValue)) {
-          const day = new Date(dateValue).getDay();
-          counts[day] += 1;
-        }
-      });
-    } catch (e) { }
-
-    // 4. Parse logins
-    try {
-      const loginDays = JSON.parse(localStorage.getItem("mentalswasthya_login_days") || "[]");
-      loginDays.forEach((dateStr) => {
-        if (isInRange(dateStr)) {
-          const day = new Date(dateStr).getDay();
-          loginCounts[day] += 1;
-        }
-      });
-    } catch (e) {}
-
     const maxVal = Math.max(...counts, 1);
+    // Y-axis in 5-minute steps (0-5-10-15-20); grows in multiples of 5 only if usage exceeds 20 min
+    const yStep = Math.max(5, Math.ceil(maxVal / 4 / 5) * 5);
+    const niceMax = yStep * 4;
+    const yTicks = [4, 3, 2, 1, 0].map((n) => n * yStep);
 
-    return shortDays.map((label, index) => ({
-      label,
-      fullDay: dayNames[index],
-      count: Math.round(counts[index]),
-      didLogin: loginCounts[index] > 0,
-      percentage: counts[index] > 0 ? (counts[index] / maxVal) * 100 : 0
-    }));
+    return {
+      xAxisLabel,
+      yMax: niceMax,
+      yTicks,
+      data: buckets.map((b, i) => ({
+        ...b,
+        count: Math.round(counts[i]),
+        didLogin: logins[i],
+        percentage: counts[i] > 0 ? (counts[i] / niceMax) * 100 : 0,
+      })),
+    };
   }, [completedHistory, selectedPeriod, selectedDate]);
+  const weeklyData = usageChart.data;
 
   return (
     <div className="space-y-4 sm:space-y-6 text-[#22331b] min-w-0">
@@ -980,6 +1130,12 @@ const Dashboard = () => {
 
           </div>
 
+          <StreakFreezeGauge
+            streak={streakInfo.current}
+            freezesLeft={streakInfo.freezesLeft}
+            freezeCap={streakInfo.freezeCap}
+          />
+
           <div className="flex justify-center border-t border-gray-100/60 pt-3">
             <span className="bg-[#f4f8f1] border border-[#e1eadb] rounded-full px-4 py-1 text-[11px] sm:text-xs font-black uppercase text-[#66785c] tracking-wide sm:tracking-wider text-center max-w-full">
               TOTALS • Out of {statsData.totalPractices} wellness practices
@@ -990,40 +1146,67 @@ const Dashboard = () => {
         {/* Right: completions bar chart */}
         <div className="rounded-3xl bg-white border border-[#e8efe3] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.06)] flex flex-col justify-between lg:col-span-2 relative min-h-[260px] sm:min-h-[300px] min-w-0">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#7d9667]">Weekly Activity</p>
-            <h3 className="text-lg font-black text-[#22331b] mt-0.5">Minutes / Day</h3>
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#7d9667]">Activity</p>
+            <h3 className="text-lg font-black text-[#22331b] mt-0.5">WebApplication Usage</h3>
           </div>
 
-          <div className="relative h-36 flex items-end justify-between gap-2.5 px-2 mt-4 mb-2">
-            {hoveredBarIndex !== null && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-900/90 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-bold shadow-xl border border-gray-800 z-20 backdrop-blur-sm pointer-events-none transition-all">
-                {weeklyData[hoveredBarIndex].fullDay}: <span className="text-[#a8c896]">{weeklyData[hoveredBarIndex].count} mins</span>
-              </div>
-            )}
-
-            {weeklyData.map((item, index) => (
-              <div
-                key={index}
-                className="flex-1 flex flex-col items-center h-full justify-end group cursor-pointer relative"
-                onMouseEnter={() => setHoveredBarIndex(index)}
-                onMouseLeave={() => setHoveredBarIndex(null)}
+          <div className="flex gap-2 mt-4 mb-2">
+            {/* Y axis */}
+            <div className="flex items-stretch gap-1.5 shrink-0">
+              <span
+                className="text-[9px] font-bold uppercase tracking-wider text-gray-400 self-center"
+                style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
               >
-                <div className="absolute inset-x-0.5 top-0 bottom-0 bg-gray-100 rounded-md -z-10 group-hover:bg-gray-200/80 transition-colors" />
-
-                <div
-                  className="w-3 rounded-t-md transition-all"
-                  style={{
-                    height: `${item.percentage}%`,
-                    minHeight: item.count > 0 ? "10px" : (item.didLogin ? "10px" : "2px"),
-                    backgroundColor: item.count === 0 
-                      ? (item.didLogin ? "#ef4444" : "#d1d5db") 
-                      : "#7d9667"
-                  }}
-                />
-
-                <span className="text-[10px] font-black text-gray-400 uppercase mt-2">{item.label}</span>
+                Usage (minutes)
+              </span>
+              <div className="h-36 flex flex-col justify-between text-[9px] font-bold text-gray-400 text-right tabular-nums">
+                {usageChart.yTicks.map((t) => (
+                  <span key={t}>{t}</span>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="relative h-36 flex items-end justify-between gap-1 px-1">
+                {hoveredBarIndex !== null && weeklyData[hoveredBarIndex] && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-900/90 text-white rounded-xl px-3.5 py-1.5 text-[10px] font-bold shadow-xl border border-gray-800 z-20 backdrop-blur-sm pointer-events-none transition-all">
+                    {weeklyData[hoveredBarIndex].fullDay}: <span className="text-[#a8c896]">{weeklyData[hoveredBarIndex].count} mins</span>
+                  </div>
+                )}
+
+                {weeklyData.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex-1 min-w-0 flex flex-col items-center h-full justify-end group cursor-pointer relative"
+                    onMouseEnter={() => setHoveredBarIndex(index)}
+                    onMouseLeave={() => setHoveredBarIndex(null)}
+                  >
+                    <div className="absolute inset-x-0.5 top-0 bottom-0 bg-gray-100 rounded-md -z-10 group-hover:bg-gray-200/80 transition-colors" />
+
+                    <div
+                      className="w-full max-w-[12px] rounded-t-md transition-all"
+                      style={{
+                        height: `${item.percentage}%`,
+                        minHeight: item.count > 0 ? "10px" : (item.didLogin ? "10px" : "2px"),
+                        backgroundColor: item.count === 0
+                          ? (item.didLogin ? "#ef4444" : "#d1d5db")
+                          : "#7d9667"
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between gap-1 px-1 mt-2">
+                {weeklyData.map((item, index) => (
+                  <span key={index} className="flex-1 min-w-0 text-center text-[9px] sm:text-[10px] font-black text-gray-400 uppercase whitespace-nowrap overflow-visible">
+                    {item.label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-center text-[9px] font-bold uppercase tracking-wider text-gray-400 mt-1">
+                {usageChart.xAxisLabel}
+              </p>
+            </div>
           </div>
         </div>
 
