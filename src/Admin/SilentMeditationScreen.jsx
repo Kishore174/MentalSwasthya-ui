@@ -4,9 +4,6 @@ import {
   FiPlay,
   FiRefreshCcw,
   FiSquare,
-  FiVolume2,
-  FiVolumeX,
-  FiZap,
   FiArrowLeft,
   FiGift,
   FiCopy,
@@ -16,6 +13,8 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import CompletionScreen from "../components/CompletionScreen";
+import ConfirmDialog from "../components/ConfirmDialog";
+import toast from "react-hot-toast";
 import {
   completeBreathingSession,
   startBreathingSession,
@@ -30,6 +29,7 @@ const ProgressShapeCircle = ({
   trackColor = "#e4ecdf",
   progressColor = "#7d9667",
   className = "absolute inset-0 w-full h-full",
+  transitionMs = 100,
 }) => {
   const pathRef = useRef(null);
   const defaultLength = 333.0; // Circumference for r=53 circle
@@ -57,7 +57,7 @@ const ProgressShapeCircle = ({
         strokeLinecap="round"
         strokeDasharray={defaultLength}
         strokeDashoffset={dashOffset}
-        style={{ transition: progress === 0 ? "none" : "stroke-dashoffset 0.1s linear" }}
+        style={{ transition: progress === 0 ? "none" : `stroke-dashoffset ${transitionMs}ms linear` }}
         transform="rotate(-90 60 60)"
       />
     </svg>
@@ -72,8 +72,6 @@ const SilentMeditationScreen = () => {
   const [customDurationMinutes, setCustomDurationMinutes] = useState("");
   const [customDurationSeconds, setCustomDurationSeconds] = useState("");
   const [customDurationError, setCustomDurationError] = useState("");
-  const [soundOn, setSoundOn] = useState(true);
-  const [vibrationOn, setVibrationOn] = useState(true);
 
   // States
   const [isCountingDown, setIsCountingDown] = useState(false);
@@ -111,20 +109,11 @@ const SilentMeditationScreen = () => {
   useEffect(() => {
     if (!isCountingDown) return undefined;
 
-    if (soundOn) {
-      if (countdownValue > 0) {
-        playPromptTone(520);
-      } else {
-        playBell('single');
-      }
-    }
-
-    if (vibrationOn) {
-      try {
-        if ("vibrate" in navigator) {
-          navigator.vibrate(countdownValue > 0 ? 80 : [100, 50, 100]);
-        }
-      } catch (e) {}
+    // Countdown ticks, then the single start bell when the countdown reaches zero
+    if (countdownValue > 0) {
+      playPromptTone(520);
+    } else {
+      playBell('single');
     }
 
     if (countdownValue > 0) {
@@ -137,11 +126,10 @@ const SilentMeditationScreen = () => {
     const startTimer = setTimeout(() => {
       setIsCountingDown(false);
       setIsRunning(true);
-      if (soundOn) playBell('single');
     }, 600);
 
     return () => clearTimeout(startTimer);
-  }, [isCountingDown, countdownValue, soundOn, vibrationOn]);
+  }, [isCountingDown, countdownValue]);
 
   // Main session timer
   useEffect(() => {
@@ -166,19 +154,6 @@ const SilentMeditationScreen = () => {
     }
     return () => clearInterval(timer);
   }, [isRunning, sessionId, durationSeconds]);
-
-  // Audio prompt effect based on full elapsed seconds
-  const prevSecRef = useRef(0);
-  useEffect(() => {
-    if (!isRunning || !soundOn) return;
-    const currentSec = Math.floor(elapsedSeconds);
-    if (currentSec > prevSecRef.current) {
-      const subSec = currentSec % 10;
-      if (subSec === 0) playBell('intersect'); // Inhale start
-      if (subSec === 5) playBell('intersect'); // Exhale start
-    }
-    prevSecRef.current = currentSec;
-  }, [elapsedSeconds, isRunning, soundOn]);
 
   // Helper to generate synthethic breathing tone (silent meditation has no complex tracks)
   const playPromptTone = (frequency = 262) => {
@@ -231,9 +206,9 @@ const SilentMeditationScreen = () => {
     }
   };
 
-  const triggerCompleteSession = async () => {
+  const triggerCompleteSession = async (ringEndBells = true) => {
     setIsRunning(false);
-    if (soundOn) playBell('double');
+    if (ringEndBells) playBell('double'); // two bells when the selected time is up (not on an early stop)
     const finalDuration = elapsedSeconds;
     try {
       const todayKey = new Date().toDateString();
@@ -301,10 +276,24 @@ const SilentMeditationScreen = () => {
     setMedCompleted(true);
   };
 
-  const handleStop = () => {
-    if (window.confirm("Are you sure you want to stop your session early?")) {
-      triggerCompleteSession();
-    }
+  // Stop / back during a session asks first (in-app dialog). The session pauses while the dialog is open.
+  const [exitRequest, setExitRequest] = useState(null); // null | { leave: boolean, wasRunning: boolean }
+
+  const requestExit = (leave = false) => {
+    setExitRequest({ leave, wasRunning: isRunning });
+    setIsRunning(false);
+  };
+
+  const confirmExit = () => {
+    const { leave } = exitRequest;
+    setExitRequest(null);
+    triggerCompleteSession(false);
+    if (leave) navigate(-1);
+  };
+
+  const cancelExit = () => {
+    if (exitRequest?.wasRunning) setIsRunning(true);
+    setExitRequest(null);
   };
 
   const resetLocalSession = () => {
@@ -392,7 +381,7 @@ const SilentMeditationScreen = () => {
     } else {
       try {
         navigator.clipboard.writeText(shareMessage);
-        alert("Mental Swasthya invite message & link copied to clipboard!");
+        toast.success("Invite message & link copied to clipboard!");
       } catch (e) { }
     }
   };
@@ -434,9 +423,17 @@ const SilentMeditationScreen = () => {
     );
   }
 
-  // 2. Immersive Active Session Layout (triggers ONLY after countdown timer completes)
+  // 2. Immersive session layout. The Settled / Ready / 3-2-1 countdown plays on this same page
+  // (progress bar at 0%), then the session continues here.
   const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
-  if (isSessionActive) {
+  const countdownLabel = countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? String(countdownValue) : "Begin";
+  // The ring fills one step per countdown tick (5 → 0)
+  const countdownProgress = ((5 - Math.min(5, Math.max(0, countdownValue))) / 5) * 100;
+  const cancelCountdown = () => {
+    setIsCountingDown(false);
+    setCountdownValue(5);
+  };
+  if (isCountingDown || isSessionActive) {
     return (
       <div
         className="fixed inset-0 z-50 h-dvh overflow-hidden flex flex-col items-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white animate-fade-in pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]"
@@ -454,7 +451,7 @@ const SilentMeditationScreen = () => {
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <button
               type="button"
-              onClick={() => { handleStop(); navigate(-1); }}
+              onClick={() => { if (isCountingDown) { cancelCountdown(); navigate(-1); } else requestExit(true); }}
               className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
               title="Go Back"
               aria-label="Stop session and go back"
@@ -469,7 +466,7 @@ const SilentMeditationScreen = () => {
           </div>
           <button
             type="button"
-            onClick={handleStop}
+            onClick={isCountingDown ? cancelCountdown : () => requestExit(false)}
             className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10 shrink-0"
             title="End Session"
             aria-label="End session"
@@ -485,19 +482,44 @@ const SilentMeditationScreen = () => {
 
               {/* Outline Circular Progress */}
               <ProgressShapeCircle
-                progress={progress}
+                progress={isCountingDown ? countdownProgress : progress}
                 strokeWidth={3}
+                transitionMs={isCountingDown ? 1000 : 100}
                 className="absolute inset-0 w-full h-full"
               />
 
+              {isCountingDown && (
+                <span
+                  key={`ripple-${countdownValue}`}
+                  aria-hidden="true"
+                  className="cd-ripple absolute rounded-full border-2 border-[#a8c896] pointer-events-none"
+                  style={{ inset: "18%" }}
+                />
+              )}
+
               {/* Bubble Shape with dynamic scale */}
               <div className="sm-full-bubble rounded-full flex items-center justify-center text-white bg-gradient-to-br from-[#7d9667] to-[#a8c896]/60 shadow-[0_0_50px_rgba(125,150,103,0.3)] animate-pulse-slow"
-                style={breathScaleStyle}>
-                <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                  {isRunning ? "" : "Paused"}
-                </span>
+                style={isCountingDown ? { transform: "scale(1)" } : breathScaleStyle}>
+                {isCountingDown ? (
+                  <span
+                    key={countdownValue}
+                    aria-live="assertive"
+                    className="animate-countdown font-black uppercase tracking-wider select-none"
+                    style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? "clamp(2.5rem, 12vw, 4.5rem)" : "clamp(1rem, 4vw, 1.5rem)" }}
+                  >
+                    {countdownLabel}
+                  </span>
+                ) : (
+                  <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
+                    {isRunning ? "" : "Paused"}
+                  </span>
+                )}
               </div>
             </div>
+
+            {isCountingDown && (
+              <p className="mt-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#a8c896]">Get ready</p>
+            )}
 
             {/* Progress Bar */}
             <div className="w-full max-w-xs sm:max-w-sm mt-5">
@@ -522,52 +544,39 @@ const SilentMeditationScreen = () => {
             </div>
           </div>
 
-          {/* Bottom Control Bar */}
-          <div className="sm-full-controls w-full max-w-md flex-none flex items-center justify-between gap-2 bg-white/5 backdrop-blur-md px-3 sm:px-6 py-3 sm:py-4 rounded-3xl border border-white/10 shadow-2xl z-50">
-            <div className="flex items-center gap-1 sm:gap-2">
+          {/* Bottom controls: round pause / resume button, same as the breathing session */}
+          <div className="sm-full-controls w-full max-w-md flex-none flex items-center justify-center py-2 animate-fade-in z-50">
+            {isCountingDown ? (
               <button
                 type="button"
-                onClick={() => setSoundOn(!soundOn)}
-                className="w-11 h-11 flex items-center justify-center rounded-full text-white/60 hover:text-white transition-colors cursor-pointer"
-                title="Toggle Sound"
-                aria-label={soundOn ? "Turn sound off" : "Turn sound on"}
-                aria-pressed={soundOn}
+                onClick={cancelCountdown}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white shadow-xl transition-all cursor-pointer"
+                title="Cancel"
+                aria-label="Cancel and return to setup"
               >
-                {soundOn ? <FiVolume2 size={20} /> : <FiVolumeX size={20} />}
+                <FiX size={26} />
               </button>
+            ) : isRunning ? (
               <button
                 type="button"
-                onClick={() => setVibrationOn(!vibrationOn)}
-                className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors cursor-pointer ${vibrationOn ? "text-[#a8c896]" : "text-white/60 hover:text-white"}`}
-                title="Toggle Vibration"
-                aria-label={vibrationOn ? "Turn vibration off" : "Turn vibration on"}
-                aria-pressed={vibrationOn}
+                onClick={() => setIsRunning(false)}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white text-gray-900 shadow-xl hover:bg-gray-100 transition-all cursor-pointer"
+                title="Pause"
+                aria-label="Pause session"
               >
-                <FiZap size={20} />
+                <FiPause size={26} />
               </button>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              {isRunning ? (
-                <button
-                  type="button"
-                  onClick={() => setIsRunning(false)}
-                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-white text-gray-900 px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-gray-100 transition-all cursor-pointer"
-                >
-                  <FiPause />
-                  Pause
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsRunning(true)}
-                  className="inline-flex items-center justify-center gap-2 min-h-[48px] rounded-2xl bg-[#7d9667] text-white px-4 sm:px-6 py-3 text-sm font-bold shadow-lg hover:bg-[#6f865c] transition-all cursor-pointer"
-                >
-                  <FiPlay />
-                  Resume
-                </button>
-              )}
-            </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsRunning(true)}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-[#7d9667] text-white shadow-xl shadow-[#7d9667]/30 hover:bg-[#6f865c] transition-all animate-pulse cursor-pointer"
+                title="Resume"
+                aria-label="Resume session"
+              >
+                <FiPlay size={26} className="ml-1" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -591,6 +600,17 @@ const SilentMeditationScreen = () => {
             width: 54%;
             aspect-ratio: 1 / 1;
           }
+          @keyframes smCountdown {
+            0% { transform: scale(0.6); opacity: 0; }
+            50% { transform: scale(1.12); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes cdRipple {
+            0% { transform: scale(0.85); opacity: 0.7; }
+            100% { transform: scale(1.35); opacity: 0; }
+          }
+          .cd-ripple { animation: cdRipple 1s ease-out forwards; }
+          .animate-countdown { animation: smCountdown 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
           .animate-pulse-slow {
             animation: smPulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
           }
@@ -599,6 +619,17 @@ const SilentMeditationScreen = () => {
             50% { opacity: .85; }
           }
         `}</style>
+
+        <ConfirmDialog
+          open={!!exitRequest}
+          tone="pause"
+          title="Stop your session early?"
+          message="Your session is paused. Stopping now will end it before the time is up."
+          confirmLabel="Stop session"
+          cancelLabel="Keep going"
+          onConfirm={confirmExit}
+          onCancel={cancelExit}
+        />
       </div>
     );
   }
@@ -789,39 +820,6 @@ const SilentMeditationScreen = () => {
                   {customDurationError}
                 </p>
               )}
-            </div>
-          </div>
-
-          {/* Sound & Vibration control panel */}
-          <div className="rounded-[24px] sm:rounded-[28px] bg-white p-4 sm:p-5 shadow-sm border border-gray-100">
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-gray-400">
-              Session Controls
-            </p>
-            <div className="space-y-3 mt-4">
-              <button
-                type="button"
-                onClick={() => setSoundOn(!soundOn)}
-                aria-pressed={soundOn}
-                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
-              >
-                <span className="inline-flex items-center gap-2">
-                  {soundOn ? <FiVolume2 /> : <FiVolumeX />}
-                  Sound Prompts
-                </span>
-                <span className="text-[#7d9667]">{soundOn ? "ON" : "OFF"}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setVibrationOn(!vibrationOn)}
-                aria-pressed={vibrationOn}
-                className="w-full min-h-[44px] flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100/50 transition-colors"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <FiZap />
-                  Vibration
-                </span>
-                <span className="text-[#7d9667]">{vibrationOn ? "ON" : "OFF"}</span>
-              </button>
             </div>
           </div>
         </aside>

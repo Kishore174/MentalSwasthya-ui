@@ -231,12 +231,6 @@ export default function CompletionScreen({
                 </div>
               ))}
             </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 mt-5 pt-4 border-t border-[#e6efe0] text-center">
-              <span className="text-xs">🔥</span>
-              <span className="text-xs font-semibold text-[#8a5a1f]">{streakDays}-day streak</span>
-              <span className="text-xs text-[#8a8f7f]">— your longest run yet</span>
-            </div>
           </div>
 
           {/* ── Referral program ─────────────────────────── */}
@@ -245,10 +239,10 @@ export default function CompletionScreen({
               <span className="w-7 h-7 rounded-full bg-[#f0f6ea] flex items-center justify-center">
                 <Gift size={14} className="text-[#7d9667]" />
               </span>
-              <h3 className="ms-serif text-[1.2rem] text-[#1e3019]">Give a month, get a month</h3>
+              <h3 className="ms-serif text-[1.2rem] text-[#1e3019]">Share the love, get more free!</h3>
             </div>
             <p className="text-[12.5px] text-[#5c6f52] leading-relaxed mt-2">
-              Every friend who joins with your link gets 14 days of Premium free. Once 3 friends register successfully, you get 1 more month free.
+              If your loved ones register using your shared link, you will get an additional 1 month subscription absolutely free (for 3 successful registrations).
             </p>
 
             {/* Reward track */}
@@ -281,7 +275,7 @@ export default function CompletionScreen({
             {nextRewardAt ? (
               <div className="mt-5 rounded-xl bg-[#f7faf5] border border-[#e6efe0] p-3 sm:p-4">
                 <p className="text-[12px] font-semibold text-[#22331b]">
-                  Invite one more friend to unlock month {nextRewardAt}.
+                  Invite one more friend to unlock one month subscription free!
                 </p>
                 <div className="flex flex-col sm:flex-row items-stretch gap-2 mt-3">
                   <input

@@ -76,43 +76,6 @@ const ContactScreen = () => {
         </p>
       </section>
 
-      {/* Grievance Redressal (DPDP Act) */}
-      <section
-        id="grievance-redressal"
-        aria-labelledby="grievance-heading"
-        className="rounded-[24px] border-2 border-[#7d9667]/40 bg-[#f5faf2] p-5 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-start"
-      >
-        <div className="w-12 h-12 rounded-2xl bg-[#e3efdb] text-[#4f6b3c] flex items-center justify-center flex-shrink-0">
-          <FiShield size={22} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 id="grievance-heading" className="text-lg font-black text-[#22331b]">
-            Grievance Redressal
-          </h2>
-          <p className="text-sm text-[#66785c] mt-1 leading-6">
-            In line with the Digital Personal Data Protection (DPDP) Act, you can raise any concern about how your
-            personal data is handled with our Grievance Officer.
-          </p>
-          <dl className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Officer</dt>
-              <dd className="font-bold text-[#22331b] break-words">{GRIEVANCE.officer}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email</dt>
-              <dd className="font-bold text-[#22331b] break-words [overflow-wrap:anywhere]">
-                <a href={`mailto:${GRIEVANCE.email}`} className="underline">{GRIEVANCE.email}</a>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Phone</dt>
-              <dd className="font-bold text-[#22331b]">{GRIEVANCE.phone}</dd>
-            </div>
-          </dl>
-          <p className="text-xs text-gray-500 mt-3">{GRIEVANCE.response}</p>
-        </div>
-      </section>
-
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
@@ -240,6 +203,43 @@ const ContactScreen = () => {
         </div>
 
       </div>
+
+      {/* Grievance Redressal (DPDP Act) */}
+      <section
+        id="grievance-redressal"
+        aria-labelledby="grievance-heading"
+        className="rounded-[24px] border-2 border-[#7d9667]/40 bg-[#f5faf2] p-5 sm:p-6 flex flex-col sm:flex-row gap-4 sm:items-start"
+      >
+        <div className="w-12 h-12 rounded-2xl bg-[#e3efdb] text-[#4f6b3c] flex items-center justify-center flex-shrink-0">
+          <FiShield size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 id="grievance-heading" className="text-lg font-black text-[#22331b]">
+            Grievance Redressal
+          </h2>
+          <p className="text-sm text-[#66785c] mt-1 leading-6">
+            In line with the Digital Personal Data Protection (DPDP) Act, you can raise any concern about how your
+            personal data is handled with our Grievance Officer.
+          </p>
+          <dl className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Officer</dt>
+              <dd className="font-bold text-[#22331b] break-words">{GRIEVANCE.officer}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email</dt>
+              <dd className="font-bold text-[#22331b] break-words [overflow-wrap:anywhere]">
+                <a href={`mailto:${GRIEVANCE.email}`} className="underline">{GRIEVANCE.email}</a>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Phone</dt>
+              <dd className="font-bold text-[#22331b]">{GRIEVANCE.phone}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-gray-500 mt-3">{GRIEVANCE.response}</p>
+        </div>
+      </section>
     </div>
   );
 };

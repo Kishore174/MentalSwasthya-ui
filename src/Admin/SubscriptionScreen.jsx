@@ -306,10 +306,10 @@ const SubscriptionScreen = () => {
               <span className="text-xs font-semibold text-emerald-200">New & Existing Users</span>
             </div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-black mt-1 leading-snug">
-              Introductory Offer: 7 Days FREE Trial + 20% Discount
+              Introductory Offer: 14 Days FREE Trial + 20% Discount
             </h2>
             <p className="text-xs text-emerald-100/80 mt-1 max-w-xl">
-              Experience full premium access for 7 days with zero commitment. Upgrade now to save an extra 20% on all annual subscription plans!
+              Experience full premium access for 14 days with zero commitment. Upgrade now to save an extra 20% on all annual subscription plans!
             </p>
           </div>
         </div>

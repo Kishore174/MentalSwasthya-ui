@@ -2,13 +2,35 @@ import React, { useEffect, useState } from "react";
 import { FiMessageSquare, FiX, FiCheck, FiHeart, FiStar } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
+// Face colours follow the green → red scale; `color` is a slightly deeper tone of the same hue for text, needle and borders.
 const MOOD_LEVELS = [
-  { level: 1, val: 1.0, emoji: "😞", label: "Needs Work", color: "#ef4444", bg: "#fef2f2", ring: "#fca5a5" },
-  { level: 2, val: 2.0, emoji: "🙁", label: "Fair", color: "#f97316", bg: "#fff7ed", ring: "#fdba74" },
-  { level: 3, val: 3.0, emoji: "😐", label: "Good", color: "#eab308", bg: "#fefce8", ring: "#fde047" },
-  { level: 4, val: 4.0, emoji: "🙂", label: "Great", color: "#84cc16", bg: "#f7fee7", ring: "#bef264" },
-  { level: 5, val: 5.0, emoji: "😁", label: "Loved It!", color: "#22c55e", bg: "#f0fdf4", ring: "#86efac" },
+  { level: 1, val: 1.0, face: "#dc4630", label: "Needs Work", color: "#d93c27", bg: "#fef2f0", ring: "#f4a89c" },
+  { level: 2, val: 2.0, face: "#f0a03a", label: "Fair", color: "#e0801c", bg: "#fff6e9", ring: "#f7c88b" },
+  { level: 3, val: 3.0, face: "#f7e24a", label: "Good", color: "#c9a200", bg: "#fffce6", ring: "#f3e57a" },
+  { level: 4, val: 4.0, face: "#97c94a", label: "Great", color: "#6fa22a", bg: "#f5fbe9", ring: "#c2e08a" },
+  { level: 5, val: 5.0, face: "#5aaa4f", label: "Loved It!", color: "#3d9140", bg: "#effaec", ring: "#9fd49a" },
 ];
+
+const FACE_MOUTHS = {
+  5: "M11 24 Q20 34 29 24",
+  4: "M12.5 25 Q20 31 27.5 25",
+  3: "M13 27.5 H27",
+  2: "M13 29.5 Q20 24.5 27 29.5",
+  1: "M11 31.5 Q20 21.5 29 31.5",
+};
+
+// Flat coloured face (green smile → red frown). Pass `x`/`y` to place it inside another <svg>.
+const FaceIcon = ({ level, size = 28, ...rest }) => {
+  const mood = MOOD_LEVELS.find((m) => m.level === level) || MOOD_LEVELS[2];
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" focusable="false" {...rest}>
+      <circle cx="20" cy="20" r="19" fill={mood.face} />
+      <circle cx="14" cy="16" r="2.3" fill="#2f3a22" />
+      <circle cx="26" cy="16" r="2.3" fill="#2f3a22" />
+      <path d={FACE_MOUTHS[level]} fill="none" stroke="#2f3a22" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+};
 
 const FeedbackWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -175,11 +197,11 @@ const FeedbackWidget = () => {
                   <svg className="w-full h-full overflow-visible" viewBox="0 0 340 180">
                     <defs>
                       <linearGradient id="arcGradient" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#ef4444" />
-                        <stop offset="25%" stopColor="#f97316" />
-                        <stop offset="50%" stopColor="#eab308" />
-                        <stop offset="75%" stopColor="#84cc16" />
-                        <stop offset="100%" stopColor="#22c55e" />
+                        <stop offset="0%" stopColor="#dc4630" />
+                        <stop offset="25%" stopColor="#f0a03a" />
+                        <stop offset="50%" stopColor="#f7e24a" />
+                        <stop offset="75%" stopColor="#97c94a" />
+                        <stop offset="100%" stopColor="#5aaa4f" />
                       </linearGradient>
 
                       <filter id="shadowGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -242,8 +264,8 @@ const FeedbackWidget = () => {
                     <circle cx={cx} cy={cy} r="7" fill={currentLevelObj.color} />
 
                     {/* Corner Emojis */}
-                    <text x="32" y="172" className="text-xl select-none">😡</text>
-                    <text x="288" y="172" className="text-xl select-none">😁</text>
+                    <FaceIcon level={1} x="28" y="150" width="26" height="26" />
+                    <FaceIcon level={5} x="286" y="150" width="26" height="26" />
                   </svg>
 
                   {/* Dynamic Glowing Rating Badge Floating over Needle */}
@@ -260,7 +282,7 @@ const FeedbackWidget = () => {
                     <span className="text-sm font-black text-gray-900 leading-none">
                       {rating.toFixed(1)}
                     </span>
-                    <span className="text-sm mt-0.5">{currentLevelObj.emoji}</span>
+                    <span className="mt-0.5"><FaceIcon level={currentLevelObj.level} size={16} /></span>
                   </div>
 
                   {/* Hidden Range Input overlay for smooth dragging */}
@@ -299,7 +321,7 @@ const FeedbackWidget = () => {
                             : "opacity-80 hover:opacity-100 hover:scale-102"
                         }`}
                       >
-                        <span className="text-lg select-none">{item.emoji}</span>
+                        <FaceIcon level={item.level} size={28} />
                         <span
                           className="text-[9px] sm:text-[10px] font-extrabold tracking-tight leading-tight line-clamp-2 sm:line-clamp-1 max-w-full break-words"
                           style={{ color: isSelected ? item.color : "#66785c" }}
@@ -315,7 +337,7 @@ const FeedbackWidget = () => {
                 <div className="relative w-full h-4 -mt-1" aria-hidden="true">
                   <div
                     className="absolute inset-x-[10%] top-1.5 h-1.5 rounded-full"
-                    style={{ background: "linear-gradient(to right, #22c55e, #84cc16, #eab308, #f97316, #ef4444)" }}
+                    style={{ background: "linear-gradient(to right, #5aaa4f, #97c94a, #f7e24a, #f0a03a, #dc4630)" }}
                   />
                   <span
                     className="absolute top-0 w-0 h-0 transition-all duration-300"

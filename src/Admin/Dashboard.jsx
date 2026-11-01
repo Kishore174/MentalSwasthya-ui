@@ -237,12 +237,9 @@ const DailyXpCard = ({ counts }) => {
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7d9667]">MentalSwasthya • Daily XP</span>
           <h2 className="text-lg sm:text-xl font-black tracking-tight mt-0.5 text-[#22331b]">TODAY'S XP BREAKDOWN</h2>
         </div>
-        <span className="border rounded-xl px-3.5 py-1.5 text-xs font-bold bg-[#f4f8f1] border-[#e1eadb] text-[#66785c]">
-          Daily goal: <span className="text-[#22331b]">{DAILY_XP_GOAL} XP</span>
-        </span>
       </div>
 
-      <div className="relative grid grid-cols-1 md:grid-cols-2 items-center gap-6 md:gap-8 pt-5 sm:pt-6">
+      <div className="relative grid grid-cols-1 items-center gap-4 pt-5 sm:pt-6">
         {/* Four-slice XP wheel: one quadrant per practice, filled when earned today */}
         <div className="w-full max-w-[340px] mx-auto">
           {(() => {
@@ -267,6 +264,7 @@ const DailyXpCard = ({ counts }) => {
             const OutsideLabel = ({ row, align }) => (
               <div className={`flex flex-col ${align === "right" ? "items-end text-right" : "items-start text-left"}`}>
                 <span className="text-xs sm:text-sm font-bold text-[#22331b]">{row.label}</span>
+                <span className="text-[10px] sm:text-[11px] font-semibold text-gray-500 leading-tight">{row.xp} XP/session</span>
                 <span className="text-base mt-0.5" style={{ color: row.color }}><row.Icon aria-hidden="true" /></span>
               </div>
             );
@@ -326,46 +324,8 @@ const DailyXpCard = ({ counts }) => {
           })()}
         </div>
 
-        {/* Legend + values (direct labels and table view in one) */}
         <div className="min-w-0">
-          <ul className="space-y-2.5">
-            {rows.map(({ key, label, xp, color, tint, Icon, count, earned }) => {
-              const isActive = activeKey === key;
-              return (
-                <li key={key}>
-                  <button
-                    type="button"
-                    aria-pressed={isActive}
-                    onMouseEnter={() => setActiveKey(key)}
-                    onMouseLeave={() => setActiveKey(null)}
-                    onFocus={() => setActiveKey(key)}
-                    onBlur={() => setActiveKey(null)}
-                    onClick={() => toggleActive(key)}
-                    className={`w-full min-h-[56px] flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors ${isActive ? "border-[#cfdcc6] bg-[#f4f8f1]" : "border-[#eef2ea] bg-white hover:bg-[#fbfdf8]"
-                      } ${activeKey && !isActive ? "opacity-60" : ""}`}
-                  >
-                    <span className="w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-lg" style={{ backgroundColor: tint, color }}>
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="flex items-center gap-2 text-sm font-black text-[#22331b]">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} aria-hidden="true" />
-                        <span className="truncate">{label}</span>
-                      </span>
-                      <span className="block text-[11px] font-semibold text-gray-500 mt-0.5">
-                        {count} {count === 1 ? "session" : "sessions"} · {xp} XP each
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-right">
-                      <span className="block text-base font-black text-[#22331b] leading-none">{earned}</span>
-                      <span className="block text-[10px] font-bold uppercase text-gray-500 mt-0.5">XP</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="text-xs font-semibold text-[#66785c] mt-4 text-center md:text-left">
+          <p className="text-xs font-semibold text-[#66785c] mt-2 text-center">
             {totalXp === 0
               ? `Complete any practice today to start earning XP. Finish all four to reach ${DAILY_XP_GOAL} XP.`
               : totalXp >= DAILY_XP_GOAL

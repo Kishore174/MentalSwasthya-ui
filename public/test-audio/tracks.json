@@ -1,0 +1,107 @@
+[
+  {
+    "file": "track-01.mp3",
+    "title": "Morning Calm",
+    "artist": "Test Artist",
+    "category": "Meditation",
+    "duration": 45
+  },
+  {
+    "file": "track-02.mp3",
+    "title": "Deep Breath Reset",
+    "artist": "Test Artist",
+    "category": "Breathing",
+    "duration": 60
+  },
+  {
+    "file": "track-03.mp3",
+    "title": "I Am Enough",
+    "artist": "Test Voice",
+    "category": "Affirmation",
+    "duration": 90
+  },
+  {
+    "file": "track-04.mp3",
+    "title": "Ocean Drift",
+    "artist": "Test Artist",
+    "category": "Relaxation",
+    "duration": 120
+  },
+  {
+    "file": "track-05.mp3",
+    "title": "Soft Piano Haze",
+    "artist": "Test Artist",
+    "category": "Music",
+    "duration": 75
+  },
+  {
+    "file": "track-06.mp3",
+    "title": "Focus Flow",
+    "artist": "Test Artist",
+    "category": "Meditation",
+    "duration": 150
+  },
+  {
+    "file": "track-07.mp3",
+    "title": "Box Breathing 4-4-4",
+    "artist": "Test Artist",
+    "category": "Breathing",
+    "duration": 170
+  },
+  {
+    "file": "track-08.mp3",
+    "title": "Gratitude Moment",
+    "artist": "Test Voice",
+    "category": "Affirmation",
+    "duration": 185
+  },
+  {
+    "file": "track-09.mp3",
+    "title": "Evening Unwind",
+    "artist": "Test Artist",
+    "category": "Relaxation",
+    "duration": 200
+  },
+  {
+    "file": "track-10.mp3",
+    "title": "Forest Rain Ambience",
+    "artist": "Test Artist",
+    "category": "Music",
+    "duration": 210
+  },
+  {
+    "file": "track-11.mp3",
+    "title": "Body Scan Journey",
+    "artist": "Test Artist",
+    "category": "Meditation",
+    "duration": 220
+  },
+  {
+    "file": "track-12.mp3",
+    "title": "Calm Mind Daily",
+    "artist": "Test Voice",
+    "category": "Affirmation",
+    "duration": 230
+  },
+  {
+    "file": "track-13.mp3",
+    "title": "Sleep Drift",
+    "artist": "Test Artist",
+    "category": "Relaxation",
+    "duration": 240
+  },
+  {
+    "file": "track-14.mp3",
+    "title": "Prana Breath Wave",
+    "artist": "Test Artist",
+    "category": "Breathing",
+    "duration": 190
+  },
+  {
+    "file": "track-15.mp3",
+    "title": "Himalayan Bowls",
+    "artist": "Test Artist",
+    "category": "Custom",
+    "duration": 195
+  }
+]

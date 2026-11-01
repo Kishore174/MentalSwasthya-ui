@@ -1,5 +1,6 @@
 import { useLifetimeXp, getXpRing } from "../utils/xp";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   FiUser,
@@ -14,11 +15,18 @@ import {
   FiInfo,
   FiCheckCircle,
   FiClock,
-  FiMoon
+  FiMoon,
+  FiPhone,
+  FiBriefcase,
+  FiCamera,
+  FiTrash2,
+  FiAlertTriangle,
+  FiX
 } from "react-icons/fi";
 import { FaFire } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import { getUserProfile, updateUserProfile } from "../Api/userApi";
+import { getUserProfile, updateUserProfile, uploadProfilePhoto, deleteAccount } from "../Api/userApi";
+import { axiosInstance } from "../Api/config";
 
 const DAYS_OF_WEEK = [
   { id: "MON", label: "Mon", full: "Monday" },
@@ -48,8 +56,44 @@ const APP_START_OPTIONS = [
   },
 ];
 
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+
+// Relative photo paths from the API are served from the API origin
+const resolvePhotoUrl = (url) => {
+  if (!url) return "";
+  if (/^(https?:|data:|blob:)/.test(url)) return url;
+  const origin = (axiosInstance.defaults.baseURL || "").replace(/\/api\/?$/, "");
+  return `${origin}${url.startsWith("/") ? url : `/${url}`}`;
+};
+
+// Shrink the chosen image to a 256px square JPEG so it stays small enough to keep with the account
+const resizeImage = (file, size = 256) =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      canvas.getContext("2d").drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(objectUrl);
+      canvas.toBlob(
+        (blob) => (blob ? resolve({ blob, dataUrl: canvas.toDataURL("image/jpeg", 0.85) }) : reject(new Error("resize failed"))),
+        "image/jpeg",
+        0.85
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("unreadable image"));
+    };
+    img.src = objectUrl;
+  });
+
 const ProfileScreen = () => {
-  const { user: authUser, login } = useAuth();
+  const { user: authUser, login, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,6 +102,17 @@ const ProfileScreen = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("individual");
+  const [mobile, setMobile] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [photo, setPhoto] = useState("");
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const photoInputRef = useRef(null);
+
+  // Delete account
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [weeklyOff, setWeeklyOff] = useState(["SUN"]);
   const [appStartOption, setAppStartOption] = useState("first_login_of_day");
@@ -92,6 +147,9 @@ const ProfileScreen = () => {
       setName(profile.name || authUser?.name || "");
       setEmail(profile.email || authUser?.email || "");
       setRole(profile.role || authUser?.role || "individual");
+      setMobile(profile.mobile || profile.phone || authUser?.mobile || "");
+      setDesignation(profile.designation || authUser?.designation || "");
+      setPhoto(resolvePhotoUrl(profile.photoUrl || profile.avatar || profile.profileImage || authUser?.avatar || ""));
       setIsEmailVerified(!!profile.isEmailVerified);
       setWeeklyOff(profile.weeklyOff?.length ? profile.weeklyOff : ["SUN"]);
       setAppStartOption(profile.appStartOption || "first_login_of_day");
@@ -109,6 +167,9 @@ const ProfileScreen = () => {
         setName(authUser.name || "");
         setEmail(authUser.email || "");
         setRole(authUser.role || "individual");
+        setMobile(authUser.mobile || "");
+        setDesignation(authUser.designation || "");
+        setPhoto(resolvePhotoUrl(authUser.avatar || ""));
         setWeeklyOff(authUser.weeklyOff?.length ? authUser.weeklyOff : ["SUN"]);
       }
       toast.error("Could not fetch latest profile data.");
@@ -151,6 +212,12 @@ const ProfileScreen = () => {
       return;
     }
 
+    const mobileDigits = mobile.replace(/[\s-]/g, "").replace(/^\+91/, "").replace(/^0/, "");
+    if (mobile.trim() && !/^[6-9]\d{9}$/.test(mobileDigits)) {
+      toast.error("Enter a valid 10-digit mobile number.");
+      return;
+    }
+
     if (newPassword) {
       if (!currentPassword) {
         toast.error("Please enter your current password to set a new password.");
@@ -170,6 +237,8 @@ const ProfileScreen = () => {
     try {
       const payload = {
         name: name.trim(),
+        mobile: mobile.trim(),
+        designation: designation.trim(),
         weeklyOff,
         appStartOption,
         ...(newPassword ? { currentPassword, newPassword } : {}),
@@ -212,6 +281,83 @@ const ProfileScreen = () => {
     }
   };
 
+  const syncAuthUser = (patch) => {
+    const token = localStorage.getItem("token");
+    if (token) login(token, { ...authUser, ...patch });
+  };
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file (JPG, PNG or WebP).");
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      toast.error("Photo is too large. Please choose one under 5 MB.");
+      return;
+    }
+
+    setPhotoBusy(true);
+    try {
+      const { blob, dataUrl } = await resizeImage(file);
+      let finalUrl = dataUrl;
+      try {
+        const res = await uploadProfilePhoto(new File([blob], "profile.jpg", { type: "image/jpeg" }));
+        const serverUrl = res?.data?.data?.photoUrl || res?.data?.data?.user?.photoUrl || res?.data?.data?.avatar;
+        if (serverUrl) finalUrl = resolvePhotoUrl(serverUrl);
+        toast.success("Profile photo updated!");
+      } catch (apiErr) {
+        console.warn("Photo upload to server failed, keeping it on this device:", apiErr);
+        toast.success("Photo saved on this device. It could not be uploaded to your account.");
+      }
+      setPhoto(finalUrl);
+      syncAuthUser({ avatar: finalUrl });
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not read that image. Please try another one.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const handlePhotoRemove = () => {
+    setPhoto("");
+    syncAuthUser({ avatar: "" });
+    toast.success("Profile photo removed.");
+  };
+
+  const closeDelete = () => {
+    if (deleting) return;
+    setDeleteOpen(false);
+    setDeleteText("");
+    setDeletePassword("");
+  };
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    if (deleteText.trim().toUpperCase() !== "DELETE") {
+      toast.error('Type DELETE to confirm.');
+      return;
+    }
+    if (!deletePassword) {
+      toast.error("Enter your password to confirm.");
+      return;
+    }
+    setDeleting(true);
+    try {
+      await deleteAccount(deletePassword);
+      toast.success("Your account has been deleted.");
+      logout();
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      toast.error(err?.response?.data?.message || "Could not delete your account. Please check your password and try again.");
+      setDeleting(false);
+    }
+  };
+
   const getInitials = (str) => {
     if (!str) return "MS";
     const parts = str.trim().split(" ");
@@ -247,12 +393,25 @@ const ProfileScreen = () => {
 
         <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
           {/* Avatar Icon */}
-          <div
-            className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#7d9667] to-[#405933] flex items-center justify-center text-3xl font-extrabold text-white shadow-lg border-2 border-white/20 shrink-0"
-            style={xpRing ? { boxShadow: `0 0 0 5px ${xpRing.color}, 0 8px 24px rgba(0,0,0,0.25)` } : undefined}
-            title={xpRing ? `${xpRing.name} ring · ${lifetimeXp} XP` : `${lifetimeXp} XP · reach 1000 XP for the Bronze ring`}
-          >
-            {getInitials(name)}
+          <div className="relative shrink-0">
+            <div
+              className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#7d9667] to-[#405933] flex items-center justify-center text-3xl font-extrabold text-white shadow-lg border-2 border-white/20 overflow-hidden"
+              style={xpRing ? { boxShadow: `0 0 0 5px ${xpRing.color}, 0 8px 24px rgba(0,0,0,0.25)` } : undefined}
+              title={xpRing ? `${xpRing.name} ring · ${lifetimeXp} XP` : `${lifetimeXp} XP · reach 1000 XP for the Bronze ring`}
+            >
+              {photo ? <img src={photo} alt={name || "Profile photo"} className="w-full h-full object-cover" /> : getInitials(name)}
+            </div>
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              disabled={photoBusy}
+              aria-label="Change profile photo"
+              title="Change profile photo"
+              className="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-white text-[#29401f] shadow-lg border border-[#d8e5d2] flex items-center justify-center hover:bg-[#eef6ea] disabled:opacity-60 cursor-pointer"
+            >
+              {photoBusy ? <span className="w-4 h-4 border-2 border-[#29401f]/30 border-t-[#29401f] rounded-full animate-spin" /> : <FiCamera size={16} />}
+            </button>
+            <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
           </div>
 
           <div className="flex-1 space-y-2">
@@ -270,9 +429,19 @@ const ProfileScreen = () => {
               )}
             </div>
 
+            {designation && (
+              <p className="text-sm text-emerald-100 flex items-center justify-center md:justify-start gap-1.5">
+                <FiBriefcase size={14} className="text-[#8fb39c]" /> {designation}
+              </p>
+            )}
             <p className="text-sm text-gray-300 flex items-center justify-center md:justify-start gap-1.5">
               <FiMail size={14} className="text-[#8fb39c]" /> {email}
             </p>
+            {mobile && (
+              <p className="text-sm text-gray-300 flex items-center justify-center md:justify-start gap-1.5">
+                <FiPhone size={14} className="text-[#8fb39c]" /> {mobile}
+              </p>
+            )}
 
             <p className="text-xs text-[#8fb39c] font-medium pt-1">
               Protected weekly off:{" "}
@@ -466,6 +635,68 @@ const ProfileScreen = () => {
               </div>
               <p className="text-[11px] text-[#7d9070]">Email cannot be changed directly.</p>
             </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="profile-mobile" className="text-xs font-bold text-[#445638] uppercase tracking-wider">
+                Mobile Number
+              </label>
+              <div className="relative">
+                <FiPhone className="absolute left-3.5 top-3.5 text-gray-400" />
+                <input
+                  id="profile-mobile"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={16}
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/[^\d+\s-]/g, ""))}
+                  placeholder="e.g. 98765 43210"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-sm text-[#1e2f17] font-medium outline-none focus:border-[#29401f] focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="profile-designation" className="text-xs font-bold text-[#445638] uppercase tracking-wider">
+                Designation
+              </label>
+              <div className="relative">
+                <FiBriefcase className="absolute left-3.5 top-3.5 text-gray-400" />
+                <input
+                  id="profile-designation"
+                  type="text"
+                  maxLength={60}
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                  placeholder="e.g. Software Engineer"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-sm text-[#1e2f17] font-medium outline-none focus:border-[#29401f] focus:bg-white transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <span className="text-xs font-bold text-[#445638] uppercase tracking-wider block">Profile Photo</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={photoBusy}
+                  className="min-h-[44px] px-4 rounded-xl border border-[#d8e5d2] bg-[#f8fbf6] hover:bg-[#eef6ea] text-xs font-bold text-[#29401f] flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                >
+                  <FiCamera size={15} /> {photo ? "Change photo" : "Upload photo"}
+                </button>
+                {photo && (
+                  <button
+                    type="button"
+                    onClick={handlePhotoRemove}
+                    className="min-h-[44px] px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                )}
+                <span className="text-[11px] text-[#7d9070]">JPG, PNG or WebP, up to 5 MB. Applied right away.</span>
+              </div>
+            </div>
           </div>
 
           {/* App Start Mode Options */}
@@ -606,6 +837,79 @@ const ProfileScreen = () => {
           </button>
         </div>
       </form>
+
+      {/* ─── Danger Zone: Delete Account ─── */}
+      <div className="bg-white rounded-3xl p-6 md:p-8 border border-red-200 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="p-2 rounded-xl bg-red-50 text-red-600">
+            <FiAlertTriangle size={18} />
+          </span>
+          <h2 className="text-lg md:text-xl font-bold text-red-700">Delete Account</h2>
+        </div>
+        <p className="text-xs md:text-sm text-[#66785c] mb-5">
+          Permanently delete your Mental Swasthya account and all associated data, including your streaks,
+          achievements and subscription. This cannot be undone.
+        </p>
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          className="min-h-[44px] px-6 rounded-2xl border border-red-300 text-red-600 hover:bg-red-50 font-bold text-sm flex items-center gap-2 cursor-pointer"
+        >
+          <FiTrash2 size={16} /> Delete my account
+        </button>
+      </div>
+
+      {deleteOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-account-title"
+          onKeyDown={(e) => e.key === "Escape" && closeDelete()}
+          className="fixed inset-0 z-[9998] flex items-end sm:items-center justify-center bg-black/50 p-3"
+        >
+          <form onSubmit={handleDeleteAccount} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <h3 id="delete-account-title" className="text-lg font-black text-red-700">Delete your account?</h3>
+              <button type="button" onClick={closeDelete} aria-label="Close" className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <FiX size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 leading-6">
+              This permanently removes your account and data. To confirm, type <strong>DELETE</strong> and enter your password.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder="Type DELETE"
+              aria-label="Type DELETE to confirm"
+              className="w-full px-4 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-base sm:text-sm outline-none focus:border-red-400"
+            />
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Your password"
+              aria-label="Your password"
+              className="w-full px-4 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-base sm:text-sm outline-none focus:border-red-400"
+            />
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={closeDelete} disabled={deleting} className="min-h-[44px] px-5 rounded-xl border border-[#dbe7d3] text-sm font-bold text-[#3a4d31] cursor-pointer">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={deleting || deleteText.trim().toUpperCase() !== "DELETE" || !deletePassword}
+                className="min-h-[44px] px-5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-40 text-sm font-bold text-white cursor-pointer"
+              >
+                {deleting ? "Deleting..." : "Delete permanently"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

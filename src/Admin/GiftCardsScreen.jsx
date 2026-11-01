@@ -5,6 +5,29 @@ import { useAuth } from "../context/AuthContext";
 
 const DEFAULT_GIFT_MESSAGE = "Wishing you peace, balance, and joy on your mindfulness journey with MentalSwasthya.";
 
+// Year a gift card belongs to: when it was used, else when it was created (from `createdAt` or the
+// timestamp in its `gc-<ms>` id). Cards of unknown age are treated as current so they are never dropped by mistake.
+const getCardYear = (card) => {
+  const fromDate = (v) => {
+    const y = new Date(v).getFullYear();
+    return Number.isNaN(y) ? null : y;
+  };
+  if (card.status === "used" && card.usedAt) {
+    const y = fromDate(String(card.usedAt).slice(0, 10));
+    if (y) return y;
+  }
+  if (card.createdAt) {
+    const y = fromDate(card.createdAt);
+    if (y) return y;
+  }
+  const ms = Number(String(card.id || "").replace(/^gc-/, ""));
+  if (ms > 1e12) return new Date(ms).getFullYear();
+  return new Date().getFullYear();
+};
+
+// All gift cards except the Active ones are removed from the page at the end of the calendar year.
+const isCardExpired = (card) => card.status !== "active" && getCardYear(card) < new Date().getFullYear();
+
 const GiftCardsScreen = () => {
   const { user } = useAuth();
 
@@ -39,7 +62,12 @@ const GiftCardsScreen = () => {
   const [giftedCards, setGiftedCards] = useState(() => {
     const stored = localStorage.getItem("mentalswasthya_gifted_cards");
     if (stored) {
-      try { return JSON.parse(stored); } catch (e) {}
+      try {
+        const parsed = JSON.parse(stored);
+        const kept = parsed.filter((card) => !isCardExpired(card));
+        if (kept.length !== parsed.length) localStorage.setItem("mentalswasthya_gifted_cards", JSON.stringify(kept));
+        return kept;
+      } catch (e) {}
     }
     return [
       {
@@ -100,6 +128,11 @@ const GiftCardsScreen = () => {
       }
     ];
   });
+
+  // Unused (active) cards first, then the rest; each group keeps its newest-first order
+  const visibleCards = giftedCards
+    .filter((card) => !isCardExpired(card))
+    .sort((a, b) => (a.status === "active" ? 0 : 1) - (b.status === "active" ? 0 : 1));
 
   // Pricing & Tier Specifications for Regular vs Premium
   const plans = {
@@ -198,11 +231,11 @@ const GiftCardsScreen = () => {
     try {
       const canvas = document.createElement("canvas");
       canvas.width = 800;
-      canvas.height = 480;
+      canvas.height = 504; // 800 x 504 = credit-card proportion (85.6 x 53.98)
       const ctx = canvas.getContext("2d");
 
       // Draw Card Background Gradient
-      const gradient = ctx.createLinearGradient(0, 0, 800, 480);
+      const gradient = ctx.createLinearGradient(0, 0, 800, 504);
       if (giftData.duration === "3M") {
         gradient.addColorStop(0, "#6c8557");
         gradient.addColorStop(1, "#98b786");
@@ -217,10 +250,10 @@ const GiftCardsScreen = () => {
 
       // Rounded rectangle
       if (ctx.roundRect) {
-        ctx.roundRect(0, 0, 800, 480, 28);
+        ctx.roundRect(0, 0, 800, 504, 28);
         ctx.fill();
       } else {
-        ctx.fillRect(0, 0, 800, 480);
+        ctx.fillRect(0, 0, 800, 504);
       }
 
       // Decorative Circle
@@ -311,6 +344,7 @@ const GiftCardsScreen = () => {
         codeLast4: codeNum,
         fullCode: code,
         status: "active",
+        createdAt: new Date().toISOString(),
         usedAt: null,
         theme: activeDuration.theme,
         desc: `${activeDuration.name} Gift Card. ${activeDuration.validity}`
@@ -544,7 +578,7 @@ const GiftCardsScreen = () => {
             </div>
             
             <div
-              className="rounded-2xl aspect-[1.58/1] w-full p-4 sm:p-6 flex flex-col justify-between gap-2 relative shadow-xl"
+              className="rounded-2xl aspect-[85.6/53.98] w-full p-4 sm:p-6 flex flex-col justify-between gap-2 relative shadow-xl"
               style={{ background: activeTheme.bg }}
             >
               {/* Graphic background circles (clipped separately so the card can grow taller than its aspect ratio when content needs it) */}
@@ -651,101 +685,122 @@ const GiftCardsScreen = () => {
           </div>
           <div className="sm:text-right">
             <span className="text-xs font-bold text-[#7d9667] bg-[#eef6ea] px-3.5 py-1.5 rounded-full border border-[#cbe2c1] inline-block">
-              Total Gifted Cards: {giftedCards.length}
+              Total Gifted Cards: {visibleCards.length}
             </span>
           </div>
         </div>
 
         {/* Gift Cards Grid (Exact UI layout matching reference concept image) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {giftedCards.map((card) => {
+          {visibleCards.map((card) => {
             const isUsed = card.status === "used";
             const theme = cardThemes[card.theme] || cardThemes.sage;
+            // Credit/debit card proportion (85.6 x 53.98 mm). Everything inside is sized in cqw (% of card width)
+            // so the whole card scales as one piece at any screen size.
             return (
               <div
                 key={card.id}
-                className="relative rounded-[24px] sm:rounded-[28px] p-5 sm:p-7 min-w-0 flex flex-col justify-between overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl group min-h-[270px]"
-                style={{ background: theme.bg }}
+                className="relative w-full max-w-[540px] justify-self-center overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl group"
+                style={{ background: theme.bg, aspectRatio: "85.6 / 53.98", borderRadius: "4.2cqw", containerType: "inline-size" }}
               >
-                {/* ─── Top-Right Large Soft Circle Overlay ─── */}
                 <div
-                  className="absolute -right-6 -top-6 w-48 h-48 rounded-full pointer-events-none transition-transform duration-500 group-hover:scale-110"
-                  style={{ backgroundColor: theme.logo }}
+                  className="absolute pointer-events-none rounded-full transition-transform duration-500 group-hover:scale-110"
+                  style={{ backgroundColor: theme.logo, width: "42cqw", height: "42cqw", right: "-8cqw", top: "-12cqw" }}
                 />
 
-                {/* ─── Top Header: Title, Plan Badge & Used/Active Status Pill ─── */}
-                <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 sm:gap-4">
-                  <div className="space-y-1.5 min-w-0">
-                    <h3 className={`text-xl sm:text-2xl font-black tracking-tight ${theme.text}`}>
-                      {card.name}
-                    </h3>
-                    <span className={`inline-block text-[10px] font-black uppercase tracking-widest border px-3 py-0.5 rounded-full ${theme.badge} ${theme.text}`}>
-                      {card.planLabel}
-                    </span>
+                <div className={`relative z-10 h-full flex flex-col justify-between min-w-0 ${theme.text}`} style={{ padding: "4.5cqw 5cqw" }}>
+                  {/* Header: name, plan badge, status */}
+                  <div className="flex items-start justify-between min-w-0" style={{ gap: "2cqw" }}>
+                    <div className="min-w-0">
+                      <h3 className="font-black tracking-tight truncate" style={{ fontSize: "5.4cqw", lineHeight: 1.15 }}>
+                        {card.name}
+                      </h3>
+                      <span
+                        className={`inline-block font-black uppercase tracking-widest border rounded-full ${theme.badge}`}
+                        style={{ fontSize: "2.2cqw", padding: "0.4cqw 2.2cqw", marginTop: "1cqw" }}
+                      >
+                        {card.planLabel}
+                      </span>
+                    </div>
+
+                    {isUsed ? (
+                      <div
+                        className="bg-slate-950/80 text-amber-300 font-black uppercase tracking-wider rounded-full border border-amber-400/30 shadow-md flex items-center shrink-0"
+                        style={{ fontSize: "2.1cqw", padding: "1cqw 2.4cqw", gap: "1.2cqw" }}
+                      >
+                        <span className="rounded-full bg-amber-400" style={{ width: "1.2cqw", height: "1.2cqw" }} />
+                        <span>Used</span>
+                        <span className="opacity-40">|</span>
+                        <span className="font-mono opacity-90 whitespace-nowrap" style={{ fontSize: "1.9cqw" }}>
+                          {String(card.usedAt || "").slice(0, 10)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div
+                        className="bg-emerald-950/80 text-emerald-300 font-black uppercase tracking-wider rounded-full border border-emerald-400/40 shadow-md flex items-center ring-2 ring-emerald-400/20 shrink-0"
+                        style={{ fontSize: "2.1cqw", padding: "1cqw 2.4cqw", gap: "1.2cqw" }}
+                      >
+                        <span className="rounded-full bg-emerald-400 animate-ping" style={{ width: "1.5cqw", height: "1.5cqw" }} />
+                        <span>Unused</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* ─── Status Badge (Used / Active) Overlay ─── */}
-                  {isUsed ? (
-                    <div className="bg-slate-950/80 backdrop-blur-md text-amber-300 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-amber-400/30 shadow-md flex items-center gap-1.5 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      <span>Used</span>
-                      <span className="opacity-40">|</span>
-                      <span className="font-mono text-[9px] opacity-90 whitespace-nowrap">{card.usedAt}</span>
-                    </div>
-                  ) : (
-                    <div className="bg-emerald-950/80 backdrop-blur-md text-emerald-300 text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full border border-emerald-400/40 shadow-md flex items-center gap-1.5 ring-2 ring-emerald-400/20 shrink-0">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span>Active</span>
-                      <span className="opacity-40">|</span>
-                      <span>Available</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* ─── Body: Recipient, Sender & Italic Quote (Exact Image UI) ─── */}
-                <div className="relative z-10 my-4 space-y-1">
-                  <p className={`text-xs sm:text-sm font-bold opacity-95 break-words ${theme.text}`}>
-                    To: <span className="font-black">{card.recipient}</span> <span className="text-[10px] opacity-80">({card.email})</span>
-                  </p>
-                  <p className={`text-xs sm:text-sm font-bold opacity-95 ${theme.text}`}>
-                    From: <span className="font-black">{giftData.sender || user?.name || "MentalSwasthya Member"}</span>
-                  </p>
-                  
-                  <p className={`text-xs italic opacity-90 border-t border-white/20 pt-2 mt-2 leading-relaxed ${theme.text}`}>
-                    "{DEFAULT_GIFT_MESSAGE}"
-                  </p>
-                </div>
-
-                {/* ─── Footer: Validity, Website Link & Code Pill ─── */}
-                <div className={`relative z-10 border-t border-white/25 pt-3 flex flex-wrap items-center justify-between gap-3 text-xs ${theme.text}`}>
-                  <div className="min-w-0">
-                    <p className="opacity-95 font-semibold text-[11px]">{card.desc || "Valid for full subscription access"}</p>
-                    <a
-                      href="https://mentalswasthya.com"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-bold underline mt-0.5 inline-block opacity-90 hover:opacity-100"
+                  {/* Body: recipient, sender, message */}
+                  <div className="min-w-0" style={{ fontSize: "2.9cqw", lineHeight: 1.35 }}>
+                    <p className="font-bold truncate">
+                      To: <span className="font-black">{card.recipient}</span>{" "}
+                      <span className="opacity-80" style={{ fontSize: "2.3cqw" }}>({card.email})</span>
+                    </p>
+                    <p className="font-bold truncate">
+                      From: <span className="font-black">{giftData.sender || user?.name || "MentalSwasthya Member"}</span>
+                    </p>
+                    <p
+                      className="italic opacity-90 border-t border-white/20 line-clamp-2"
+                      style={{ fontSize: "2.5cqw", paddingTop: "1cqw", marginTop: "1cqw" }}
                     >
-                      mentalswasthya.com
-                    </a>
+                      "{DEFAULT_GIFT_MESSAGE}"
+                    </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => copyCode(card.fullCode)}
-                    className="font-mono font-black bg-white/25 hover:bg-white/35 backdrop-blur-md px-3.5 py-1.5 min-h-[40px] rounded-xl text-xs sm:text-sm border border-white/30 transition-all flex items-center gap-1.5 shadow-sm"
-                    title="Click to copy code"
-                    aria-label={`Copy gift code ${card.fullCode}`}
-                  >
-                    <FiCopy size={13} />
-                    {card.fullCode}
-                  </button>
-                </div>
+                  {/* Footer: validity, link, code */}
+                  <div className="flex items-center justify-between border-t border-white/25 min-w-0" style={{ paddingTop: "1.8cqw", gap: "2cqw" }}>
+                    <div className="min-w-0">
+                      <p className="font-semibold opacity-95 truncate" style={{ fontSize: "2.4cqw" }}>
+                        {card.desc || "Valid for full subscription access"}
+                      </p>
+                      <a
+                        href="https://mentalswasthya.com"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-bold underline inline-block opacity-90 hover:opacity-100"
+                        style={{ fontSize: "2.4cqw" }}
+                      >
+                        mentalswasthya.com
+                      </a>
+                    </div>
 
+                    <button
+                      type="button"
+                      onClick={() => copyCode(card.fullCode)}
+                      className="font-mono font-black bg-white/25 hover:bg-white/35 border border-white/30 transition-all flex items-center shadow-sm shrink-0"
+                      style={{ fontSize: "2.8cqw", padding: "1.4cqw 2.6cqw", gap: "1.2cqw", borderRadius: "2.4cqw", minHeight: 32 }}
+                      title="Click to copy code"
+                      aria-label={`Copy gift code ${card.fullCode}`}
+                    >
+                      <FiCopy style={{ width: "3cqw", height: "3cqw" }} />
+                      {card.fullCode}
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })}
         </div>
+
+        <p className="text-[11px] sm:text-xs font-semibold text-[#66785c] text-center border-t border-gray-100 pt-4">
+          All gift cards, except the Active ones, will be removed from this page at the end of the calendar year
+        </p>
       </section>
 
     </div>

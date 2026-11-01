@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   FiPlay, FiPause, FiSkipBack, FiSkipForward, FiRepeat, FiShuffle,
   FiVolume2, FiVolumeX, FiPlus, FiTrash2, FiFolder, FiInfo, FiCheck,
-  FiSearch, FiSliders, FiFilter, FiClock, FiX, FiUser, FiLock
+  FiSearch, FiSliders, FiFilter, FiClock, FiX, FiLock, FiUpload
 } from 'react-icons/fi';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { axiosInstance } from '../Api/config';
+import ConfirmDialog from './ConfirmDialog';
 
 /* ─── IndexedDB Constants & Helpers ──────────────────────── */
 const DB_NAME = "MentalSwasthyaAudioPlaylistDB";
@@ -554,9 +555,18 @@ const AudioPlaylist = ({
     }
   };
 
-  const handleTrackDelete = async (id, isCustom, e) => {
+  // Delete asks first via an in-app dialog; `pendingDelete` holds the track awaiting confirmation
+  const [pendingDelete, setPendingDelete] = useState(null);
+
+  const handleTrackDelete = (id, isCustom, e) => {
     if (e) e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this track?")) return;
+    const track = allCombinedTracks.find((t) => t._id === id);
+    setPendingDelete({ id, isCustom, title: track?.title || "this track" });
+  };
+
+  const performTrackDelete = async () => {
+    const { id, isCustom } = pendingDelete;
+    setPendingDelete(null);
 
     try {
       if (isCustom || (typeof id === 'string' && id.startsWith("custom-"))) {
@@ -774,7 +784,7 @@ const AudioPlaylist = ({
                     id: "custom",
                     label: (
                       <span className="inline-flex items-center gap-1.5">
-                        {isPremium() ? <FiUser size={14} aria-hidden="true" /> : <FiLock size={14} aria-hidden="true" />}
+                        {isPremium() ? <FiUpload size={14} aria-hidden="true" /> : <FiLock size={14} aria-hidden="true" />}
                         Personal
                       </span>
                     ),
@@ -1333,6 +1343,17 @@ const AudioPlaylist = ({
         .ap-no-scrollbar { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .ap-no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        tone="danger"
+        title="Delete this track?"
+        message={pendingDelete ? `"${pendingDelete.title}" will be removed from your playlist.` : ""}
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        onConfirm={performTrackDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

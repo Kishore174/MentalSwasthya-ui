@@ -234,7 +234,7 @@ const LandingPage = () => {
       date: "October 2026",
       tagColor: "#2b93b3",
       bgGradient: "linear-gradient(135deg, #17405a 0%, #0a1d2b 100%)",
-      url: "https://share.google/yEJ3fGalcXM7RusU"
+      url: "https://news.abplive.com/health/can-7-minutes-of-meditation-make-a-difference-what-new-research-reveals-1870620/amp"
     },
     {
       id: 1,
@@ -739,7 +739,7 @@ const LandingPage = () => {
                 e.currentTarget.style.transform = "none";
               }}
             >
-              Start Wellness Journey
+              Start Your Wellness Journey
               <FiArrowRight size={14} />
             </button>
           </div>

@@ -20,6 +20,8 @@ import { getTodayProgress, recordBreathingToday } from "../utils/dailyProgress";
 import { isPremium, PREMIUM_MESSAGE } from "../utils/plan";
 import { toast } from "react-hot-toast";
 import { playBell } from "../utils/audioUtils";
+import { triggerVibrate } from "../utils/haptics";
+import ConfirmDialog from "../components/ConfirmDialog";
 import {
   completeBreathingSession,
   getBreathingHistory,
@@ -212,15 +214,6 @@ const playBeep = (frequency = 440, duration = 0.15) => {
   }
 };
 
-const triggerVibrate = (pattern = 100) => {
-  try {
-    if ("vibrate" in navigator) {
-      navigator.vibrate(pattern);
-    }
-  } catch (e) {
-    // Ignore vibration errors
-  }
-};
 
 const ProgressShape = ({
   shape,
@@ -230,6 +223,7 @@ const ProgressShape = ({
   progressColor = "#7d9667",
   className = "absolute inset-0 w-full h-full",
   showBall = false,
+  transitionMs = 100,
 }) => {
   const pathRef = useRef(null);
   const [totalLength, setTotalLength] = useState(0);
@@ -283,7 +277,7 @@ const ProgressShape = ({
   }
 
   return (
-    <svg className={className} viewBox="0 0 120 120">
+    <svg className={className} viewBox="0 0 120 120" style={{ overflow: "visible" }}>
       <path
         d={currentShapeConfig.d}
         fill="none"
@@ -302,7 +296,7 @@ const ProgressShape = ({
         strokeLinejoin="round"
         strokeDasharray={length}
         strokeDashoffset={dashOffset}
-        style={{ transition: progress === 0 ? "none" : "stroke-dashoffset 0.1s linear" }}
+        style={{ transition: progress === 0 ? "none" : `stroke-dashoffset ${transitionMs}ms linear` }}
       />
       {ball && (
         <circle
@@ -336,7 +330,7 @@ const MeditationScreen = () => {
   const [countdownValue, setCountdownValue] = useState(5);
   const [isCompleted, setIsCompleted] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
-  const [vibrationOn, setVibrationOn] = useState(false);
+  const [vibrationOn, setVibrationOn] = useState(true);
   const [apiMessage, setApiMessage] = useState("");
   const [historyCount, setHistoryCount] = useState(0);
   const completedRef = useRef(false);
@@ -513,13 +507,14 @@ const MeditationScreen = () => {
   }, [isRunning, currentPhase, phaseProgress, activePhaseIndex, config.phases]);
 
   useEffect(() => {
-    if (isRunning && soundOn && activePhaseIndex !== prevPhaseIndexRef.current) {
+    if (isRunning && activePhaseIndex !== prevPhaseIndexRef.current) {
       if (prevPhaseIndexRef.current !== null) {
-        playBell('intersect');
+        if (soundOn) playBell('intersect');
+        if (vibrationOn) triggerVibrate(120); // phase change: inhale / hold / exhale
       }
       prevPhaseIndexRef.current = activePhaseIndex;
     }
-  }, [activePhaseIndex, isRunning, soundOn]);
+  }, [activePhaseIndex, isRunning, soundOn, vibrationOn]);
 
   useEffect(() => {
     getBreathingHistory()
@@ -562,6 +557,7 @@ const MeditationScreen = () => {
     setIsRunning(false);
     setIsCompleted(true);
     if (soundOn) playBell('double'); // Final double bell
+    if (vibrationOn) triggerVibrate([200, 100, 200]);
 
     if (isLocalSession(sessionId)) {
       setApiMessage("Session completed locally. Please check API connection.");
@@ -574,7 +570,7 @@ const MeditationScreen = () => {
     })
       .then(() => setApiMessage("Session saved successfully."))
       .catch(() => setApiMessage("Session completed locally. Please check API connection."));
-  }, [elapsedSeconds, sessionSeconds, sessionId, cycleSeconds, totalCycles, soundOn]);
+  }, [elapsedSeconds, sessionSeconds, sessionId, cycleSeconds, totalCycles, soundOn, vibrationOn]);
 
   // After a finished session, send the user to the dashboard to pick their next tool
   // (the dashboard guides them to the last page if they don't pick anything within a few seconds).
@@ -714,8 +710,28 @@ const MeditationScreen = () => {
     setIsCountingDown(true);
   };
 
-  const handleStop = async () => {
-    const shouldCompleteSession = isRunning && sessionId && !isLocalSession(sessionId);
+  // Stop / back during a session asks first (in-app dialog). The session pauses while the dialog is open.
+  const [exitRequest, setExitRequest] = useState(null); // null | { leave: boolean, wasRunning: boolean }
+
+  const requestExit = (leave = false) => {
+    setExitRequest({ leave, wasRunning: isRunning });
+    setIsRunning(false);
+  };
+
+  const confirmExit = async () => {
+    const { leave, wasRunning } = exitRequest;
+    setExitRequest(null);
+    await handleStop(wasRunning); // the dialog paused the timer, so pass the state from before it opened
+    if (leave) navigate(-1);
+  };
+
+  const cancelExit = () => {
+    if (exitRequest?.wasRunning) setIsRunning(true);
+    setExitRequest(null);
+  };
+
+  const handleStop = async (wasRunning = isRunning) => {
+    const shouldCompleteSession = wasRunning && sessionId && !isLocalSession(sessionId);
     const currentCyclesCompleted = calculateCompletedCycles(
       elapsedSeconds,
       durationSeconds,
@@ -775,49 +791,19 @@ const MeditationScreen = () => {
     );
   }
 
-  // Big full-screen "Ready, 3, 2, 1" countdown before every breathing exercise
-  if (isCountingDown) {
-    const countdownText = countdownValue === 5 ? "Settle" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? String(countdownValue) : "Begin";
-    return (
-      <div
-        className="fixed inset-0 z-50 h-dvh flex flex-col items-center justify-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Breathing session starting"
-      >
-        <button
-          type="button"
-          onClick={handleStop}
-          aria-label="Cancel and go back"
-          className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10"
-        >
-          <FiArrowLeft size={18} />
-        </button>
-        <style>{`
-          @keyframes countdownPulse {
-            0% { transform: scale(0.65); opacity: 0; }
-            50% { transform: scale(1.12); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          .animate-countdown { animation: countdownPulse 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        `}</style>
-        <p className="text-xs sm:text-sm font-black uppercase tracking-[0.3em] text-[#a8c896]">Get ready</p>
-        <div
-          key={countdownValue}
-          aria-live="assertive"
-          className="animate-countdown mt-4 font-black leading-none text-[#e8f5dd] text-[32vw] sm:text-[22vw] lg:text-[18rem]"
-          style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? undefined : "clamp(3rem, 14vw, 8rem)" }}
-        >
-          {countdownText}
-        </div>
-      </div>
-    );
-  }
-
-  // Full screen session view triggers ONLY after countdown timer completes and session is actively running
+  // Full screen session view. The Settle / Ready / 3-2-1 countdown plays on this same page
+  // (progress bar at 0%), then the breathing session continues here.
   const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
+  const countdownLabel = countdownValue === 5 ? "Settle" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? String(countdownValue) : "Begin";
+  // The ring fills one step per countdown tick (5 → 0) instead of showing a stray ball at the start point
+  const countdownProgress = ((5 - Math.min(5, Math.max(0, countdownValue))) / 5) * 100;
+  const cancelCountdown = () => {
+    setIsCountingDown(false);
+    setIsRunning(false);
+    setCountdownValue(5);
+  };
 
-  if (isSessionActive) {
+  if (isCountingDown || isSessionActive) {
     return (
       <div
         className="fixed inset-0 z-50 h-dvh overflow-hidden flex flex-col items-center bg-gradient-to-br from-[#0c160b] via-[#142312] to-[#0c1926] text-white animate-fade-in pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pt-[max(1.5rem,env(safe-area-inset-top))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]"
@@ -833,7 +819,7 @@ const MeditationScreen = () => {
         <div className="relative w-full flex-none grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-3 animate-fade-in z-50">
           <button
             type="button"
-            onClick={() => { handleStop(); navigate(-1); }}
+            onClick={() => { if (isCountingDown) { cancelCountdown(); navigate(-1); } else requestExit(true); }}
             className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
             title="Go Back"
             aria-label="Stop session and go back"
@@ -850,7 +836,7 @@ const MeditationScreen = () => {
           </div>
           <button
             type="button"
-            onClick={handleStop}
+            onClick={isCountingDown ? cancelCountdown : () => requestExit(false)}
             className="flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-all text-white border border-white/10"
             title="Exit Full View"
             aria-label="Exit full view"
@@ -865,22 +851,47 @@ const MeditationScreen = () => {
             <div className="bs-full-stage relative flex items-center justify-center">
               {/* Outer animated breathing progress indicator matching shape */}
               <ProgressShape
-                shape={config.shape}
-                progress={shapeCycleProgress}
+                shape={isCountingDown ? "circle" : config.shape}
+                progress={isCountingDown ? countdownProgress : shapeCycleProgress}
                 strokeWidth={4}
                 trackColor="rgba(255,255,255,0.06)"
                 progressColor="#a8c896"
                 className="absolute inset-0 w-full h-full"
-                showBall
+                showBall={!isCountingDown}
+                transitionMs={isCountingDown ? 1000 : 100}
               />
 
+              {isCountingDown && (
+                <span
+                  key={`ripple-${countdownValue}`}
+                  aria-hidden="true"
+                  className="cd-ripple absolute rounded-full border-2 border-[#a8c896] pointer-events-none"
+                  style={{ inset: "18%" }}
+                />
+              )}
+
               {/* Breathing shape with animated scale */}
-              <div className={`breath-shape-full ${config.shape}`} style={breathScaleStyle}>
-                <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                  {isRunning ? currentPhase.name : "Paused"}
-                </span>
+              <div className={`breath-shape-full ${isCountingDown ? "circle" : config.shape}`} style={breathScaleStyle}>
+                {isCountingDown ? (
+                  <span
+                    key={countdownValue}
+                    aria-live="assertive"
+                    className="animate-countdown font-black uppercase tracking-wider select-none"
+                    style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? "clamp(2.5rem, 12vw, 4.5rem)" : "clamp(1rem, 4vw, 1.5rem)" }}
+                  >
+                    {countdownLabel}
+                  </span>
+                ) : (
+                  <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
+                    {isRunning ? currentPhase.name : "Paused"}
+                  </span>
+                )}
               </div>
             </div>
+
+            {isCountingDown && (
+              <p className="mt-4 text-[11px] font-black uppercase tracking-[0.3em] text-[#a8c896]">Get ready</p>
+            )}
 
             {/* Horizontal Session Progress Bar */}
             <div className="w-full max-w-xs sm:max-w-sm mt-5 mb-2">
@@ -907,7 +918,17 @@ const MeditationScreen = () => {
 
           {/* Bottom bar with controls */}
           <div className="bs-full-controls w-full max-w-md flex-none flex items-center justify-center py-2 animate-fade-in z-50">
-            {isRunning ? (
+            {isCountingDown ? (
+              <button
+                type="button"
+                onClick={cancelCountdown}
+                className="w-16 h-16 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white shadow-xl transition-all cursor-pointer"
+                title="Cancel"
+                aria-label="Cancel and return to setup"
+              >
+                <FiX size={26} />
+              </button>
+            ) : isRunning ? (
               <button
                 type="button"
                 onClick={() => setIsRunning(false)}
@@ -948,6 +969,18 @@ const MeditationScreen = () => {
             .bs-full-controls { max-width: 22rem; }
           }
 
+          @keyframes bsCountdown {
+            0% { transform: scale(0.6); opacity: 0; }
+            50% { transform: scale(1.12); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes cdRipple {
+            0% { transform: scale(0.85); opacity: 0.7; }
+            100% { transform: scale(1.35); opacity: 0; }
+          }
+          .cd-ripple { animation: cdRipple 1s ease-out forwards; }
+          .animate-countdown { animation: bsCountdown 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
           .breath-shape-full {
             width: min(240px, 72%);
             height: auto;
@@ -978,6 +1011,17 @@ const MeditationScreen = () => {
             padding-top: min(60px, 18%);
           }
         `}</style>
+
+        <ConfirmDialog
+          open={!!exitRequest}
+          tone="pause"
+          title="Stop your session early?"
+          message="Your session is paused. Stopping now will end it before the time is up."
+          confirmLabel="Stop session"
+          cancelLabel="Keep going"
+          onConfirm={confirmExit}
+          onCancel={cancelExit}
+        />
       </div>
     );
   }
