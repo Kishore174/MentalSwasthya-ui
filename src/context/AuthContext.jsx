@@ -57,6 +57,19 @@ const login = (token, user) => {
   setUser(user);
 };
 
+  const updateUser = (fields) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...fields };
+      try {
+        localStorage.setItem("user", JSON.stringify(updated));
+      } catch (e) {
+        /* ignore */
+      }
+      return updated;
+    });
+  };
+
   const logout = () => {
     localStorage.clear();
     setToken(null);
@@ -98,7 +111,7 @@ const login = (token, user) => {
 
   return (
     <AuthContext.Provider
-      value={{ token, user, login, logout, loading }}
+      value={{ token, user, login, logout, loading, updateUser }}
     >
       {children}
     </AuthContext.Provider>

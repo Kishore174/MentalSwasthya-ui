@@ -11,4 +11,17 @@ export const completeBreathingSession = (sessionId, data) => {
 export const getBreathingHistory = () => {
   return axiosInstance.get("/breathing/history");
 };
+
+export const getCustomBreathingPresets = () => {
+  return axiosInstance.get("/breathing/custom-presets");
+};
+
+export const saveCustomBreathingPreset = (data) => {
+  return axiosInstance.post("/breathing/custom-presets", data);
+};
+
+export const deleteCustomBreathingPreset = (id) => {
+  return axiosInstance.delete(`/breathing/custom-presets/${id}`);
+};
+
   

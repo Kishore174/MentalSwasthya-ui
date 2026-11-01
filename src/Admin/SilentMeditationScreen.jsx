@@ -636,7 +636,7 @@ const SilentMeditationScreen = () => {
 
   // 4. Initial Configure Session Layout (Matches Breathing exercises UI)
   return (
-    <div className="min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-3 sm:p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
+    <div className="min-w-0 space-y-6 pb-10">
 
       {/* Header bar */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
@@ -671,7 +671,7 @@ const SilentMeditationScreen = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 mt-7">
 
         {/* Left main: The breathing bubble circle container */}
-        <section className="rounded-[24px] sm:rounded-[30px] bg-white/80 border border-white p-4 sm:p-5 md:p-8 shadow-sm">
+        <section className="rounded-[24px] sm:rounded-[30px] bg-white border border-[#e1eadb] p-4 sm:p-5 md:p-8 shadow-sm">
           <div className="flex flex-col items-center justify-center min-h-[380px] md:min-h-[460px] text-center">
 
             {/* Outline Circular Progress */}

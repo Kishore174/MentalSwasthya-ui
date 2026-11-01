@@ -598,11 +598,11 @@ const AudioPlaylist = ({
   };
 
   return (
-    <div className={`min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] ${bgGradient} p-3 sm:p-4 md:p-8 shadow-[0_18px_55px_rgba(30,48,25,0.08)]`}>
+    <div className="min-w-0 space-y-6 pb-10">
       <div className="flex flex-col xl:flex-row gap-6 md:gap-8">
 
         {/* ─── LEFT COLUMN: PREMIUM VINYL PLAYER CARD ─── */}
-        <section className="flex-shrink-0 w-full xl:w-[380px] bg-white/80 backdrop-blur-md rounded-[24px] sm:rounded-[32px] border border-white p-5 sm:p-6 shadow-lg flex flex-col items-center">
+        <section className="flex-shrink-0 w-full xl:w-[380px] bg-white rounded-[24px] sm:rounded-[32px] border border-[#e1eadb] p-5 sm:p-6 shadow-sm flex flex-col items-center">
 
           {/* Vinyl player spinner */}
           <div className="relative w-full max-w-[16rem] aspect-square md:max-w-[18rem] mt-2 flex items-center justify-center">
@@ -771,7 +771,7 @@ const AudioPlaylist = ({
           </div>
 
           {/* ─── Search & Advanced Filter Controls Bar ─── */}
-          <div className="bg-white/70 backdrop-blur-md border border-white rounded-[24px] p-3 sm:p-4 shadow-sm mb-6 space-y-3">
+          <div className="bg-white border border-[#e1eadb] rounded-[24px] p-3 sm:p-4 shadow-sm mb-6 space-y-3">
             
             {/* Top Row: Language / Preset Filter Tabs */}
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-3 pb-2 border-b border-gray-100/60">
@@ -1027,7 +1027,7 @@ const AudioPlaylist = ({
           )}
 
           {/* Tracks Table */}
-          <div className="bg-white/60 backdrop-blur-md rounded-[24px] sm:rounded-[28px] border border-white overflow-hidden shadow-sm flex-grow">
+          <div className="bg-white rounded-[24px] sm:rounded-[28px] border border-[#e1eadb] overflow-hidden shadow-sm flex-grow">
             {/* Mobile: compact card list */}
             {filteredTracks.length > 0 && (
               <ul className="md:hidden divide-y divide-gray-100/50">

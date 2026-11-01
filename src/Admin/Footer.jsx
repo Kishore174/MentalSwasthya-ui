@@ -10,10 +10,6 @@ const Footer = () => {
         px: { xs: 2, sm: 4 },
         pb: 'max(16px, env(safe-area-inset-bottom))',
         mt: 'auto',
-        backgroundColor: (theme) =>
-          theme.palette.mode === 'light'
-            ? theme.palette.grey[200]
-            : theme.palette.grey[800],
         textAlign: 'center',
       }}
     >

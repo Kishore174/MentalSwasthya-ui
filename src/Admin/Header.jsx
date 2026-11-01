@@ -76,7 +76,14 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
         message: item.body,
         time: formatRelativeTime(item.createdAt),
         read: item.isRead,
-        type: item.type === 'streak_milestone' ? 'achievement' : item.type === 'system' ? 'system' : 'info',
+        type:
+          item.type === 'streak_milestone'
+            ? 'achievement'
+            : item.type === 'session_completed'
+              ? 'session'
+              : item.type === 'system'
+                ? 'system'
+                : 'info',
       }));
       setNotifications(formatted);
     } catch (err) {
@@ -264,6 +271,10 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
                           {item.type === 'achievement' ? (
                             <div className="p-1.5 rounded-full bg-amber-100 text-amber-600">
                               <FiAward className="text-sm" />
+                            </div>
+                          ) : item.type === 'session' ? (
+                            <div className="p-1.5 rounded-full bg-[#eef6ea] text-[#456134] border border-[#d6e8ce]">
+                              <FiCheckCircle className="text-sm text-[#557743]" />
                             </div>
                           ) : item.type === 'info' ? (
                             <div className="p-1.5 rounded-full bg-emerald-100 text-emerald-700">

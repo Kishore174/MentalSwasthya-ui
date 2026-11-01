@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { updateUserProfile } from "../Api/userApi";
 
 const SEEN_KEY = "ms_feature_spotlight_seen";
 
@@ -24,17 +26,24 @@ const STEPS = [
 const PAD = 8;
 const CARD_W = 320;
 
-const isSeen = () => {
+const isSeen = (user) => {
+  if (user?.hasCompletedTour) return true;
   try {
+    const key = user?._id || user?.id || user?.email;
+    if (key && localStorage.getItem(`${SEEN_KEY}_${key}`) === "true") return true;
     return localStorage.getItem(SEEN_KEY) === "true";
   } catch (e) {
     return true; // storage unavailable: don't nag on every visit
   }
 };
 
-const markSeen = () => {
+const markSeen = (user) => {
   try {
     localStorage.setItem(SEEN_KEY, "true");
+    const key = user?._id || user?.id || user?.email;
+    if (key) {
+      localStorage.setItem(`${SEEN_KEY}_${key}`, "true");
+    }
   } catch (e) { /* ignore */ }
 };
 
@@ -63,6 +72,7 @@ const CSS = `
 // Impressive first-visit spotlight: dims the page, glows around the real menu item, glides between steps.
 // Skippable at any time (Skip button, Esc, or clicking the dimmed area).
 const FeatureHints = () => {
+  const { user, updateUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState(null);
@@ -71,10 +81,10 @@ const FeatureHints = () => {
   const last = step === STEPS.length - 1;
 
   useEffect(() => {
-    if (isSeen()) return undefined;
+    if (isSeen(user)) return undefined;
     const t = setTimeout(() => setOpen(true), 1200); // let the dashboard settle first
     return () => clearTimeout(t);
-  }, []);
+  }, [user]);
 
   const update = useCallback(() => setRect(measure(current.href)), [current.href]);
 
@@ -96,10 +106,21 @@ const FeatureHints = () => {
     if (open && nextRef.current) nextRef.current.focus();
   }, [open, step]);
 
-  const finish = useCallback(() => {
-    markSeen();
+  const finish = useCallback(async () => {
+    markSeen(user);
     setOpen(false);
-  }, []);
+
+    if (user && !user.hasCompletedTour) {
+      try {
+        if (updateUser) {
+          updateUser({ hasCompletedTour: true });
+        }
+        await updateUserProfile({ hasCompletedTour: true });
+      } catch (err) {
+        console.error("Failed to mark tour as completed in db:", err);
+      }
+    }
+  }, [user, updateUser]);
 
   const go = (dir) => setStep((s) => Math.min(STEPS.length - 1, Math.max(0, s + dir)));
 

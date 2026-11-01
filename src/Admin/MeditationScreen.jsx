@@ -1027,7 +1027,7 @@ const MeditationScreen = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-130px)] rounded-[24px] sm:rounded-[32px] bg-gradient-to-br from-[#eef6ea] via-white to-[#eef7fb] p-3 sm:p-4 md:p-7 shadow-[0_18px_55px_rgba(30,48,25,0.08)]">
+    <div className="min-w-0 space-y-6 pb-10">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div className="flex items-start gap-3 sm:gap-4 min-w-0">
           <button
@@ -1071,7 +1071,7 @@ const MeditationScreen = () => {
           </div>
 
           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-gray-400 mt-2 hidden lg:block">Preset Patterns</p>
-          <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1 bg-white/70 backdrop-blur-md p-1 rounded-2xl border border-gray-100/50 shadow-sm mt-1" role="group" aria-label="Breathing pattern">
+          <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1 bg-white p-1 rounded-2xl border border-[#e1eadb] shadow-sm mt-1" role="group" aria-label="Breathing pattern">
             {presets[selectedTechnique].map((preset, index) => (
               <button
                 key={preset.label}
@@ -1114,7 +1114,7 @@ const MeditationScreen = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 mt-7 lg:items-stretch">
-        <section className="rounded-[24px] sm:rounded-[30px] bg-white/80 border border-white p-4 sm:p-5 md:p-8 shadow-sm">
+        <section className="rounded-[24px] sm:rounded-[30px] bg-white border border-[#e1eadb] p-4 sm:p-5 md:p-8 shadow-sm">
           <div className="flex flex-col items-center justify-center min-h-[380px] md:min-h-[460px] text-center">
             <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] lg:max-w-[440px] flex items-center justify-center">
               {/* The countdown uses the Silent Meditation bubble; the chosen shape takes over once breathing begins */}

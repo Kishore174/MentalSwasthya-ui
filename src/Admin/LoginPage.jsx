@@ -151,19 +151,25 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (authMode === "register" && form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
+    if (authMode === "register") {
+      if (!form.name.trim()) {
+        toast.error("Please enter your name");
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
     }
     setLoading(true);
     try {
       if (authMode === "register") {
-        const giftCodeValue = (form.giftCode || form.referralCode || "").trim();
+        const giftCodeValue = form.giftCode?.trim() || undefined;
         const res = await registerUser({ 
+          name: form.name.trim(),
           email: form.email.trim(), 
           password: form.password,
           giftCode: giftCodeValue,
-          referralCode: giftCodeValue
         });
 
         const payload = res?.data?.data || res?.data || {};
@@ -630,7 +636,7 @@ const LoginPage = () => {
               <p className="text-xs text-gray-300 leading-relaxed mb-6">
                 We've sent a 6-digit verification code to{" "}
                 <strong className="text-white underline">{verifyEmailAddress || form.email}</strong>.
-                Enter the code below or click the verification link in your inbox (valid for 15 minutes).
+                Enter the code below or click the verification link in your inbox (valid for 15 minutes max).
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -813,7 +819,7 @@ const LoginPage = () => {
                 <div className="relative">
                   <FiGift aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400/80 pointer-events-none" />
                   <input
-                    id="login-referral"
+                    id="login-gift-code"
                     type="text"
                     name="giftCode"
                     placeholder="Enter gift code"
