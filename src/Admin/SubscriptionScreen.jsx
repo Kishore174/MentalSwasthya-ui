@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   FiCheck, FiX, FiActivity, FiZap, FiCalendar,
   FiArrowRight, FiCopy, FiShare2, FiGift, FiStar, FiPercent, FiClock,
-  FiSlash, FiPauseCircle, FiPlayCircle, FiAlertCircle, FiCheckCircle, FiShield, FiRefreshCw
+  FiPauseCircle, FiPlayCircle, FiAlertCircle, FiCheckCircle, FiRefreshCw
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +11,6 @@ import {
   updateSubscriptionPlan,
   stopAutoDebit,
   resumeAutoDebit,
-  cancelSubscription,
   reactivateSubscription
 } from "../Api/subscriptionApi";
 
@@ -37,7 +36,6 @@ const SubscriptionScreen = () => {
     return localStorage.getItem("mentalswasthya_subscription_status") || "active";
   });
 
-  const [showCancelModal, setShowCancelModal] = useState(false);
   const [showAutoDebitModal, setShowAutoDebitModal] = useState(false);
   const [renewalDateFromBE, setRenewalDateFromBE] = useState(null);
   const [loadingAction, setLoadingAction] = useState(false);
@@ -80,10 +78,7 @@ const SubscriptionScreen = () => {
 
   // Referral Rewards State
   const [referralCount, setReferralCount] = useState(2); // 2 out of 3 earned
-  const userRefCode = user?.name
-    ? user.name.replace(/\s+/g, "_").toUpperCase() + "_" + Math.floor(100 + Math.random() * 900)
-    : "SARAH_J94";
-  const refLink = `mentalswasthya.com/ref/${userRefCode}`;
+  const refLink = "mentalswasthya.com";
 
   const plans = [
     {
@@ -191,24 +186,6 @@ const SubscriptionScreen = () => {
       } else {
         toast.success("Auto-debit stopped. No automatic charges will occur.", { icon: "🛑" });
       }
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    setSubscriptionStatus("cancelled");
-    setAutoDebitEnabled(false);
-    localStorage.setItem("mentalswasthya_subscription_status", "cancelled");
-    localStorage.setItem("mentalswasthya_auto_debit", "false");
-    setShowCancelModal(false);
-
-    try {
-      await cancelSubscription();
-      window.dispatchEvent(new Event("subscription_updated"));
-      toast.success(`Subscription cancelled. You retain full premium access until ${formattedRenewDate}.`);
-    } catch (err) {
-      console.warn("Cancellation local only:", err);
-      window.dispatchEvent(new Event("subscription_updated"));
-      toast.success(`Subscription cancelled. You retain full premium access until ${formattedRenewDate}.`);
     }
   };
 
@@ -425,16 +402,7 @@ const SubscriptionScreen = () => {
         </div>
 
         {/* ─── Management Action Buttons (Cancel Subscription & Auto-Debit Stop) ─── */}
-        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 text-xs text-[#526649]">
-            <span className="w-7 h-7 rounded-lg bg-[#f0f5ee] flex items-center justify-center text-[#7d9667] flex-shrink-0">
-              <FiShield size={14} />
-            </span>
-            <span>
-              Cancel subscription or stop auto-debit at any time. Your benefits stay active through the end of your billing period.
-            </span>
-          </div>
-
+        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-end gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             {/* Auto-Debit Stop / Resume Button */}
             {autoDebitEnabled && subscriptionStatus === "active" ? (
@@ -457,17 +425,8 @@ const SubscriptionScreen = () => {
               </button>
             ) : null}
 
-            {/* Cancel Subscription Button */}
-            {subscriptionStatus === "active" && currentTier !== "free" ? (
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100/80 text-rose-700 font-extrabold text-xs transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <FiSlash size={14} />
-                Cancel Subscription
-              </button>
-            ) : subscriptionStatus === "cancelled" ? (
+            {/* Reactivate (only for subscriptions cancelled earlier) */}
+            {subscriptionStatus === "cancelled" ? (
               <button
                 type="button"
                 onClick={handleReactivateSubscription}
@@ -735,55 +694,6 @@ const SubscriptionScreen = () => {
         </div>
 
       </div>
-
-      {/* ─── MODAL: CANCEL SUBSCRIPTION CONFIRMATION ─── */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-gray-150 shadow-2xl space-y-5">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center">
-              <FiAlertCircle size={24} />
-            </div>
-
-            <div>
-              <h3 className="text-xl font-black text-[#22331b]">Cancel Subscription?</h3>
-              <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-                Are you sure you want to cancel your <strong>{activePlan.name}</strong> subscription? You will retain access until <strong>{formattedRenewDate}</strong>, after which your account will revert to the free tier.
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-              <FiPauseCircle size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                <strong>Alternative:</strong> You can choose to <strong>Stop Auto-Debit</strong> instead. This ensures you won't be charged again without losing your membership right now.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition-all order-3 sm:order-1"
-              >
-                Keep Subscription
-              </button>
-              <button
-                type="button"
-                onClick={handleToggleAutoDebit}
-                className="flex-1 py-3 px-4 rounded-xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-900 font-bold text-xs transition-all order-2"
-              >
-                Stop Auto-Debit Only
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelSubscription}
-                className="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-all order-1 sm:order-3"
-              >
-                Confirm Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ─── MODAL: STOP AUTO-DEBIT CONFIRMATION ─── */}
       {showAutoDebitModal && (

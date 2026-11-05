@@ -188,40 +188,53 @@ const LandingPage = () => {
   const communityReviews = [
     {
       id: 1,
-      name: "Aarav Sharma",
-      role: "Product Designer & Mindfulness Advocate",
-      rating: 5,
-      image: hero1,
-      review: "MentalSwasthya completely changed my daily routine. The 4-7-8 breathing pacer and daily intention journal give me immense clarity before starting work!",
-      date: "August 2026"
+      name: "MentalSwasthya Member",
+      role: "Silent Meditation Bubble",
+      rating: 4.9,
+      review: "The Silent Meditation Bubble offers a perfect sanctuary during a hectic schedule. It is an invaluable tool that I turn to whenever I feel overwhelmed by heavy workloads, providing instant calm and clarity right when I need it most."
     },
     {
       id: 2,
-      name: "Sarah Jenkins",
-      role: "Wellness Coach",
-      rating: 5,
-      image: hero3,
-      review: "The curated soundscapes and gift card options are wonderful. I gifted a 6-month Bloom card to my sister and she loves it!",
-      date: "August 2026"
+      name: "MentalSwasthya Member",
+      role: "Daily Intentions & Breathing",
+      rating: 5.0,
+      review: "Since adding Mental Swasthya to my daily routine, my mornings look completely different. The daily intention setting and regulated breathing give me so much clarity before kicking off the day. 🧘‍♂️✨"
     },
     {
       id: 3,
-      name: "Vikram Patel",
-      role: "Software Engineer",
-      rating: 5,
-      image: hero5,
-      review: "Tracking my streak with the Dragon Guard shield keeps me disciplined every morning. Best mental health investment.",
-      date: "July 2026"
+      name: "MentalSwasthya Member",
+      role: "Streak Freeze",
+      rating: 4.9,
+      review: "I love that, Mental Swasthya understands real life. The streak freeze feature has completely removed the anxiety of maintaining a daily habit, letting me take a guilt-free rest when I need it without losing my momentum. It makes building a routine feel supportive, not stressful."
     },
     {
       id: 4,
-      name: "Maya Lin",
-      role: "Executive Lead",
-      rating: 5,
-      image: hero7,
-      review: "The silent meditation bubble is so peaceful. It's my go-to tool whenever I feel overwhelmed during busy workdays.",
-      date: "July 2026"
-    }
+      name: "MentalSwasthya Member",
+      role: "Guided Meditations",
+      rating: 5.0,
+      review: "Mental Swasthya’s guided meditations are my ultimate reset button. 🧘‍♂️ Whenever stress or anxiety hits, these sessions effectively help me ground myself and restore my peace of mind. Best mental health investment!"
+    },
+    {
+      id: 5,
+      name: "MentalSwasthya Member",
+      role: "Milestone Achievements",
+      rating: 4.9,
+      review: "The milestone achievements are brilliantly designed alongside the streak freeze feature. This combination creates a highly rewarding system that genuinely motivates me to push my limits, while still allowing for healthy, guilt-free rest."
+    },
+    {
+      id: 6,
+      name: "MentalSwasthya Member",
+      role: "Gift Cards",
+      rating: 5.0,
+      review: "The perfect gift for a loved one. I gave my sister a 6-month mental wellness card, and it’s been a total hit. She found it super easy to register and is praising the platform's wellness tools and intuitive, friendly user interface. Highly recommend gifting this!"
+    },
+    {
+      id: 7,
+      name: "MentalSwasthya Member",
+      role: "Affirmation Tracks",
+      rating: 5.0,
+      review: "The affirmation tracks have become my go-to tool for emotional resilience. Whenever I experience low moments, these tracks effectively elevate my mood and rebuild my confidence. It is a wonderfully supportive and uplifting feature."
+    },
   ];
 
   const curatedArticles = [
@@ -237,34 +250,46 @@ const LandingPage = () => {
       url: "https://news.abplive.com/health/can-7-minutes-of-meditation-make-a-difference-what-new-research-reveals-1870620/amp"
     },
     {
-      id: 1,
-      category: "Mindfulness & Breathing",
-      readTime: "4 min read",
-      title: "The Science of Mindful Breathing & Daily Peace",
-      message: "Discover how regulating your breath for just 5 minutes daily calms the central nervous system, lowers anxiety, and creates immediate mental clarity.",
-      date: "September 2026",
-      tagColor: "#7d9667",
-      bgGradient: "linear-gradient(135deg, #2e4a27 0%, #152612 100%)"
+      id: 4,
+      category: "Breathwork",
+      readTime: "Quick read",
+      title: "These breathing techniques could reduce your stress in minutes",
+      message: "BBC Future explores how just five minutes of breathwork can help lower stress, and which simple techniques are worth trying.",
+      date: "May 2026",
+      tagColor: "#2b93b3",
+      bgGradient: "linear-gradient(135deg, #1a4a4d 0%, #0a2224 100%)",
+      url: "https://www.bbc.com/future/article/20260513-how-5-minutes-of-breathwork-can-lower-your-stress"
     },
     {
-      id: 2,
-      category: "Restorative Sleep",
-      readTime: "5 min read",
-      title: "Soundscapes & Sleep: Restoring Natural Rest",
-      message: "Explore how acoustic frequencies and ambient soundscapes settle an overactive mind and prepare your body for deep, uninterrupted sleep.",
-      date: "September 2026",
-      tagColor: "#5478a3",
-      bgGradient: "linear-gradient(135deg, #1e334d 0%, #0d1a29 100%)"
-    },
-    {
-      id: 3,
-      category: "Emotional Resilience",
-      readTime: "3 min read",
-      title: "Building Sustainable Intentions & Self-Compassion",
-      message: "Small morning reflections cultivate long-term emotional stability. Aligning daily choices with core values leads to genuine peace of mind.",
+      id: 5,
+      category: "Intentions",
+      readTime: "Quick read",
+      title: "The Power of Setting Intentions",
+      message: "A Psychology Today read on why setting an intention can shape how you approach your day, your habits and your goals.",
       date: "August 2026",
       tagColor: "#b3823b",
-      bgGradient: "linear-gradient(135deg, #4d3617 0%, #241808 100%)"
+      bgGradient: "linear-gradient(135deg, #5a3a1a 0%, #2b1a0a 100%)",
+      url: "https://www.psychologytoday.com/us/blog/last-stop-on-the-struggle-bus/202608/the-power-of-setting-intentions"
+    },
+    {
+      id: 6,
+      category: "Affirmations",
+      readTime: "Quick read",
+      title: "Benefits of Positive Affirmations: Why They Matter",
+      message: "Wellspring explains how positive affirmations can support confidence, mood and a kinder inner dialogue.",
+      tagColor: "#a35490",
+      bgGradient: "linear-gradient(135deg, #4a2a47 0%, #1f0f1e 100%)",
+      url: "https://wellspringprevention.org/blog/the-benefits-of-positive-affirmations/"
+    },
+    {
+      id: 7,
+      category: "Silence",
+      readTime: "Quick read",
+      title: "The Benefits of Silence for Body and Mind",
+      message: "Kripalu looks at how making room for silence can calm the nervous system and clear the mind.",
+      tagColor: "#7d9667",
+      bgGradient: "linear-gradient(135deg, #2e4a27 0%, #152612 100%)",
+      url: "https://kripalu.org/living-kripalu/benefits-silence-body-and-mind"
     }
   ];
 
@@ -1341,7 +1366,7 @@ const LandingPage = () => {
 
                   <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16, borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: 20 }}>
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
-                      Published: {curatedArticles[articleIndex].date}
+                      {curatedArticles[articleIndex].date ? `Published: ${curatedArticles[articleIndex].date}` : "External article"}
                     </span>
 
                     <button
@@ -1490,16 +1515,13 @@ const LandingPage = () => {
                         borderRadius: 99
                       }}>
                         <span style={{ color: "#fbbf24", fontSize: 15, letterSpacing: "2px" }}>
-                          {"★".repeat(communityReviews[reviewIndex].rating)}
+                          {"★".repeat(Math.round(communityReviews[reviewIndex].rating))}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 800, color: "#fbbf24" }}>
-                          {communityReviews[reviewIndex].rating}.0 Rating
+                          {communityReviews[reviewIndex].rating.toFixed(1)} Rating
                         </span>
                       </div>
 
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", background: "rgba(255,255,255,0.08)", padding: "6px 14px", borderRadius: 99 }}>
-                        {communityReviews[reviewIndex].date}
-                      </span>
                     </div>
                   </div>
 

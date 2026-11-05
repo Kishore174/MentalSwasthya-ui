@@ -293,11 +293,8 @@ const DailyXpCard = ({ counts }) => {
                           style={{ transition: "opacity 0.2s ease" }}
                         >
                           <path d={sector(start + 0.6, end - 0.6)} fill={row.color} fillOpacity={done ? 1 : 0.28} stroke="#ffffff" strokeWidth="1.5" />
-                          <text x={tx} y={ty - 1} textAnchor="middle" fontSize="16" fontWeight="800" fill={done ? "#ffffff" : "#22331b"}>
+                          <text x={tx} y={ty + 6} textAnchor="middle" fontSize="16" fontWeight="800" fill={done ? "#ffffff" : "#22331b"}>
                             {row.earned}
-                          </text>
-                          <text x={tx} y={ty + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill={done ? "#ffffff" : "#475569"}>
-                            {row.xp} XP
                           </text>
                         </g>
                       );
@@ -431,15 +428,10 @@ const MilestoneAchievementsCard = () => {
     { target: 90, badgeType: "diamond", level: 90, times: 0, color: "from-gray-300 to-gray-400", glow: "rgba(0,0,0,0)", statusText: "NOT ACHIEVED", countText: "YET", achieved: false },
   ];
 
-  const yAxisTicks = [
-    { label: "20+ TIMES", val: 20 },
-    { label: "15", val: 15 },
-    { label: "10", val: 10 },
-    { label: "5", val: 5 },
-    { label: "0", val: 0 },
-  ];
+  // Y axis = streak days (milestone length); bar height follows the milestone's streak days.
+  const yAxisTicks = [90, 75, 60, 45, 30, 15, 0].map((v) => ({ label: String(v), val: v }));
 
-  const maxY = 20;
+  const maxY = 90;
   const isDark = cardTheme === "dark";
 
   return (
@@ -484,26 +476,28 @@ const MilestoneAchievementsCard = () => {
       </div>
 
       {/* Chart Main Area */}
-      <div className="relative z-10 flex gap-1.5 sm:gap-2 md:gap-4 items-end sm:min-h-[360px] pt-4 pb-2 px-0 sm:px-2">
+      <div className="relative z-10 flex gap-1.5 sm:gap-2 md:gap-3 items-start pt-12 pb-1 px-0 sm:px-2">
+
+        {/* Y-Axis Title */}
+        <div className={`shrink-0 h-[240px] flex items-center justify-center text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] ${isDark ? "text-slate-400" : "text-[#66785c]"
+          }`} style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+          Streak days
+        </div>
 
         {/* Y-Axis Column */}
-        <div className={`w-7 sm:w-16 md:w-20 shrink-0 flex flex-col justify-between h-[240px] text-right pr-1 sm:pr-2 font-extrabold text-[10px] sm:text-[11px] md:text-xs ${isDark ? "text-slate-400" : "text-[#66785c]"
+        <div className={`w-6 sm:w-10 shrink-0 flex flex-col justify-between h-[240px] text-right pr-1 sm:pr-2 font-extrabold text-[10px] sm:text-[11px] md:text-xs ${isDark ? "text-slate-400" : "text-[#66785c]"
           }`}>
           {yAxisTicks.map((tick, idx) => (
-            <span key={idx} className="leading-none whitespace-nowrap">
-              {idx === 0 ? (
-                <>
-                  20+<span className="hidden sm:inline"> TIMES</span>
-                </>
-              ) : (
-                tick.label
-              )}
+            <span key={idx} className="leading-none whitespace-nowrap -my-[5px]">
+              {tick.label}
             </span>
           ))}
         </div>
 
+        {/* Chart Column (canvas + numbers) */}
+        <div className="flex-1 min-w-0">
         {/* Chart Column Canvas */}
-        <div className={`flex-1 min-w-0 relative h-[240px] border-l border-b ${isDark ? "border-slate-700/80" : "border-[#e8efe3]"
+        <div className={`relative h-[240px] border-l border-b ${isDark ? "border-slate-700/80" : "border-[#e8efe3]"
           }`}>
 
           {/* Horizontal Gridlines */}
@@ -513,46 +507,30 @@ const MilestoneAchievementsCard = () => {
             ))}
           </div>
 
-          {/* 5 Milestone Bars */}
-          <div className="absolute inset-0 grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6 items-end">
+          {/* Milestone Bars: height = streak days of the milestone */}
+          <div className="absolute inset-0 grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6">
             {milestoneData.map((item, index) => {
-              const heightPct = Math.min(100, (item.times / maxY) * 100);
+              const heightPct = Math.min(100, (item.target / maxY) * 100);
 
               return (
-                <div key={index} className="flex flex-col items-center h-full justify-end group min-w-0">
+                <div key={index} className="relative h-full min-w-0 flex justify-center group">
+                  <div
+                    className={`absolute bottom-0 w-full max-w-[64px] rounded-t-lg ${item.achieved ? `bg-gradient-to-t ${item.color}` : isDark ? "bg-slate-800/70" : "bg-gray-200"}`}
+                    style={{
+                      height: `${heightPct}%`,
+                      boxShadow: item.achieved ? `0 0 15px ${item.glow}` : "none",
+                      opacity: item.achieved ? 1 : 0.7,
+                    }}
+                    title={`${item.target}-day streak`}
+                  />
 
-                  {/* Shield Badge */}
-                  <div className="mb-1 sm:mb-2 relative z-20">
+                  {/* Shield Badge sits on top of its bar */}
+                  <div className="absolute z-20" style={{ bottom: `calc(${heightPct}% + 4px)` }}>
                     <MilestoneShieldBadge
                       badgeType={item.badgeType}
                       achieved={item.achieved}
                     />
                   </div>
-
-                  {/* Frequency Value */}
-                  <div className="mb-1 text-center h-5">
-                    <span className={`text-xs md:text-sm font-black tracking-tight ${isDark ? "text-white drop-shadow" : "text-[#22331b]"
-                      }`}>
-                      {item.times > 0 ? item.times.toFixed(1) : ""}
-                    </span>
-                  </div>
-
-                  {/* Vertical Column Track */}
-                  <div className={`w-full max-w-[64px] h-[160px] border rounded-t-lg relative flex items-end justify-center overflow-hidden shadow-inner ${isDark
-                      ? "bg-[#0c1f2d]/80 border-slate-800/80"
-                      : "bg-[#f4f8f1] border-[#e1eadb]"
-                    }`}>
-                    {item.times > 0 && (
-                      <div
-                        className={`w-full bg-gradient-to-t ${item.color} rounded-t-sm transition-all duration-1000`}
-                        style={{
-                          height: `${heightPct}%`,
-                          boxShadow: `0 0 15px ${item.glow}`
-                        }}
-                      />
-                    )}
-                  </div>
-
                 </div>
               );
             })}
@@ -560,35 +538,24 @@ const MilestoneAchievementsCard = () => {
 
         </div>
 
-      </div>
-
-      {/* Bottom Status Cards */}
-      <div className="relative z-10 flex gap-1.5 sm:gap-2 md:gap-4 mt-3 sm:mt-4 px-0 sm:px-2">
-        <div className="w-7 sm:w-16 md:w-20 shrink-0" />
-        <div className="flex-1 min-w-0 grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6">
+        {/* X axis: only the number of times each milestone was achieved */}
+        <div className="grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-6 px-1.5 sm:px-2 md:px-6 mt-2">
           {milestoneData.map((item, index) => (
             <div
               key={index}
-              className={`min-w-0 rounded-lg sm:rounded-xl px-0.5 py-1.5 sm:p-2 md:p-3 text-center border transition-all ${item.achieved
-                  ? isDark
-                    ? "bg-slate-800/90 border-slate-600 text-white shadow-sm"
-                    : "bg-[#f4f8f1] border-[#e1eadb] text-[#22331b] shadow-sm"
-                  : isDark
-                    ? "bg-slate-900/40 border-slate-800/60 text-slate-500"
-                    : "bg-gray-50 border-gray-100 text-gray-400"
-                }`}
+              className={`text-center text-sm sm:text-base md:text-lg font-black ${item.achieved ? "text-[#22331b]" : isDark ? "text-slate-500" : "text-gray-400"}`}
             >
-              <div className="text-[7.5px] sm:text-[9px] md:text-[11px] font-black uppercase tracking-normal sm:tracking-wider leading-tight break-words">
-                {item.statusText}
-              </div>
-              <div className={`text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-normal sm:tracking-wider leading-tight mt-0.5 break-words ${item.achieved ? "text-amber-500" : isDark ? "text-slate-500" : "text-gray-400"
-                }`}>
-                {item.countText}
-              </div>
+              {Math.round(item.times)}
             </div>
           ))}
         </div>
+        </div>
+
       </div>
+
+      <p className={`relative z-10 mt-1 text-center text-[10px] sm:text-xs font-black uppercase tracking-[0.15em] ${isDark ? "text-slate-400" : "text-[#66785c]"}`}>
+        No of Times Achieved
+      </p>
 
     </div>
   );

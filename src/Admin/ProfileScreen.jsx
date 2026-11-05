@@ -9,13 +9,9 @@ import {
   FiEye,
   FiEyeOff,
   FiCheck,
-  FiAward,
   FiShield,
   FiSave,
-  FiInfo,
   FiCheckCircle,
-  FiClock,
-  FiMoon,
   FiPhone,
   FiBriefcase,
   FiCamera,
@@ -25,7 +21,7 @@ import {
 } from "react-icons/fi";
 import { FaFire } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
-import { getUserProfile, updateUserProfile, uploadProfilePhoto, deleteAccount } from "../Api/userApi";
+import { getUserProfile, getUserStreak, updateUserProfile, uploadProfilePhoto, deleteAccount } from "../Api/userApi";
 import { axiosInstance } from "../Api/config";
 
 const DAYS_OF_WEEK = [
@@ -36,24 +32,6 @@ const DAYS_OF_WEEK = [
   { id: "FRI", label: "Fri", full: "Friday" },
   { id: "SAT", label: "Sat", full: "Saturday" },
   { id: "SUN", label: "Sun", full: "Sunday" },
-];
-
-const APP_START_OPTIONS = [
-  {
-    id: "first_login_of_day",
-    title: "First Login of the Day",
-    desc: "Opens guided breathing automatically on your first visit each morning",
-  },
-  {
-    id: "every_login",
-    title: "Every Login",
-    desc: "Prompts you to center and breathe on every sign in",
-  },
-  {
-    id: "manual",
-    title: "Manual Start Only",
-    desc: "Launch sessions whenever you feel ready from the navigation menu",
-  },
 ];
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -115,7 +93,6 @@ const ProfileScreen = () => {
   const [deleting, setDeleting] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [weeklyOff, setWeeklyOff] = useState(["SUN"]);
-  const [appStartOption, setAppStartOption] = useState("first_login_of_day");
 
   // Lifetime XP drives the avatar ring colour (1000 Bronze … 5000 Diamond)
   const lifetimeXp = useLifetimeXp();
@@ -136,13 +113,66 @@ const ProfileScreen = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const closePasswordDialog = () => {
+    setPasswordOpen(false);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      toast.error("Please enter your current password.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      const res = await updateUserProfile({ currentPassword, newPassword });
+      toast.success(res?.data?.message || "Password changed successfully!");
+      closePasswordDialog();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Could not change your password.");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await getUserProfile();
-      const profile = res?.data?.data?.user || {};
-      const streak = res?.data?.data?.streak || {};
+      // Retry once so a brief network hiccup or cold server doesn't show an error.
+      let res;
+      try {
+        res = await getUserProfile();
+      } catch (firstErr) {
+        if (firstErr?.response && firstErr.response.status < 500) throw firstErr;
+        await new Promise((r) => setTimeout(r, 800));
+        res = await getUserProfile();
+      }
+      const body = res?.data?.data ?? res?.data ?? {};
+      const profile = body.user || body.profile || (body.email || body.name ? body : {});
+      let streak = body.streak || {};
+      if (!body.streak) {
+        try {
+          const sr = await getUserStreak();
+          streak = sr?.data?.data?.streak || sr?.data?.data || sr?.data || {};
+        } catch (e) { /* streak is optional */ }
+      }
 
       setName(profile.name || authUser?.name || "");
       setEmail(profile.email || authUser?.email || "");
@@ -152,7 +182,6 @@ const ProfileScreen = () => {
       setPhoto(resolvePhotoUrl(profile.photoUrl || profile.avatar || profile.profileImage || authUser?.avatar || ""));
       setIsEmailVerified(!!profile.isEmailVerified);
       setWeeklyOff(profile.weeklyOff?.length ? profile.weeklyOff : ["SUN"]);
-      setAppStartOption(profile.appStartOption || "first_login_of_day");
 
       setStreakData({
         currentStreak: streak.currentStreak ?? 0,
@@ -172,7 +201,11 @@ const ProfileScreen = () => {
         setPhoto(resolvePhotoUrl(authUser.avatar || ""));
         setWeeklyOff(authUser.weeklyOff?.length ? authUser.weeklyOff : ["SUN"]);
       }
-      toast.error("Could not fetch latest profile data.");
+      // The profile endpoint isn't available on the server yet (404): show the signed-in user's
+      // saved details instead of an error.
+      if (err?.response?.status === 404) return;
+      const reason = err?.response?.data?.message || (err?.response ? `error ${err.response.status}` : "network problem, check your connection");
+      toast.error(`Could not fetch latest profile data (${reason}).`);
     } finally {
       setLoading(false);
     }
@@ -218,21 +251,6 @@ const ProfileScreen = () => {
       return;
     }
 
-    if (newPassword) {
-      if (!currentPassword) {
-        toast.error("Please enter your current password to set a new password.");
-        return;
-      }
-      if (newPassword.length < 8) {
-        toast.error("New password must be at least 8 characters long.");
-        return;
-      }
-      if (newPassword !== confirmPassword) {
-        toast.error("New passwords do not match.");
-        return;
-      }
-    }
-
     setSaving(true);
     try {
       const payload = {
@@ -240,8 +258,6 @@ const ProfileScreen = () => {
         mobile: mobile.trim(),
         designation: designation.trim(),
         weeklyOff,
-        appStartOption,
-        ...(newPassword ? { currentPassword, newPassword } : {}),
       };
 
       const res = await updateUserProfile(payload);
@@ -265,11 +281,6 @@ const ProfileScreen = () => {
           lastSessionDate: updatedStreak.lastSessionDate || streakData.lastSessionDate,
         });
       }
-
-      // Clear password fields on success
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
 
       toast.success(res?.data?.message || "Profile updated successfully!");
     } catch (err) {
@@ -449,6 +460,14 @@ const ProfileScreen = () => {
                 {getDayNamesFormatted() || "Sunday"}
               </span>
             </p>
+
+            <button
+              type="button"
+              onClick={() => setPasswordOpen(true)}
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold text-white transition-colors cursor-pointer"
+            >
+              <FiLock size={13} /> Change password
+            </button>
           </div>
 
           {/* Quick Streak Pill */}
@@ -470,127 +489,6 @@ const ProfileScreen = () => {
       </div>
 
       <form onSubmit={handleSaveProfile} className="space-y-8">
-        {/* ─── Card 1: Weekly Off Day & Streak Protection ─── */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#dde8d5] shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="p-2 rounded-xl bg-[#eef6ea] text-[#29401f]">
-                  <FiMoon size={18} />
-                </span>
-                <h2 className="text-lg md:text-xl font-bold text-[#29401f]">
-                  Weekly Rest Day & Streak Protection
-                </h2>
-              </div>
-              <p className="text-xs md:text-sm text-[#66785c]">
-                Select your designated weekly off day(s). On these days, streak reminders are
-                automatically paused and your streak continues unbroken into the next day.
-              </p>
-            </div>
-          </div>
-
-          {/* Interactive Day Selection Chips */}
-          <div className="space-y-3 mb-6">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#526543] block">
-              Choose Your Weekly Off Day(s)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
-              {DAYS_OF_WEEK.map((day) => {
-                const isSelected = weeklyOff.includes(day.id);
-                return (
-                  <button
-                    key={day.id}
-                    type="button"
-                    onClick={() => handleToggleDay(day.id)}
-                    className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all cursor-pointer select-none text-center ${
-                      isSelected
-                        ? "bg-[#0a331c] text-white border-[#0a331c] shadow-md ring-2 ring-[#7d9667]/40 scale-[1.02]"
-                        : "bg-[#f8fbf6] text-[#29401f] border-[#d8e5d2] hover:bg-[#eef6ea] hover:border-[#b8cea9]"
-                    }`}
-                  >
-                    {isSelected && (
-                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-400 text-[#0a331c] flex items-center justify-center text-[10px] font-black">
-                        <FiCheck size={10} />
-                      </span>
-                    )}
-                    <span className="text-sm font-black">{day.id}</span>
-                    <span
-                      className={`text-[11px] font-medium ${
-                        isSelected ? "text-emerald-200" : "text-[#66785c]"
-                      }`}
-                    >
-                      {day.full}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Explanatory Callout Box */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#f4f9f1] to-[#eaf3e5] border border-[#d2e2cb] p-4 md:p-5 flex items-start gap-3.5">
-            <div className="p-2 rounded-xl bg-white text-[#29401f] shadow-sm shrink-0 mt-0.5">
-              <FiInfo size={17} />
-            </div>
-            <div className="space-y-1 text-xs md:text-sm text-[#3b4e31]">
-              <p className="font-bold text-[#223519]">How Streak Continuity Works</p>
-              <p className="leading-relaxed">
-                If your weekly off is set to{" "}
-                <strong className="text-[#0a331c] uppercase underline">
-                  {weeklyOff.join(" & ") || "SUN"}
-                </strong>{" "}
-                and your streak on the previous day is <strong>10 days</strong>, your streak will{" "}
-                <strong>not break</strong> on your rest day or the following day. It remains at 10
-                days and seamlessly progresses to <strong>11 days</strong> once you complete your
-                next session.
-              </p>
-              <p className="text-[11px] text-[#607455] pt-0.5">
-                • Streak reminder emails are also silenced on your chosen rest days so you can
-                recharge guilt-free.
-              </p>
-            </div>
-          </div>
-
-          {/* Streak Statistics Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-6 mt-6 border-t border-[#edf4e8]">
-            <div className="bg-[#f9fbf8] border border-[#e4eedf] rounded-2xl p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700">
-                <FaFire size={18} />
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#29401f] leading-tight">
-                  {streakData.currentStreak}
-                </div>
-                <div className="text-xs text-[#66785c] font-medium">Current Streak</div>
-              </div>
-            </div>
-
-            <div className="bg-[#f9fbf8] border border-[#e4eedf] rounded-2xl p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700">
-                <FiAward size={18} />
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#29401f] leading-tight">
-                  {streakData.longestStreak}
-                </div>
-                <div className="text-xs text-[#66785c] font-medium">Longest Streak</div>
-              </div>
-            </div>
-
-            <div className="bg-[#f9fbf8] border border-[#e4eedf] rounded-2xl p-4 flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-teal-100 text-teal-700">
-                <FiCheckCircle size={18} />
-              </div>
-              <div>
-                <div className="text-xl font-black text-[#29401f] leading-tight">
-                  {streakData.totalSessionsCompleted}
-                </div>
-                <div className="text-xs text-[#66785c] font-medium">Total Sessions</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* ─── Card 2: Personal Profile Details ─── */}
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#dde8d5] shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center gap-2 mb-6">
@@ -699,130 +597,44 @@ const ProfileScreen = () => {
             </div>
           </div>
 
-          {/* App Start Mode Options */}
+          {/* Weekly off day chooser */}
           <div className="space-y-3 pt-4 border-t border-[#edf4e8]">
-            <label className="text-xs font-bold text-[#445638] uppercase tracking-wider flex items-center gap-1.5">
-              <FiClock size={13} /> Breathing Exercise Launch Mode
+            <label className="text-xs font-bold uppercase tracking-wider text-[#526543] block">
+              Choose Your Weekly Off Day(s)
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {APP_START_OPTIONS.map((opt) => {
-                const isSelected = appStartOption === opt.id;
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+              {DAYS_OF_WEEK.map((day) => {
+                const isSelected = weeklyOff.includes(day.id);
                 return (
-                  <div
-                    key={opt.id}
-                    onClick={() => setAppStartOption(opt.id)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  <button
+                    key={day.id}
+                    type="button"
+                    onClick={() => handleToggleDay(day.id)}
+                    className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all cursor-pointer select-none text-center ${
                       isSelected
-                        ? "bg-[#f4f9f1] border-[#29401f] shadow-sm ring-1 ring-[#29401f]"
-                        : "bg-[#f9fbf8] border-[#e0ebd9] hover:bg-[#f1f7ee]"
+                        ? "bg-[#0a331c] text-white border-[#0a331c] shadow-md ring-2 ring-[#7d9667]/40 scale-[1.02]"
+                        : "bg-[#f8fbf6] text-[#29401f] border-[#d8e5d2] hover:bg-[#eef6ea] hover:border-[#b8cea9]"
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-[#29401f]">{opt.title}</span>
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            isSelected
-                              ? "border-[#29401f] bg-[#29401f] text-white"
-                              : "border-gray-300 bg-white"
-                          }`}
-                        >
-                          {isSelected && <FiCheck size={10} />}
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-[#66785c] leading-relaxed">{opt.desc}</p>
-                    </div>
-                  </div>
+                    {isSelected && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-400 text-[#0a331c] flex items-center justify-center text-[10px] font-black">
+                        <FiCheck size={10} />
+                      </span>
+                    )}
+                    <span className="text-sm font-black">{day.id}</span>
+                    <span
+                      className={`text-[11px] font-medium ${
+                        isSelected ? "text-emerald-200" : "text-[#66785c]"
+                      }`}
+                    >
+                      {day.full}
+                    </span>
+                  </button>
                 );
               })}
             </div>
           </div>
-        </div>
 
-        {/* ─── Card 3: Change Password / Security ─── */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 border border-[#dde8d5] shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="p-2 rounded-xl bg-[#eef6ea] text-[#29401f]">
-              <FiShield size={18} />
-            </span>
-            <h2 className="text-lg md:text-xl font-bold text-[#29401f]">Change Password</h2>
-          </div>
-          <p className="text-xs md:text-sm text-[#66785c] mb-6">
-            Leave password fields blank if you do not wish to change your password.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">
-                Current Password
-              </label>
-              <div className="relative">
-                <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-sm text-[#1e2f17] outline-none focus:border-[#29401f] focus:bg-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3.5 top-3.5 text-gray-400 hover:text-[#29401f]"
-                >
-                  {showCurrentPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">
-                New Password
-              </label>
-              <div className="relative">
-                <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  minLength={8}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-sm text-[#1e2f17] outline-none focus:border-[#29401f] focus:bg-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3.5 top-3.5 text-gray-400 hover:text-[#29401f]"
-                >
-                  {showNewPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  minLength={8}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter new password"
-                  className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-sm text-[#1e2f17] outline-none focus:border-[#29401f] focus:bg-white transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3.5 top-3.5 text-gray-400 hover:text-[#29401f]"
-                >
-                  {showConfirmPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* ─── Submit Actions Bar ─── */}
@@ -858,6 +670,105 @@ const ProfileScreen = () => {
           <FiTrash2 size={16} /> Delete my account
         </button>
       </div>
+
+      {passwordOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="change-password-title"
+          onKeyDown={(e) => e.key === "Escape" && closePasswordDialog()}
+          className="fixed inset-0 z-[9998] flex items-end sm:items-center justify-center bg-black/50 p-3"
+        >
+          <form onSubmit={handleChangePassword} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <h3 id="change-password-title" className="text-lg font-black text-[#29401f] flex items-center gap-2">
+                <FiShield size={18} /> Change password
+              </h3>
+              <button type="button" onClick={closePasswordDialog} aria-label="Close" className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                <FiX size={20} />
+              </button>
+            </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">Current Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-base sm:text-sm outline-none focus:border-[#7d9667]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    aria-label="Show or hide password"
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    {showCurrentPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">New Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 8 characters"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-base sm:text-sm outline-none focus:border-[#7d9667]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    aria-label="Show or hide password"
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    {showNewPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#445638] uppercase tracking-wider">Confirm New Password</label>
+                <div className="relative">
+                  <FiLock className="absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#f8fbf6] border border-[#d8e5d2] text-base sm:text-sm outline-none focus:border-[#7d9667]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label="Show or hide password"
+                    className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    {showConfirmPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                  </button>
+                </div>
+              </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={closePasswordDialog} disabled={passwordSaving} className="min-h-[44px] px-5 rounded-xl border border-[#dbe7d3] text-sm font-bold text-[#3a4d31] cursor-pointer">
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={passwordSaving}
+                className="min-h-[44px] px-5 rounded-xl bg-[#0a331c] hover:bg-[#124527] disabled:opacity-50 text-sm font-bold text-white cursor-pointer"
+              >
+                {passwordSaving ? "Saving..." : "Change password"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {deleteOpen && (
         <div

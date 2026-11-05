@@ -180,8 +180,8 @@ const FeedbackWidget = () => {
                 
                 {/* Header */}
                 <div className="px-8 sm:px-0">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#7d9667] bg-[#eef6ea] px-3 py-1 rounded-full mb-2">
-                    <FiHeart size={12} className="text-[#7d9667]" /> Your Opinion Matters
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#d4e8c6] bg-[#0a331c] px-3 py-1 rounded-full mb-2">
+                    <FiHeart size={12} className="text-[#a8c896]" /> Your Opinion Matters
                   </span>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-[#1e3019] tracking-tight">
                     Rate Your Experience

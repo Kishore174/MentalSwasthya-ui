@@ -16,7 +16,7 @@ const SessionCompletePage = () => {
       stepStatus={getTodayProgress()}
       streakDays={1}
       referralCount={2}
-      refLink="mentalswasthya.com/ref/MS-REF2026"
+      refLink="mentalswasthya.com"
     />
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiGift, FiCheckCircle, FiDownload, FiStar, FiCheck, FiCopy, FiX, FiArrowRight } from "react-icons/fi";
+import { FiGift, FiCheckCircle, FiDownload, FiCopy, FiX, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 
@@ -419,43 +419,7 @@ const GiftCardsScreen = () => {
           <form onSubmit={handleBuy} className="rounded-3xl bg-white border-2 border-[#7d9667] p-4 sm:p-6 shadow-[0_10px_30px_rgba(80,105,67,0.04)] space-y-5 min-w-0">
             <h3 className="text-lg sm:text-xl font-black text-[#22331b]">Configure Gift Card</h3>
 
-            {/* 1. Plan Type Selector: Regular vs Premium */}
-            <div className="space-y-2">
-              <p id="gift-plan-type-label" className="text-xs font-bold text-[#66785c]">Select Membership Plan Type</p>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3" role="group" aria-labelledby="gift-plan-type-label">
-                {[
-                  { id: "regular", name: "Regular Plan", desc: "Standard mindfulness library access" },
-                  { id: "premium", name: "Premium VIP", desc: "Unlimited access + custom uploads & soundscapes", icon: FiStar }
-                ].map((plan) => {
-                  const isSelected = giftData.planType === plan.id;
-                  const Icon = plan.icon;
-                  return (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setGiftData({ ...giftData, planType: plan.id })}
-                      aria-pressed={isSelected}
-                      className={`p-3 sm:p-3.5 min-w-0 rounded-2xl text-left border transition-all flex flex-col justify-between ${
-                        isSelected
-                          ? "border-[#7d9667] bg-[#eef6ea]/80 text-[#22331b] shadow-sm ring-1 ring-[#7d9667]"
-                          : "border-gray-200 text-gray-500 hover:border-[#e2eadc] hover:bg-gray-50/50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-sm font-black flex items-center gap-1.5 min-w-0">
-                          {Icon && <Icon className="text-amber-500" size={14} />}
-                          {plan.name}
-                        </span>
-                        {isSelected && <FiCheck className="text-[#7d9667] shrink-0" size={16} />}
-                      </div>
-                      <span className="text-[11px] text-gray-500 font-medium mt-1 leading-tight">{plan.desc}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Duration Tabs (3M / 6M / 1Y) with Amount for Selected Plan */}
+            {/* Duration Tabs (3M / 6M / 1Y) with Amount for Selected Plan */}
             <div className="space-y-2">
               <p id="gift-duration-label" className="text-xs font-bold text-[#66785c]">Select Membership Duration (3M / 6M / 1Y)</p>
               <div className="grid grid-cols-3 gap-2 sm:gap-3" role="group" aria-labelledby="gift-duration-label">

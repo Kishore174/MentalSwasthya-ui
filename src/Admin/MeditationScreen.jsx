@@ -194,6 +194,9 @@ const calculateCompletedCycles = (seconds, durationSeconds, cycleSeconds, totalC
 
 const isLocalSession = (id) => typeof id === "string" && id.startsWith("local-");
 
+// Length of the closing double bell in utils/audioUtils.js (1.2s gap + 4s ring)
+const CLOSING_BELL_MS = 5300;
+
 const playBeep = (frequency = 440, duration = 0.15) => {
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -555,8 +558,9 @@ const MeditationScreen = () => {
     completedRef.current = true;
     recordBreathingToday(sessionSeconds);
     setIsRunning(false);
-    setIsCompleted(true);
+    // Stay on the breathing screen while the closing double bell rings, then show the end page.
     if (soundOn) playBell('double'); // Final double bell
+    setTimeout(() => setIsCompleted(true), soundOn ? CLOSING_BELL_MS : 0);
     if (vibrationOn) triggerVibrate([200, 100, 200]);
 
     if (isLocalSession(sessionId)) {
@@ -785,7 +789,7 @@ const MeditationScreen = () => {
         stepStatus={stepStatus}
         streakDays={historyCount + 1}
         referralCount={2}
-        refLink="mentalswasthya.com/ref/MS-REF2026"
+        refLink="mentalswasthya.com"
         apiMessage={apiMessage}
       />
     );
@@ -795,8 +799,6 @@ const MeditationScreen = () => {
   // (progress bar at 0%), then the breathing session continues here.
   const isSessionActive = !isCountingDown && (isRunning || (sessionId !== null && elapsedSeconds > 0));
   const countdownLabel = countdownValue === 5 ? "Settle" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? String(countdownValue) : "Begin";
-  // The ring fills one step per countdown tick (5 → 0) instead of showing a stray ball at the start point
-  const countdownProgress = ((5 - Math.min(5, Math.max(0, countdownValue))) / 5) * 100;
   const cancelCountdown = () => {
     setIsCountingDown(false);
     setIsRunning(false);
@@ -851,8 +853,8 @@ const MeditationScreen = () => {
             <div className="bs-full-stage relative flex items-center justify-center">
               {/* Outer animated breathing progress indicator matching shape */}
               <ProgressShape
-                shape={isCountingDown ? "circle" : config.shape}
-                progress={isCountingDown ? countdownProgress : shapeCycleProgress}
+                shape={config.shape}
+                progress={isCountingDown ? 0 : shapeCycleProgress}
                 strokeWidth={4}
                 trackColor="rgba(255,255,255,0.06)"
                 progressColor="#a8c896"
@@ -861,7 +863,7 @@ const MeditationScreen = () => {
                 transitionMs={isCountingDown ? 1000 : 100}
               />
 
-              {isCountingDown && (
+              {isCountingDown && config.shape === "circle" && (
                 <span
                   key={`ripple-${countdownValue}`}
                   aria-hidden="true"
@@ -871,19 +873,19 @@ const MeditationScreen = () => {
               )}
 
               {/* Breathing shape with animated scale */}
-              <div className={`breath-shape-full ${isCountingDown ? "circle" : config.shape}`} style={breathScaleStyle}>
+              <div className={`breath-shape-full ${config.shape}`} style={breathScaleStyle}>
                 {isCountingDown ? (
                   <span
                     key={countdownValue}
                     aria-live="assertive"
                     className="animate-countdown font-black uppercase tracking-wider select-none"
-                    style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? "clamp(2.5rem, 12vw, 4.5rem)" : "clamp(1rem, 4vw, 1.5rem)" }}
+                    style={{ fontSize: countdownValue > 0 && countdownValue <= 3 ? (config.shape === "triangle" ? "clamp(2rem, 9vw, 3.25rem)" : "clamp(2.5rem, 12vw, 4.5rem)") : (config.shape === "triangle" ? "clamp(0.85rem, 3.2vw, 1.15rem)" : "clamp(1rem, 4vw, 1.5rem)") }}
                   >
                     {countdownLabel}
                   </span>
                 ) : (
                   <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                    {isRunning ? currentPhase.name : "Paused"}
+                    {isRunning ? currentPhase.name : sessionSeconds && elapsedSeconds >= sessionSeconds ? "Complete" : "Paused"}
                   </span>
                 )}
               </div>
@@ -1008,7 +1010,7 @@ const MeditationScreen = () => {
           .breath-shape-full.triangle {
             border-radius: 2px;
             clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-            padding-top: min(60px, 18%);
+            padding-top: min(80px, 26%);
           }
         `}</style>
 
@@ -1119,7 +1121,7 @@ const MeditationScreen = () => {
             <div className="relative w-full max-w-[280px] aspect-square md:max-w-[340px] lg:max-w-[440px] flex items-center justify-center">
               {/* The countdown uses the Silent Meditation bubble; the chosen shape takes over once breathing begins */}
               <ProgressShape
-                shape={isCountingDown ? "circle" : config.shape}
+                shape={config.shape}
                 progress={shapeCycleProgress}
                 strokeWidth={7}
                 trackColor="#e4ecdf"
@@ -1127,7 +1129,7 @@ const MeditationScreen = () => {
                 className="absolute inset-0 w-full h-full"
               />
 
-              <div className={`breath-shape ${isCountingDown ? "circle" : config.shape}`} style={breathScaleStyle}>
+              <div className={`breath-shape ${config.shape}`} style={breathScaleStyle}>
                 <span className={isCountingDown ? "text-xl md:text-2xl font-black uppercase tracking-wider select-none text-white animate-pulse" : ""}>
                   {isCountingDown
                     ? (countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin")
@@ -1537,7 +1539,7 @@ const MeditationScreen = () => {
         .breath-shape.triangle {
           border-radius: 2px;
           clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-          padding-top: min(40px, 14%);
+          padding-top: min(56px, 22%);
         }
 
         @keyframes countdownPulse {

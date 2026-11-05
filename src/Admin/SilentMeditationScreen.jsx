@@ -82,6 +82,8 @@ const SilentMeditationScreen = () => {
   const [remainingSeconds, setRemainingSeconds] = useState(180);
   const [medCompleted, setMedCompleted] = useState(false);
 
+  // Set when the closing double bell starts, so we stay on the meditation screen until it has finished.
+  const bellEndsAtRef = useRef(0);
   useEffect(() => {
     if (medCompleted) navigate("/app", { state: { fromTool: true }, replace: true });
   }, [medCompleted, navigate]);
@@ -208,7 +210,10 @@ const SilentMeditationScreen = () => {
 
   const triggerCompleteSession = async (ringEndBells = true) => {
     setIsRunning(false);
-    if (ringEndBells) playBell('double'); // two bells when the selected time is up (not on an early stop)
+    if (ringEndBells) {
+      playBell('double'); // two bells when the selected time is up (not on an early stop)
+      bellEndsAtRef.current = Date.now() + 5300; // 1.2s gap + 4s ring
+    }
     const finalDuration = elapsedSeconds;
     try {
       const todayKey = new Date().toDateString();
@@ -273,6 +278,8 @@ const SilentMeditationScreen = () => {
       console.error("Failed to complete session in backend:", err);
     }
 
+    const bellWait = Math.max(0, bellEndsAtRef.current - Date.now());
+    if (bellWait > 0) await new Promise((resolve) => setTimeout(resolve, bellWait));
     setMedCompleted(true);
   };
 
@@ -417,7 +424,7 @@ const SilentMeditationScreen = () => {
         stepStatus={stepStatus}
         streakDays={historyCount + 1}
         referralCount={2}
-        refLink="mentalswasthya.com/ref/MS-REF2026"
+        refLink="mentalswasthya.com"
         apiMessage={apiMessage}
       />
     );
