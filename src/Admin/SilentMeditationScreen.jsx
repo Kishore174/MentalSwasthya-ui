@@ -81,6 +81,7 @@ const SilentMeditationScreen = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(180);
   const [medCompleted, setMedCompleted] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false); // time is up: bells ringing, show "Completed"
 
   // Set when the closing double bell starts, so we stay on the meditation screen until it has finished.
   const bellEndsAtRef = useRef(0);
@@ -210,6 +211,7 @@ const SilentMeditationScreen = () => {
 
   const triggerCompleteSession = async (ringEndBells = true) => {
     setIsRunning(false);
+    if (ringEndBells) setIsFinishing(true);
     if (ringEndBells) {
       playBell('double'); // two bells when the selected time is up (not on an early stop)
       bellEndsAtRef.current = Date.now() + 5300; // 1.2s gap + 4s ring
@@ -311,6 +313,7 @@ const SilentMeditationScreen = () => {
     setElapsedSeconds(0);
     setRemainingSeconds(durationSeconds);
     setMedCompleted(false);
+    setIsFinishing(false);
     setApiMessage("");
   };
 
@@ -518,7 +521,7 @@ const SilentMeditationScreen = () => {
                   </span>
                 ) : (
                   <span className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wider select-none">
-                    {isRunning ? "" : "Paused"}
+                    {isRunning ? "" : isFinishing ? "Completed" : "Paused"}
                   </span>
                 )}
               </div>
@@ -573,7 +576,7 @@ const SilentMeditationScreen = () => {
               >
                 <FiPause size={26} />
               </button>
-            ) : (
+            ) : isFinishing ? null : (
               <button
                 type="button"
                 onClick={() => setIsRunning(true)}
@@ -698,7 +701,9 @@ const SilentMeditationScreen = () => {
                     ? (countdownValue === 5 ? "Settled" : countdownValue === 4 ? "Ready" : countdownValue > 0 ? countdownValue : "Begin")
                     : isRunning
                       ? ""
-                      : "Paused"}
+                      : isFinishing
+                        ? "Completed"
+                        : "Paused"}
                 </span>
               </div>
             </div>
@@ -723,9 +728,6 @@ const SilentMeditationScreen = () => {
                 <h2 className="text-5xl md:text-6xl font-black text-gray-900 mt-2">
                   {formatTime(remainingSeconds)}
                 </h2>
-                <p className="text-sm text-gray-400 mt-2">
-                  Coherent 5-second Breathing Cycle
-                </p>
               </>
             )}
 

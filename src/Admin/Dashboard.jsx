@@ -321,15 +321,15 @@ const DailyXpCard = ({ counts }) => {
           })()}
         </div>
 
-        <div className="min-w-0">
-          <p className="text-xs font-semibold text-[#66785c] mt-2 text-center">
-            {totalXp === 0
-              ? `Complete any practice today to start earning XP. Finish all four to reach ${DAILY_XP_GOAL} XP.`
-              : totalXp >= DAILY_XP_GOAL
+        {totalXp > 0 && (
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#66785c] mt-2 text-center">
+              {totalXp >= DAILY_XP_GOAL
                 ? "Daily goal reached. Wonderful consistency!"
                 : `${DAILY_XP_GOAL - totalXp} XP to go to reach today's goal.`}
-          </p>
-        </div>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

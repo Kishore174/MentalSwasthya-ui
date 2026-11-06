@@ -11,7 +11,7 @@ export const getTier = () => {
 
 export const isPremium = () => getTier() !== "free";
 
-// Streak freezes granted per 15-day milestone block: Regular 2, Premium 3
-export const getFreezeAllowance = () => (isPremium() ? 3 : 2);
+// Streak freezes granted per 15-day milestone block: 2 for both Regular and Premium
+export const getFreezeAllowance = () => 2;
 
 export const PREMIUM_MESSAGE = "This is a Premium feature. Upgrade your plan to unlock it.";

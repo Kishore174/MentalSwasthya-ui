@@ -59,7 +59,7 @@ export default function CompletionScreen({
 
   const shareReferralLink = async () => {
     setPausedAutoClose(true);
-    const inviteMsg = `Hey, \nI came across the "Mental Swasthya" platform, that offers a variety of wellness tools which truly helps you to find peace of mind. \n\nIt is simple, helpful, and perfect for daily relaxation.\n\nI hope you enjoy using it!\n\nRegister using the link below and get 14 days of Premium free!\nhttps://${refLink}`;
+    const inviteMsg = `Hey,\nI came across the "Mental Swasthya" platform, which offers wellness tools that truly help you find peace of mind.\nRegister using the link below and get 14 days premium subscription free!\n\nhttps://mentalswasthya.com/login`;
 
     if (navigator.share) {
       try {

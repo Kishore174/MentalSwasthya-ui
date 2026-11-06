@@ -93,12 +93,11 @@ const SubscriptionScreen = () => {
       badgeText: "Free Plan",
       badgeColor: "bg-gray-100 text-gray-500 border-gray-200",
       features: [
-        { text: "Standard 4-7-8 Breathing Presets", checked: true },
-        { text: "Access to Daily Affirmations Playlist", checked: true },
-        { text: "Standard Wellness Dashboard Logs", checked: true },
-        { text: "Custom Personal Audio Uploads (MP3/WAV)", checked: false },
-        { text: "Local Offline IndexedDB Storage", checked: false },
-        { text: "1-on-1 Monthly Mindfulness Consultations", checked: false }
+        { text: "Limited Preset Breathing Exercises", checked: true },
+        { text: "Preloaded Meditation and Affirmations", checked: true },
+        { text: "Two Streak Freezes for every 15 days in milestone achievements", checked: true },
+        { text: "Streak Reminders", checked: true },
+        { text: "Weekly Off Protection", checked: true }
       ]
     },
     {
@@ -113,12 +112,11 @@ const SubscriptionScreen = () => {
       badgeText: "Most Popular",
       badgeColor: "bg-[#eef6ea] text-[#7d9667] border-[#7d9667]/30",
       features: [
-        { text: "Unlimited Custom Breathing Presets", checked: true },
-        { text: "Full Language Filters (Hindi/English)", checked: true },
-        { text: "Advanced Wellness Progress Ring Metrics", checked: true },
-        { text: "Custom Personal Audio Uploads (MP3/WAV)", checked: true },
-        { text: "Local Offline IndexedDB Storage", checked: true },
-        { text: "1-on-1 Monthly Mindfulness Consultations", checked: true }
+        { text: "Custom Breathing Exercises along with Limited Preset Breathing Exercises", checked: true },
+        { text: "Personal uploading facility along with Preloaded Meditation and Affirmations", checked: true },
+        { text: "Two Streak Freezes for every 15 days in milestone achievements", checked: true },
+        { text: "Streak Reminders", checked: true },
+        { text: "Weekly Off Protection", checked: true }
       ]
     }
   ];

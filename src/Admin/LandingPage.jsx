@@ -14,6 +14,7 @@ import {
   FiTwitter,
   FiSmartphone,
   FiShield,
+  FiMoon,
   FiAward,
   FiMusic,
   FiLayers,
@@ -393,7 +394,7 @@ const LandingPage = () => {
   const tools = [
     {
       num: "01",
-      title: "Daily Intentions Setting",
+      title: "Daily Intentions",
       icon: <FiBookOpen size={20} />,
       color: "#b5893d",
       accent: "rgba(181,137,61,0.08)",
@@ -407,7 +408,7 @@ const LandingPage = () => {
       color: "#4a7c59",
       accent: "rgba(74,124,89,0.08)",
       border: "rgba(74,124,89,0.18)",
-      text: "Science-backed diaphragmatic & regulated breathing triggers the vagus nerve, signaling the nervous system to transition from fight-or-flight to recovery. A responsive breathing bubble with visual and timing cues to guide inhalation, holding, and exhalation cycles."
+      text: "Diaphragmatic, slow-paced breathwork serves as a direct physiological intervention—stimulating the vagus nerve to downregulate sympathetic fight-or-flight dominance and activate your parasympathetic rest response."
     },
     {
       num: "03",
@@ -416,47 +417,62 @@ const LandingPage = () => {
       color: "#7d6b3a",
       accent: "rgba(125,107,58,0.07)",
       border: "rgba(125,107,58,0.18)",
-      text: "Mindful focus improves neuroplasticity in areas of the brain related to emotional regulation and attention, providing clarity for decision making under workplace pressure."
+      text: "Mindful focus enhances neuroplasticity in areas of the brain dedicated to attention and emotional regulation. By anchoring your awareness, you unlock the mental clarity required for calm, effective decision-making under workplace pressure."
     },
     {
       num: "04",
+      title: "Silent Meditation",
+      icon: <FiMoon size={20} />,
+      color: "#3f6f8f",
+      accent: "rgba(63,111,143,0.07)",
+      border: "rgba(63,111,143,0.18)",
+      text: "Silent meditation forces the brain to shift from passive processing to active internal regulation. This deep state of introspection reduces sensory overload, lowers cortisol, and enhances your capacity for profound mental focus."
+    },
+    {
+      num: "05",
       title: "Resilient Affirmations",
       icon: <FiHeart size={20} />,
       color: "#7d4a67",
       accent: "rgba(125,74,103,0.07)",
       border: "rgba(125,74,103,0.18)",
-      text: "Deliberate cognitive restructuring using positive affirmations builds self-concept, replacing toxic self-evaluation loops with supportive neural pathways."
+      text: "Deliberate cognitive restructuring using positive affirmations builds self-concept, replacing old doubt with supportive neural pathways."
     }
   ];
 
   const features = [
     {
       title: "Intuitively designed interface",
-      desc: "A simple, intuitive and easy to navigate design that empowers your wellness journey without the hastle. ",
+      desc: "Experience a clean, intuitive interface that fuels your wellness journey—completely hassle-free.",
       icon: <FiCompass size={22} />,
       badge: "User Experience"
     },
     {
       title: "Streak Reminders",
-      desc: "Never miss a beat, receive timely notifications to keep your streak going and maintain your wellness consistency.",
+      desc: "Receive timely nudges to protect your active streak and keep your daily wellness momentum going strong.",
       icon: <FiClock size={22} />,
       badge: "Consistency"
     },
     {
-      title: "Certificate on milestone achievements",
-      desc: "Earn certificates as you reach significant well-being milestones and complete progress goals.",
+      title: "Safety Net",
+      desc: "Missed a day? Don’t panic! Your streak freezes will automatically protect your hard-earned progress.",
+      icon: <FiShield size={22} />,
+      badge: "Achievements"
+    },
+    {
+      title: "Certificates",
+      desc: "Earn milestones certificates as you hit significant well-being benchmarks and complete your personal growth goals.",
       icon: <FiAward size={22} />,
       badge: "Achievements"
     },
     {
       title: "Curated Soundscapes",
-      desc: "Guided meditations, Affirmation and ambient tracks designed to filter out background corporate noise and facilitate deep concentration. Even you can upload your favorite one and listen!",
+      desc: "Immerse yourself in guided meditations, empowering affirmations, and ambient tracks engineered to mask background noise and trigger deep concentration. Make the experience entirely yours by uploading your favorite audio seamlessly.",
       icon: <FiMusic size={22} />,
       badge: "Sound & Focus"
     },
     {
       title: "Progress Analytics",
-      desc: "A clean dashboard compiling session’s progress, total days/minutes, and active streaks to foster consistent habits.",
+      desc: "Track your daily momentum in real-time with a live dashboard that pulls together your session progress, app usage time, XP earned, milestone achievements, and active streak—giving you everything you need to lock in consistent habits.",
       icon: <FiLayers size={22} />,
       badge: "Insights"
     }
@@ -736,7 +752,7 @@ const LandingPage = () => {
               fontWeight: 300,
               marginBottom: 36,
             }}>
-              Unlock Your Personalized Daily Wellness Kit. Select your daily practice from the tools below to support your growth.
+              Your curated wellness ritual awaits. Explore the toolkit below and choose a practice to elevate your mental well-being today.
             </p>
 
             <button
@@ -885,7 +901,7 @@ const LandingPage = () => {
                   <em style={{ fontStyle: "italic", color: "#7d9667" }}>hyper-connected world</em>
                 </h2>
                 <p style={{ fontSize: 14.5, color: "#6b7f63", lineHeight: 1.7, marginTop: 18, fontWeight: 300 }}>
-                  We live in an era of constant stimulation. Between work demands, continuous digital notifications, and urban acceleration, our nervous systems remain in a state of high alert. Chronic stress, anxiety, and sleep depletion are the modern defaults.
+                  We live in an era of constant stimulation. Between work demands, continuous digital notifications, and urban acceleration. Our nervous systems remain in a state of high alert. Chronic stress, anxiety, and sleep depletion are the modern defaults.
                 </p>
               </div>
 
@@ -1110,7 +1126,7 @@ const LandingPage = () => {
                   Special Offer
                 </span>
                 <p style={{ fontSize: 15, color: "#6e5d57", lineHeight: 1.6, marginTop: 6 }}>
-                  Get your <strong style={{ color: "#d36a3d" }}>14 days</strong> subscription absolutely <strong style={{ color: "#d36a3d" }}>free</strong> as an introductory offer!
+                  Get your <strong style={{ color: "#d36a3d" }}>14 days Premium</strong> subscription absolutely <strong style={{ color: "#d36a3d" }}>free</strong> as an introductory offer!
                 </p>
 
                 <button
@@ -1152,7 +1168,7 @@ const LandingPage = () => {
               
               <div>
                 <h4 style={{ fontSize: 14, fontWeight: 700, color: "#3a2118", marginBottom: 8, letterSpacing: "0.02em" }}>
-                  Share the love, get more free!
+                  Spread love, Get rewarded!
                 </h4>
                 <p style={{ fontSize: 12.5, color: "#6e5d57", lineHeight: 1.6 }}>
                   If your loved ones register using your shared link, you will get an additional <strong style={{ color: "#d36a3d" }}>1 more month</strong> subscription absolutely free (for 3 successful registrations).
@@ -1236,7 +1252,7 @@ const LandingPage = () => {
                   <FiBookOpen size={18} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>My Daily Intention</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Daily Intention</p>
                   <span style={{ fontSize: 11, color: "#768c6e" }}>(e.g., 'To be present.')</span>
                 </div>
               </div>
@@ -1252,6 +1268,51 @@ const LandingPage = () => {
                 </div>
                 <div>
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Regulated Breathing</p>
+                  <span style={{ fontSize: 11, color: "#768c6e" }}>Animation preview</span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: "#ffffff", border: "1px solid #dde7d6",
+                  display: "flex", alignItems: "center",
+                  color: "#7d6b3a", flexShrink: 0, justifyContent: "center"
+                }}>
+                  <FiSun size={18} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Meditation</p>
+                  <span style={{ fontSize: 11, color: "#768c6e" }}>Animation preview</span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: "#ffffff", border: "1px solid #dde7d6",
+                  display: "flex", alignItems: "center",
+                  color: "#3f6f8f", flexShrink: 0, justifyContent: "center"
+                }}>
+                  <FiMoon size={18} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Silent Meditation</p>
+                  <span style={{ fontSize: 11, color: "#768c6e" }}>Animation preview</span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: "#ffffff", border: "1px solid #dde7d6",
+                  display: "flex", alignItems: "center",
+                  color: "#7d4a67", flexShrink: 0, justifyContent: "center"
+                }}>
+                  <FiHeart size={18} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#1a2416", marginBottom: 2 }}>Affirmation</p>
                   <span style={{ fontSize: 11, color: "#768c6e" }}>Animation preview</span>
                 </div>
               </div>
@@ -1279,7 +1340,7 @@ const LandingPage = () => {
                     Curated Articles
                   </h3>
                   <p style={{ fontSize: 13, color: "#6b7f63", marginTop: 4 }}>
-                    Explore expert insights, mindful strategies, and science-backed reads to support your mental wellbeing.
+                    Explore expert insights, mindful strategies, and science-backed reads to support your mental wellbeing delivered straight to your inbox to foster your wellness journey.
                   </p>
                 </div>
 
@@ -1454,7 +1515,7 @@ const LandingPage = () => {
                       Our Community
                     </h3>
                     <p style={{ fontSize: 13, color: "rgba(232,240,227,0.75)", marginTop: 4 }}>
-                      Real experiences from practitioners finding peace, focus, and clarity with MentalSwasthya.
+                      See how the Mental Swasthya's global community is discovering inner peace, focus, and mental clarity.
                     </p>
                   </div>
 
@@ -1617,7 +1678,7 @@ const LandingPage = () => {
                         We'd love to hear <br />from you.
                       </h2>
                       <p style={{ fontSize: "clamp(13px, 2vw, 14.5px)", color: "#556b50", marginTop: 20, lineHeight: 1.7, fontWeight: 300 }}>
-                        Whether you have a question about features, subscriptions, or simply want to share your mindfulness journey, our friendly team is here to support you.
+                        Whether you are curious about our features, need help with your subscription, or just want to share a moment from your mindfulness journey, our team is always here to listen and support you.
                       </p>
                     </div>
 

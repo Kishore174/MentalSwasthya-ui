@@ -496,7 +496,7 @@ const ProfileScreen = () => {
               <FiUser size={18} />
             </span>
             <h2 className="text-lg md:text-xl font-bold text-[#29401f]">
-              Personal Information & Preferences
+              Personal Information
             </h2>
           </div>
 

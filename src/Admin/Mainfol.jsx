@@ -13,33 +13,42 @@ const Mainfol = () => {
   const isAboutPage = location.pathname === "/app/about";
   const isDashboard = location.pathname === "/app" || location.pathname === "/app/";
 
+  // The feature tour stays mounted (same spot in the tree) while it moves through the pages,
+  // so it is rendered once, outside both layouts.
+  const tour = <FeatureHints autoStart={isDashboard && !location.state?.fromTool} />;
+
   if (isAboutPage) {
     return (
-      <div className='w-full min-h-screen bg-[#f7f9f4]'>
-        <Outlet />
-      </div>
+      <>
+        <div className='w-full min-h-screen bg-[#f7f9f4]'>
+          <Outlet />
+        </div>
+        {tour}
+      </>
     )
   }
 
   return (
-    <div className='flex flex-1 min-h-screen bg-[#f6f9f3] relative'>
-      <div className='lg:w-64 shrink-0'>
-        <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      </div>
-      <div className='flex lg:flex-1 w-full flex-col min-w-0'>
-        <SubscriptionAlertBanner />
-        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-        <div
-          id='main-content'
-          className={`px-4 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] lg:pl-8 lg:pr-8 pt-4 sm:pt-6 mx-auto w-full min-w-0 mb-5 flex-1 ${isDashboard ? 'pb-16 lg:pb-0' : ''}`}
-        >
-          <Outlet />
+    <>
+      <div className='flex flex-1 min-h-screen bg-[#f6f9f3] relative'>
+        <div className='lg:w-64 shrink-0'>
+          <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         </div>
-        <Footer />
+        <div className='flex lg:flex-1 w-full flex-col min-w-0'>
+          <SubscriptionAlertBanner />
+          <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+          <div
+            id='main-content'
+            className={`px-4 lg:px-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] lg:pl-8 lg:pr-8 pt-4 sm:pt-6 mx-auto w-full min-w-0 mb-5 flex-1 ${isDashboard ? 'pb-16 lg:pb-0' : ''}`}
+          >
+            <Outlet />
+          </div>
+          <Footer />
+        </div>
+        {isDashboard && <FeedbackWidget />}
       </div>
-      {isDashboard && <FeedbackWidget />}
-      {isDashboard && !location.state?.fromTool && <FeatureHints />}
-    </div>
+      {tour}
+    </>
   )
 }
 
