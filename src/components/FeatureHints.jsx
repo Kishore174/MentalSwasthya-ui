@@ -8,7 +8,7 @@ const SEEN_KEY = "ms_feature_spotlight_seen";
 // href → sidebar link to spotlight. Steps without an href (or whose link isn't on screen, e.g. the
 // mobile drawer is closed) are shown as a centred card instead.
 const STEPS = [
-  {"icon": "🌿", "title": "Welcome to Mental Swasthya", "text": "A calm space for your mind. Let's walk through every section of the app."},
+  {"icon": "🌿", "title": "Welcome to Mental Swasthya", "text": "A calm space for your mind. Let's take a quick walkthrough of the app."},
   {"icon": "🏠", "href": "/app", "title": "Dashboard", "text": "See today's wellness tools progress, your streak, web app usage, XP and achievements at a glance.", "more": [{"body": "Use the period selector to review any time range."}]},
   {"icon": "📝", "href": "/app/intentions", "title": "Daily Intentions", "text": "Start your day with purpose.", "more": [{"body": "Set an intention using prompts or write your own thoughts, then look back at your yesterday’s intention progress gently."}]},
   {"icon": "🌬️", "href": "/app/meditation", "title": "Regulated Breathing & Meditation", "text": "Choose from Triangle, Box and Circle breathing patterns, or pick audio from the Meditation playlist.", "more": [{"heading": "Regulated Breathing", "body": "Choose different breathing patterns like Triangle, Box and Circle. You can even create your own pattern and save it. You can use preset timings, or set a custom timing. You have the option of turning sound prompts ON or OFF."}, {"heading": "Meditation", "body": "Choose the audio from the Meditation playlist of English, Hindi and Music. You can filter it too, and upload tracks of your choice."}]},

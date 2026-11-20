@@ -821,7 +821,7 @@ const AchievementsScreen = () => {
               MILESTONE ACHIEVEMENTS
             </h2>
             <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.1em] sm:tracking-[0.14em] mt-1 text-[#66785c]">
-              SUMMARY OF MILESTONES REACHED (TIMES COMPLETED)
+              SUMMARY OF MILESTONES REACHED
             </p>
           </div>
         </div>

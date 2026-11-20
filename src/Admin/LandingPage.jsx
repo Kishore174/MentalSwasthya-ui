@@ -447,24 +447,6 @@ const LandingPage = () => {
       badge: "User Experience"
     },
     {
-      title: "Streak Reminders",
-      desc: "Receive timely nudges to protect your active streak and keep your daily wellness momentum going strong.",
-      icon: <FiClock size={22} />,
-      badge: "Consistency"
-    },
-    {
-      title: "Safety Net",
-      desc: "Missed a day? Don’t panic! Your streak freezes will automatically protect your hard-earned progress.",
-      icon: <FiShield size={22} />,
-      badge: "Achievements"
-    },
-    {
-      title: "Certificates",
-      desc: "Earn milestones certificates as you hit significant well-being benchmarks and complete your personal growth goals.",
-      icon: <FiAward size={22} />,
-      badge: "Achievements"
-    },
-    {
       title: "Curated Soundscapes",
       desc: "Immerse yourself in guided meditations, empowering affirmations, and ambient tracks engineered to mask background noise and trigger deep concentration. Make the experience entirely yours by uploading your favorite audio seamlessly.",
       icon: <FiMusic size={22} />,
@@ -475,6 +457,24 @@ const LandingPage = () => {
       desc: "Track your daily momentum in real-time with a live dashboard that pulls together your session progress, app usage time, XP earned, milestone achievements, and active streak—giving you everything you need to lock in consistent habits.",
       icon: <FiLayers size={22} />,
       badge: "Insights"
+    },
+    {
+      title: "Certificates",
+      desc: "Earn milestones certificates as you hit significant well-being benchmarks and complete your personal growth goals.",
+      icon: <FiAward size={22} />,
+      badge: "Achievements"
+    },
+    {
+      title: "Streak Reminders",
+      desc: "Receive timely nudges to protect your active streak and keep your daily wellness momentum going strong.",
+      icon: <FiClock size={22} />,
+      badge: "Consistency"
+    },
+    {
+      title: "Safety Net",
+      desc: "Missed a day? Don’t panic! Your streak freezes will automatically protect your hard-earned progress.",
+      icon: <FiShield size={22} />,
+      badge: "Protection"
     }
   ];
 
@@ -1037,8 +1037,8 @@ const LandingPage = () => {
                 fontWeight: 600, color: "#1a2416",
                 lineHeight: 1.1, letterSpacing: "-0.02em",
               }}>
-                Intuitively designed interfaces to<br />
-                <em style={{ fontStyle: "italic", color: "#7d9667" }}>optimize your daily rituals</em>
+                Explore a seamless suite of features engineered to help you pause, reflect, and{" "}
+                <em style={{ fontStyle: "italic", color: "#7d9667" }}>master your emotional wellness.</em>
               </h2>
             </div>
           </Reveal>

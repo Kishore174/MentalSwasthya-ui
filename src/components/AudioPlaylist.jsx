@@ -228,7 +228,6 @@ const AudioPlaylist = ({
       const matchesSearch =
         !q ||
         track.title.toLowerCase().includes(q) ||
-        (track.artist || "").toLowerCase().includes(q) ||
         (track.category || "").toLowerCase().includes(q) ||
         (track.language || "").toLowerCase().includes(q);
 
@@ -642,9 +641,6 @@ const AudioPlaylist = ({
             <h2 className="text-xl font-black text-gray-800 line-clamp-1">
               {currentTrack?.title || 'Select a track to play'}
             </h2>
-            <p className="text-sm text-gray-500 font-bold mt-1">
-              {currentTrack?.artist || 'Unknown Artist'}
-            </p>
             {currentTrack && (
               <span className="inline-block text-[10px] font-black uppercase tracking-[0.1em] px-2.5 py-0.5 mt-2 rounded"
                 style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
@@ -836,7 +832,7 @@ const AudioPlaylist = ({
                 <FiSearch size={15} className="text-gray-400 shrink-0" />
                 <input
                   type="text"
-                  placeholder="Search title, artist, category..."
+                  placeholder="Search title, category..."
                   aria-label="Search tracks"
                   value={searchQuery}
                   onChange={(e) => {
@@ -1064,9 +1060,6 @@ const AudioPlaylist = ({
                           style={isCurrent ? { color: themeColor } : { color: '#222222' }}>
                           {track.title}
                         </p>
-                        <p className="text-xs text-gray-400 font-bold mt-0.5 truncate">
-                          {track.artist || 'Unknown'}
-                        </p>
                       </div>
 
                       <span className="shrink-0 text-xs font-bold text-gray-500 tabular-nums">
@@ -1152,7 +1145,7 @@ const AudioPlaylist = ({
                           </div>
                         </td>
 
-                        {/* Title & Artist */}
+                        {/* Title */}
                         <td className="py-4 px-5">
                           <div>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1166,9 +1159,6 @@ const AudioPlaylist = ({
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-gray-400 font-bold mt-0.5">
-                              {track.artist || 'Unknown'}
-                            </p>
                           </div>
                         </td>
 

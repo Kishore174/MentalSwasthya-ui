@@ -222,6 +222,13 @@ const SilentMeditationScreen = () => {
       const saved = JSON.parse(localStorage.getItem("ms_daily_silent") || "{}");
       const base = saved.date === todayKey ? saved.seconds || 0 : 0;
       localStorage.setItem("ms_daily_silent", JSON.stringify({ date: todayKey, seconds: base + finalDuration }));
+      // Also log it as a meditation session so the dashboard ring, daily XP and achievements count it.
+      if (finalDuration > 0) {
+        const historyKey = "mentalswasthya_play_history";
+        const list = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        list.push({ title: "Silent meditation", type: "meditation", silent: true, duration: finalDuration, timestamp: Date.now() });
+        localStorage.setItem(historyKey, JSON.stringify(list));
+      }
     } catch (e) { /* storage unavailable */ }
 
     // Fetch stats for completion summary cards
@@ -469,9 +476,12 @@ const SilentMeditationScreen = () => {
               <FiArrowLeft size={18} />
             </button>
             <div className="text-left min-w-0">
-              <h3 className="truncate text-sm font-bold text-white/50">
-                Coherent 5s/5s Breathing Cycle
+              <h3 className="truncate text-sm font-bold text-white/80">
+                Silent meditation
               </h3>
+              <p className="text-[11px] leading-snug text-white/50 line-clamp-2">
+                Let go of every thought and simply rest in the stillness
+              </p>
             </div>
           </div>
           <button

@@ -404,7 +404,10 @@ const GiftCardsScreen = () => {
             Gift the experience of calm
           </h1>
           <p className="text-sm text-[#66785c] mt-2 max-w-2xl leading-6">
-            Share peace of mind, custom meditations, and stress relief with your friends and family. Send a customizable digital gift card instantly.
+            Give your loved ones the ultimate antidote to modern stress. This thoughtful gift delivers access to a curated sanctuary of soothing practices, mindful meditations, and deep relaxation tools designed to restore balance and quiet the mind.
+          </p>
+          <p className="text-sm text-[#66785c] mt-3 max-w-2xl leading-6">
+            Send a customized digital gift card instantly.
           </p>
         </div>
       </section>

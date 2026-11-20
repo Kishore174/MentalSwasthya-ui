@@ -312,10 +312,11 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{
               fontFamily: "'Cormorant Garamond', serif",
-              fontSize: "1.05rem", fontWeight: 600,
-              color: "#1f2f18", letterSpacing: "-0.01em", lineHeight: 1.1,
+              fontSize: "1.3rem", fontWeight: 700,
+              color: "#1f2f18", letterSpacing: "0.01em", lineHeight: 1.1,
+              whiteSpace: "nowrap",
             }}>
-              MentalSwasthya
+              Mental Swasthya
             </p>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
               <span style={{
@@ -334,9 +335,9 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
             type="button"
             onClick={() => setIsSidebarOpen(false)}
             aria-label="Close navigation menu"
-            className="lg:hidden flex items-center justify-center w-10 h-10 -mr-2 rounded-xl text-[#526447] hover:bg-[#eef6ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d9667]"
+            className="lg:hidden absolute top-1.5 right-1.5 flex items-center justify-center w-8 h-8 rounded-lg text-[#526447] hover:bg-[#eef6ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#7d9667]"
           >
-            <FiX size={20} />
+            <FiX size={18} />
           </button>
         </div>
 

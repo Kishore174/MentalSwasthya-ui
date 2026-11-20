@@ -321,12 +321,10 @@ const DailyXpCard = ({ counts }) => {
           })()}
         </div>
 
-        {totalXp > 0 && (
+        {totalXp > 0 && totalXp < DAILY_XP_GOAL && (
           <div className="min-w-0">
             <p className="text-xs font-semibold text-[#66785c] mt-2 text-center">
-              {totalXp >= DAILY_XP_GOAL
-                ? "Daily goal reached. Wonderful consistency!"
-                : `${DAILY_XP_GOAL - totalXp} XP to go to reach today's goal.`}
+              {`${DAILY_XP_GOAL - totalXp} XP to go to reach today's goal.`}
             </p>
           </div>
         )}
@@ -457,7 +455,7 @@ const MilestoneAchievementsCard = () => {
           </h2>
           <p className={`text-[11px] sm:text-xs font-bold uppercase tracking-[0.08em] sm:tracking-[0.14em] mt-1 ${isDark ? "text-slate-400" : "text-[#66785c]"
             }`}>
-            SUMMARY OF MILESTONES REACHED (TIMES COMPLETED)
+            SUMMARY OF MILESTONES REACHED
           </p>
         </div>
 

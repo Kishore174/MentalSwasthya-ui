@@ -95,7 +95,7 @@ export default function CompletionScreen({
   const nextRewardAt = referralCount >= 3 ? null : referralCount + 1;
 
   return (
-    <div onTouchStart={() => setPausedAutoClose(true)} className="fixed inset-0 z-50 h-dvh flex items-center justify-center bg-gradient-to-br from-[#f0f6f0] via-[#f7fbf7] to-[#eef6f6] px-3 sm:px-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 md:py-6 overflow-y-auto overscroll-contain">
+    <div onTouchStart={() => setPausedAutoClose(true)} className="fixed inset-0 z-50 h-dvh flex items-center justify-center bg-[#f3f8e8] px-3 sm:px-4 md:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:py-4 md:py-6 overflow-y-auto overscroll-contain">
       <style>{`
         ${FONT_IMPORT}
         .ms-serif { font-family: 'Fraunces', serif; }
@@ -164,189 +164,247 @@ export default function CompletionScreen({
         @media (prefers-reduced-motion: reduce) {
           .ms-mount, .ms-aura-anim, .ms-track-fill, .ms-share-btn-attention, .ms-share-nudge-glow { animation: none !important; }
         }
+
+        @keyframes ms-ring {
+          0%   { transform: scale(0.35); opacity: 0.7; }
+          100% { transform: scale(1);    opacity: 0; }
+        }
+        .ms-ring { animation: ms-ring 4.8s ease-out infinite; }
+        @keyframes ms-petal {
+          0%   { transform: translateY(-10px) rotate(0deg);   opacity: 0; }
+          10%  { opacity: 1; }
+          100% { transform: translateY(105vh) rotate(260deg); opacity: 0; }
+        }
+        .ms-petal { animation: ms-petal 9s linear infinite; }
+        .ms-step { animation: ms-rise 0.6s ease-out both; }
+        @media (prefers-reduced-motion: reduce) {
+          .ms-ring, .ms-petal, .ms-step { animation: none; }
+        }
       `}</style>
 
+      {/* Leaf backdrop — full page, sits behind the content */}
+      <svg aria-hidden="true" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
+        style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: -1 }}>
+        <defs>
+          <radialGradient id="ms-bg-glow" cx="50%" cy="48%" r="70%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="55%" stopColor="#f3f8e8" />
+            <stop offset="100%" stopColor="#e4eecf" />
+          </radialGradient>
+          <path id="ms-leaf" d="M0 0 C20 -110 130 -190 260 -210 C255 -80 150 30 0 0 Z" />
+          <path id="ms-vein" d="M6 -4 C80 -60 150 -110 232 -190" fill="none" strokeLinecap="round" />
+        </defs>
+        <rect width="1440" height="900" fill="url(#ms-bg-glow)" />
+        {/* bottom-left cluster */}
+        <g transform="translate(40 880) rotate(-8)">
+          <use href="#ms-leaf" fill="#8aab4f" transform="translate(-60 -40) rotate(-80) scale(0.9)" />
+          <use href="#ms-leaf" fill="#cddfb0" transform="translate(40 -120) rotate(-20) scale(0.8)" />
+          <use href="#ms-leaf" fill="#cddfb0" transform="translate(190 -10) rotate(-5) scale(0.6)" />
+          <use href="#ms-leaf" fill="#8aab4f" transform="translate(140 10) rotate(10) scale(0.7)" />
+          <use href="#ms-leaf" fill="#17563b" transform="translate(20 -30) rotate(-12) scale(1.7)" />
+          <use href="#ms-vein" stroke="#e9f1d8" strokeWidth="9" transform="translate(20 -30) rotate(-12) scale(1.7)" />
+        </g>
+        {/* top-right cluster */}
+        <g transform="translate(1440 0) rotate(180)">
+          <use href="#ms-leaf" fill="#8aab4f" transform="translate(-10 -110) rotate(-55) scale(1.1)" />
+          <use href="#ms-leaf" fill="#cddfb0" transform="translate(60 -40) rotate(-30) scale(1.0)" />
+          <use href="#ms-leaf" fill="#cddfb0" transform="translate(150 -150) rotate(-60) scale(0.6)" />
+          <use href="#ms-leaf" fill="#cddfb0" transform="translate(30 -260) rotate(-70) scale(0.7)" />
+        </g>
+        {/* deep green base bar */}
+        <path d="M360 900 L420 850 L1440 850 L1440 900 Z" fill="#17563b" />
+      </svg>
+
       <div
-        className={`ms-sans w-full max-w-2xl lg:max-w-4xl rounded-[24px] sm:rounded-[28px] bg-white shadow-[0_20px_60px_-15px_rgba(30,48,25,0.18)] border border-[#e7f0e2] my-auto overflow-hidden ${
+        className={`ms-sans relative w-full max-w-5xl my-auto rounded-[28px] sm:rounded-[34px] overflow-hidden grid lg:grid-cols-[0.95fr_1.05fr] bg-white/85 backdrop-blur-xl border border-white shadow-[0_30px_80px_-20px_rgba(23,86,59,0.38)] ${
           mounted ? "ms-mount" : "opacity-0"
         }`}
       >
-        {/* ── Hero ───────────────────────────────────────────── */}
-        <div className="relative px-4 sm:px-6 md:px-10 pt-7 sm:pt-10 pb-6 sm:pb-8 text-center bg-gradient-to-b from-[#f4faf1] to-white">
-          <div className="relative mx-auto w-32 h-[6.5rem] sm:w-40 sm:h-32">
-            {mounted && (
-              <div className="ms-aura-anim absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(184,215,205,0.55)_0%,rgba(184,215,205,0)_70%)]" />
-            )}
-            <svg viewBox="0 0 200 160" className="relative w-full h-full overflow-visible">
-              <defs>
-                <linearGradient id="ms-leaf-1" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#c3dec5" />
-                  <stop offset="100%" stopColor="#a9cdb7" />
-                </linearGradient>
-                <linearGradient id="ms-leaf-2" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#b9d7cd" />
-                  <stop offset="100%" stopColor="#96c0b8" />
-                </linearGradient>
-              </defs>
-              <circle cx="75" cy="50" r="22" fill="url(#ms-leaf-1)" opacity="0.85" />
-              <circle cx="125" cy="50" r="22" fill="url(#ms-leaf-1)" opacity="0.85" />
-              <circle cx="100" cy="35" r="25" fill="url(#ms-leaf-2)" opacity="0.9" />
-              <circle cx="60" cy="70" r="18" fill="#dceade" opacity="0.75" />
-              <circle cx="140" cy="70" r="18" fill="#dbe7e7" opacity="0.75" />
-              <path
-                d="M96 95 C96 90 94 75 92 65 C92 65 80 50 78 48 M98 68 C98 68 112 52 115 50 M104 95 C104 90 106 75 108 65"
-                stroke="#5c6f52" strokeWidth="2" strokeLinecap="round" fill="none"
+        {/* ══ Left: celebration panel ══════════════════════════ */}
+        <div className="relative overflow-hidden px-6 sm:px-10 py-9 sm:py-12 text-white bg-gradient-to-br from-[#0d4130] via-[#17563b] to-[#24754f]">
+          {/* ripple rings */}
+          <div aria-hidden="true" className="pointer-events-none absolute -top-24 -right-24 w-[26rem] h-[26rem]">
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="ms-ring absolute inset-0 rounded-full border border-white/25" style={{ animationDelay: `${i * 1.6}s` }} />
+            ))}
+          </div>
+          {/* drifting petals */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            {[8, 22, 37, 52, 66, 80, 91].map((left, i) => (
+              <span
+                key={left}
+                className="ms-petal absolute -top-6 block w-2.5 h-4 rounded-[100%_0_100%_0] bg-[#b9d98a]/70"
+                style={{ left: `${left}%`, animationDelay: `${i * 0.9}s`, animationDuration: `${7 + (i % 3) * 2}s` }}
               />
-              <path d="M96 95 L96 110 L104 110 L104 95 Z" fill="#5c6f52" />
-              <circle cx="100" cy="95" r="18" stroke="#9db287" strokeWidth="1" fill="#ffffff" strokeDasharray="3 3" />
-              <circle cx="100" cy="85" r="4.5" fill="#4b5563" />
-              <path d="M100 89.5 L100 99" stroke="#4b5563" strokeWidth="2.5" strokeLinecap="round" />
-              <path d="M88 103 C92 98 108 98 112 103" stroke="#4b5563" strokeWidth="3" strokeLinecap="round" fill="none" />
-              <path d="M94 92 C90 95 90 101 94 101 M106 92 C110 95 110 101 106 101" stroke="#4b5563" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-            </svg>
+            ))}
           </div>
 
-          <h1 className="ms-serif text-[2rem] sm:text-[2.3rem] leading-none font-medium text-[#1e3019] mt-3 sm:mt-4">
-            Well done.
-          </h1>
-          <p className="text-[13.5px] text-[#5c6f52] mt-3 max-w-sm mx-auto leading-relaxed">
-            You showed up for your mind today. Take a moment — notice the stillness you just made room for.
-          </p>
-        </div>
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/12 border border-white/20 px-3 py-1 text-[10.5px] font-semibold tracking-[0.18em] uppercase text-[#d6ecb8]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#b9d98a]" /> Session complete
+            </span>
 
-        <div className="px-4 sm:px-6 md:px-10 pb-6 sm:pb-8">
-          {/* ── Session timeline ── */}
-          <div className="rounded-2xl bg-[#f7faf5] border border-[#e6efe0] px-2 sm:px-4 py-4 sm:py-5 -mt-1">
-            <div className="relative grid grid-cols-4 gap-0.5 sm:gap-1">
-              <div className="absolute left-[12.5%] right-[12.5%] top-[18px] h-px bg-[#cfe0c6]" />
-              {STEPS.map((s) => (
-                <div key={s.key} className="relative flex flex-col items-center text-center">
-                  <div className="w-9 h-9 rounded-full bg-white border border-[#cfe0c6] flex items-center justify-center text-sm shadow-sm">
-                    {s.icon}
-                  </div>
-                  <span className="text-[9.5px] font-semibold text-[#3a4d31] mt-2 leading-tight break-words max-w-full">
-                    {s.label}
-                  </span>
-                  <span className="text-[9px] text-[#7d9667] mt-0.5">{stepStatus[s.key]}</span>
-                </div>
-              ))}
+            {/* emblem */}
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 mt-7">
+              {mounted && <div className="ms-aura-anim absolute -inset-5 rounded-full bg-[radial-gradient(circle,rgba(185,217,138,0.55)_0%,rgba(185,217,138,0)_70%)]" />}
+              <svg viewBox="0 0 120 120" className="relative w-full h-full">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" strokeDasharray="3 6" />
+                <circle cx="60" cy="60" r="42" fill="#f3f8e8" />
+                {/* lotus petals */}
+                <g fill="#8aab4f" opacity="0.9">
+                  <path d="M60 78 C46 72 40 58 46 46 C54 52 60 62 60 78Z" />
+                  <path d="M60 78 C74 72 80 58 74 46 C66 52 60 62 60 78Z" />
+                </g>
+                <path d="M60 80 C50 66 52 48 60 36 C68 48 70 66 60 80Z" fill="#17563b" />
+                <path d="M60 80 L60 52" stroke="#f3f8e8" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </div>
-          </div>
 
-          {/* ── Referral program ─────────────────────────── */}
-          <div className="rounded-2xl border border-[#e1ebd9] mt-4 p-4 sm:p-5 md:p-6">
-            <div className="flex items-center gap-2">
-              <span className="w-7 h-7 rounded-full bg-[#f0f6ea] flex items-center justify-center">
-                <Gift size={14} className="text-[#7d9667]" />
-              </span>
-              <h3 className="ms-serif text-[1.2rem] text-[#1e3019]">Share the love, get more free!</h3>
-            </div>
-            <p className="text-[12.5px] text-[#5c6f52] leading-relaxed mt-2">
-              If your loved ones register using your shared link, you will get an additional 1 month subscription absolutely free (for 3 successful registrations).
+            <h1 className="ms-serif text-[2.6rem] sm:text-[3.4rem] leading-[1.02] font-medium mt-6">
+              Well done<span className="text-[#b9d98a]">.</span>
+            </h1>
+            <p className="text-[14px] text-white/75 mt-3 max-w-sm leading-relaxed">
+              You showed up for your mind today. Take a moment — notice the stillness you just made room for.
             </p>
 
-            {/* Reward track */}
-            <div className="mt-5">
-              <div className="relative h-1.5 rounded-full bg-[#e6efe0] overflow-hidden">
-                <div
-                  className="ms-track-fill absolute inset-y-0 left-0 rounded-full bg-[#7d9667]"
-                  style={{ width: `${(referralCount / 3) * 100}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-2">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="flex flex-col items-center gap-1 w-[60px]">
-                    <span
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                        n <= referralCount
-                          ? "bg-[#7d9667] text-white"
-                          : "bg-white border border-[#cfe0c6] text-[#9db287]"
-                      }`}
-                    >
-                      {n <= referralCount ? <Check size={11} /> : n}
-                    </span>
-                    <span className="text-[9.5px] text-[#8a8f7f]">Month {n}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="inline-flex items-center gap-2 mt-5 rounded-2xl bg-white/10 border border-white/15 px-4 py-2.5">
+              <span className="text-lg" aria-hidden="true">🔥</span>
+              <span className="ms-serif text-2xl leading-none">{streakDays}</span>
+              <span className="text-[11px] uppercase tracking-[0.14em] text-white/70">day streak</span>
             </div>
 
-            {/* Next reward focus card */}
-            {nextRewardAt ? (
-              <div className="mt-5 rounded-xl bg-[#f7faf5] border border-[#e6efe0] p-3 sm:p-4">
-                <p className="text-[12px] font-semibold text-[#22331b]">
-                  Invite one more friend to unlock one month subscription free!
-                </p>
-                <div className="flex flex-col sm:flex-row items-stretch gap-2 mt-3">
-                  <input
-                    type="text"
-                    readOnly
-                    value={refLink}
-                    onFocus={(e) => e.target.select()}
-                    aria-label="Your referral link"
-                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 rounded-lg bg-white border border-[#dbe7d3] px-3 py-2 text-base sm:text-xs font-medium text-[#3a4d31] outline-none select-all"
-                  />
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={copyReferralLink}
-                      onMouseEnter={() => setPausedAutoClose(true)}
-                      className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-lg bg-[#2e3b29] hover:bg-[#1f281b] text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
-                    >
-                      <Copy size={13} /> Copy
-                    </button>
-                    <button
-                      type="button"
-                      onClick={shareReferralLink}
-                      onMouseEnter={() => setPausedAutoClose(true)}
-                      className="ms-share-btn-attention relative flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-lg bg-gradient-to-r from-[#0a331c] to-[#1c472d] hover:from-[#062413] hover:to-[#133520] text-white font-bold text-xs transition-all duration-300 border-2 border-[#7d9667] flex items-center justify-center gap-1.5 whitespace-nowrap shadow-md cursor-pointer"
-                    >
-                      <span className="relative flex h-2 w-2 mr-0.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#b8e2a2] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#b8e2a2]"></span>
+            {/* today's journey */}
+            <ol className="mt-8 space-y-0">
+              {STEPS.map((s, i) => (
+                <li key={s.key} className="ms-step relative flex items-center gap-3.5 pb-4 last:pb-0" style={{ animationDelay: `${0.35 + i * 0.12}s` }}>
+                  {i < STEPS.length - 1 && <span aria-hidden="true" className="absolute left-[17px] top-9 bottom-0 w-px bg-white/20" />}
+                  <span className="relative w-9 h-9 shrink-0 rounded-full bg-white/12 border border-white/25 flex items-center justify-center text-sm">
+                    {s.icon}
+                    {!/not yet/i.test(String(stepStatus[s.key] || "")) && (
+                      <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#b9d98a] text-[#0d4130] flex items-center justify-center">
+                        <Check size={10} strokeWidth={3} />
                       </span>
-                      <Share2 size={13} className="text-[#cde8ba]" />
-                      <span>Share</span>
-                    </button>
+                    )}
+                  </span>
+                  <span className="flex-1 text-[13.5px] font-semibold">{s.label}</span>
+                  <span className="text-[11.5px] text-[#d6ecb8]">{stepStatus[s.key]}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* ══ Right: rewards & actions ═════════════════════════ */}
+        <div className="px-5 sm:px-10 py-8 sm:py-12 flex flex-col">
+          <div className="flex items-center gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-[#17563b] text-[#d6ecb8] flex items-center justify-center shadow-md">
+              <Gift size={16} />
+            </span>
+            <div>
+              <p className="text-[10.5px] font-semibold tracking-[0.18em] uppercase text-[#7d9667]">Referral rewards</p>
+              <h3 className="ms-serif text-[1.45rem] sm:text-[1.7rem] leading-tight text-[#12301f]">Share the love, get more free!</h3>
+            </div>
+          </div>
+          <p className="text-[13px] text-[#4f6648] leading-relaxed mt-3">
+            If your loved ones register using your shared link, you will get an additional 1 month subscription absolutely free (for 3 successful registrations).
+          </p>
+
+          {/* reward medallions */}
+          <div className="relative mt-7">
+            <div className="absolute left-[16.6%] right-[16.6%] top-7 h-1 rounded-full bg-[#e3ecd3] overflow-hidden">
+              <div className="ms-track-fill h-full rounded-full bg-gradient-to-r from-[#8aab4f] to-[#17563b]" style={{ width: `${(Math.min(Math.max(referralCount - 1, 0), 2) / 2) * 100}%` }} />
+            </div>
+            <div className="relative grid grid-cols-3">
+              {[1, 2, 3].map((n) => {
+                const done = n <= referralCount;
+                return (
+                  <div key={n} className="flex flex-col items-center gap-2">
+                    <span
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ring-4 ring-white transition-all ${
+                        done
+                          ? "bg-gradient-to-br from-[#2f8a5d] to-[#17563b] text-white shadow-[0_8px_20px_-6px_rgba(23,86,59,0.6)]"
+                          : "bg-[#f1f6e6] border-2 border-dashed border-[#b8cf98] text-[#8aab4f]"
+                      }`}
+                    >
+                      {done ? <Check size={22} strokeWidth={3} /> : <Gift size={20} />}
+                    </span>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-5 rounded-xl bg-[#f7faf5] border border-[#e6efe0] p-4 flex items-center gap-2.5">
-                <Sparkles size={16} className="text-[#7d9667] shrink-0" />
-                <p className="text-[12.5px] font-semibold text-[#22331b]">
-                  All three months unlocked — Premium's on us through the year.
-                </p>
-              </div>
-            )}
-            {!nextRewardAt && (
-              <p className="text-[12.5px] text-[#5c6f52] text-center mt-3 leading-relaxed">
-                If you enjoy using <strong>Mental Swasthya</strong>, please share it with your friends and family.
-              </p>
-            )}
+                );
+              })}
+            </div>
           </div>
 
-          <p
-            role="status"
-            aria-live="polite"
-            className="text-xs text-[#7d9667] text-center mt-4 min-h-[1rem]"
-          >
+          {/* focus card */}
+          {nextRewardAt ? (
+            <div className="mt-7 rounded-2xl p-4 sm:p-5 bg-gradient-to-br from-[#f3f8e8] to-[#e9f2d8] border border-[#d6e5bd]">
+              <p className="text-[13px] font-semibold text-[#12301f]">
+                Invite one more friend to unlock one month subscription free!
+              </p>
+              <div className="flex flex-col sm:flex-row items-stretch gap-2 mt-3">
+                <input
+                  type="text"
+                  readOnly
+                  value={refLink}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Your referral link"
+                  className="w-full min-w-0 min-h-[44px] sm:min-h-0 rounded-xl bg-white border border-[#d6e5bd] px-3 py-2 text-base sm:text-xs font-medium text-[#3a4d31] outline-none select-all"
+                />
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={copyReferralLink}
+                    onMouseEnter={() => setPausedAutoClose(true)}
+                    className="flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-3.5 py-2 rounded-xl bg-white border border-[#c7dba6] hover:bg-[#f3f8e8] text-[#17563b] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 whitespace-nowrap"
+                  >
+                    <Copy size={13} /> Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={shareReferralLink}
+                    onMouseEnter={() => setPausedAutoClose(true)}
+                    className="ms-share-btn-attention relative flex-1 sm:flex-none min-h-[44px] sm:min-h-[36px] px-4 py-2 rounded-xl bg-gradient-to-r from-[#0a331c] to-[#1c472d] hover:from-[#062413] hover:to-[#133520] text-white font-bold text-xs transition-all duration-300 border-2 border-[#7d9667] flex items-center justify-center gap-1.5 whitespace-nowrap shadow-md cursor-pointer"
+                  >
+                    <span className="relative flex h-2 w-2 mr-0.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#b8e2a2] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#b8e2a2]"></span>
+                    </span>
+                    <Share2 size={13} className="text-[#cde8ba]" />
+                    <span>Share</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-7 rounded-2xl bg-gradient-to-br from-[#f3f8e8] to-[#e9f2d8] border border-[#d6e5bd] p-4 flex items-center gap-2.5">
+              <Sparkles size={16} className="text-[#17563b] shrink-0" />
+              <p className="text-[13px] font-semibold text-[#12301f]">
+                All three months unlocked — Premium's on us through the year.
+              </p>
+            </div>
+          )}
+          {!nextRewardAt && (
+            <p className="text-[12.5px] text-[#4f6648] text-center mt-3 leading-relaxed">
+              If you enjoy using <strong>Mental Swasthya</strong>, please share it with your friends and family.
+            </p>
+          )}
+
+          <p role="status" aria-live="polite" className="text-xs text-[#4f7a3c] text-center mt-4 min-h-[1rem]">
             {localApiMessage || apiMessage}
           </p>
 
-          {/* ── Actions ───────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          {/* actions */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-auto pt-5">
             <button
               type="button"
               onClick={handleDone}
-              className="flex-1 min-h-[44px] rounded-xl bg-[#7d9667] hover:bg-[#6f865c] text-white px-5 py-3 text-sm font-semibold shadow-sm transition-colors"
+              className="flex-1 min-h-[48px] rounded-2xl bg-[#17563b] hover:bg-[#0f4630] text-white px-5 py-3 text-sm font-semibold shadow-[0_10px_24px_-8px_rgba(23,86,59,0.7)] transition-colors"
             >
               Return to dashboard
             </button>
             <button
               type="button"
               onClick={handleTomorrow}
-              className="flex-1 min-h-[44px] rounded-xl border border-[#e1ebd9] hover:bg-[#f7faf5] text-[#5c6f52] px-5 py-3 text-sm font-semibold transition-colors"
+              className="flex-1 min-h-[48px] rounded-2xl border border-[#cfe0b4] hover:bg-[#f3f8e8] text-[#3a5b32] px-5 py-3 text-sm font-semibold transition-colors"
             >
               I'll be back tomorrow
             </button>

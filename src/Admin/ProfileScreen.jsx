@@ -8,7 +8,6 @@ import {
   FiLock,
   FiEye,
   FiEyeOff,
-  FiCheck,
   FiShield,
   FiSave,
   FiCheckCircle,
@@ -17,6 +16,8 @@ import {
   FiCamera,
   FiTrash2,
   FiAlertTriangle,
+  FiInfo,
+  FiCalendar,
   FiX
 } from "react-icons/fi";
 import { FaFire } from "react-icons/fa";
@@ -88,6 +89,7 @@ const ProfileScreen = () => {
 
   // Delete account
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [weeklyInfoOpen, setWeeklyInfoOpen] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -599,10 +601,29 @@ const ProfileScreen = () => {
 
           {/* Weekly off day chooser */}
           <div className="space-y-3 pt-4 border-t border-[#edf4e8]">
-            <label className="text-xs font-bold uppercase tracking-wider text-[#526543] block">
-              Choose Your Weekly Off Day(s)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+            <div className="flex items-center gap-2">
+              <FiCalendar size={14} className="text-[#526543]" />
+              <label className="text-xs font-bold uppercase tracking-wider text-[#526543]">
+                Weekly off
+              </label>
+              <button
+                type="button"
+                onClick={() => setWeeklyInfoOpen((o) => !o)}
+                onMouseEnter={() => setWeeklyInfoOpen(true)}
+                onMouseLeave={() => setWeeklyInfoOpen(false)}
+                aria-label="About weekly off"
+                aria-expanded={weeklyInfoOpen}
+                className="w-6 h-6 rounded-full flex items-center justify-center text-[#7d9667] hover:bg-[#eef6ea] cursor-pointer"
+              >
+                <FiInfo size={14} />
+              </button>
+            </div>
+            {weeklyInfoOpen && (
+              <p role="note" className="text-xs text-[#4f6648] bg-[#f3f8e8] border border-[#d6e5bd] rounded-xl px-3 py-2 leading-relaxed">
+                Your streak continues on your weekly off — it won't break if you skip that day. You also won't get any reminders on your weekly off.
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
               {DAYS_OF_WEEK.map((day) => {
                 const isSelected = weeklyOff.includes(day.id);
                 return (
@@ -610,29 +631,21 @@ const ProfileScreen = () => {
                     key={day.id}
                     type="button"
                     onClick={() => handleToggleDay(day.id)}
-                    className={`relative p-3.5 rounded-2xl flex flex-col items-center justify-center gap-1 border transition-all cursor-pointer select-none text-center ${
+                    aria-pressed={isSelected}
+                    className={`min-h-[40px] px-4 rounded-full text-xs font-bold tracking-wide border transition-colors cursor-pointer select-none ${
                       isSelected
-                        ? "bg-[#0a331c] text-white border-[#0a331c] shadow-md ring-2 ring-[#7d9667]/40 scale-[1.02]"
-                        : "bg-[#f8fbf6] text-[#29401f] border-[#d8e5d2] hover:bg-[#eef6ea] hover:border-[#b8cea9]"
+                        ? "bg-[#0a331c] text-white border-[#0a331c] shadow-sm"
+                        : "bg-[#f1f6ec] text-[#29401f] border-[#d8e5d2] hover:bg-[#e6f0df]"
                     }`}
                   >
-                    {isSelected && (
-                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-400 text-[#0a331c] flex items-center justify-center text-[10px] font-black">
-                        <FiCheck size={10} />
-                      </span>
-                    )}
-                    <span className="text-sm font-black">{day.id}</span>
-                    <span
-                      className={`text-[11px] font-medium ${
-                        isSelected ? "text-emerald-200" : "text-[#66785c]"
-                      }`}
-                    >
-                      {day.full}
-                    </span>
+                    {day.id}
                   </button>
                 );
               })}
             </div>
+            <p className="text-xs text-[#66785c]">
+              Your weekly day off: <span className="font-semibold text-[#29401f]">{getDayNamesFormatted() || "Sunday"}</span>
+            </p>
           </div>
 
         </div>

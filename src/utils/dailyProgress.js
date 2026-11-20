@@ -34,7 +34,7 @@ export const getTodayProgress = () => {
   const intentions = readList("mentalSwasthya:intentions").filter((i) => isToday(i.date || i.timestamp)).length;
   const plays = readList("mentalswasthya_play_history").filter((p) => isToday(p.timestamp));
   const medSeconds = plays
-    .filter((p) => p.playlistType === "/meditation" || p.type === "meditation")
+    .filter((p) => !p.silent && (p.playlistType === "/meditation" || p.type === "meditation")) // silent sessions are added below
     .reduce((sum, p) => sum + (p.duration || 180), 0); // history entries without a duration count as ~3 min
   const affirmations = plays.filter((p) => p.playlistType === "/affirmation" || p.type === "affirmation").length;
 
@@ -53,7 +53,7 @@ export const getTodayProgress = () => {
   return {
     intention: countLabel(intentions),
     breathing: minutesLabel(breathingSeconds),
-    meditation1: minutesLabel(medSeconds),
+    meditation1: minutesLabel(medSeconds + silentSeconds), // guided + silent meditation
     meditation2: minutesLabel(silentSeconds),
     affirmation: countLabel(affirmations),
   };

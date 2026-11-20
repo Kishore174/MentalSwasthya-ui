@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FiArrowRight, FiHeart, FiSun, FiWind } from "react-icons/fi";
+import { FiArrowRight, FiAward, FiBarChart2, FiBell, FiGlobe, FiHeart, FiMusic, FiShield, FiSun, FiTarget, FiWind } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import loginicon from "../Assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
@@ -16,31 +16,49 @@ if (!document.head.querySelector('[href*="Cormorant"]')) document.head.appendChi
 const tools = [
   {
     num: "01",
-    title: "Breathing",
+    title: "Daily Intentions",
+    icon: <FiTarget size={20} />,
+    color: "#3f6f8f",
+    accent: "rgba(63,111,143,0.08)",
+    border: "rgba(63,111,143,0.18)",
+    text: "Align your daily actions with your core values. An intuitive interface trains deliberate focus, so each day begins with purpose instead of autopilot.",
+  },
+  {
+    num: "02",
+    title: "Regulated Breathing",
     icon: <FiWind size={20} />,
     color: "#4a7c59",
     accent: "rgba(74,124,89,0.08)",
     border: "rgba(74,124,89,0.18)",
-    text: "Mindful breathing is one of the quickest ways to reconnect the mind and body. Slow, controlled diaphragmatic breathing can calm the nervous system, support a relaxation response, and help lower physical signs of stress such as a racing heart or tense breathing.",
+    text: "Slow-paced, diaphragmatic breathwork animations guide you to engage the vagus nerve, easing your body out of fight-or-flight and lowering stress levels within moments.",
   },
   {
-    num: "02",
-    title: "Meditation",
+    num: "03",
+    title: "Sustained & Silent Meditation",
     icon: <FiSun size={20} />,
     color: "#7d6b3a",
     accent: "rgba(125,107,58,0.07)",
     border: "rgba(125,107,58,0.18)",
-    text: "Meditation trains attention toward the present moment with less judgment. With regular practice, it can reduce negative thought loops, improve self-awareness, increase patience, and build the clarity needed to respond to daily challenges with steadier focus.",
+    text: "Sustained practice enhances neuroplasticity, while silence lowers cortisol and reduces sensory overload — unlocking sharper mental focus and steadier emotional regulation.",
   },
   {
-    num: "03",
-    title: "Affirmation",
+    num: "04",
+    title: "Resilient Affirmations",
     icon: <FiHeart size={20} />,
     color: "#7d4a67",
     accent: "rgba(125,74,103,0.07)",
     border: "rgba(125,74,103,0.18)",
-    text: "Positive affirmations help replace self-critical thoughts with empowering statements. This shift can strengthen self-image, make stressors feel more manageable, and support long-term emotional resilience through a healthier inner dialogue.",
+    text: "Deliberate cognitive restructuring replaces self-doubt with confidence, building supportive neural pathways and lasting emotional resilience.",
   },
+];
+
+/* ─── Consistency features ───────────────────────────────── */
+const habitFeatures = [
+  { icon: <FiBarChart2 size={18} />, title: "Progress analytics", text: "See your momentum at a glance." },
+  { icon: <FiBell size={18} />, title: "Gentle streak reminders", text: "Nudges that support, never nag." },
+  { icon: <FiShield size={18} />, title: "Streak safety nets", text: "A missed day won't undo your progress." },
+  { icon: <FiAward size={18} />, title: "Milestone certificates", text: "Celebrate every benchmark you reach." },
+  { icon: <FiMusic size={18} />, title: "Curated soundscapes", text: "Sound engineered for deep concentration." },
 ];
 
 /* ─── Scroll reveal hook ─────────────────────────────────── */
@@ -263,7 +281,7 @@ const AboutMentalSwasthya = () => {
             transform: heroVisible ? "none" : "translateY(16px)",
             transition: "opacity 0.7s 0.5s, transform 0.7s 0.5s",
           }}>
-            A simple, clutter-free wellness companion designed to help you breathe, pause, reset, and return to yourself — whenever you need it most.
+            Welcome to your space for daily calm. Simple, science-backed tools to help you reduce stress, build resilience, and find true peace of mind amid modern chaos.
           </p>
 
           {/* Stat pills */}
@@ -274,7 +292,7 @@ const AboutMentalSwasthya = () => {
             transition: "opacity 0.7s 0.65s, transform 0.7s 0.65s",
           }}>
             {[
-              { label: "Tools", value: "3+" },
+              { label: "Core tools", value: "4" },
               { label: "Daily streaks", value: "Active" },
               { label: "Insights", value: "Personal" },
             ].map(({ label, value }) => (
@@ -311,12 +329,12 @@ const AboutMentalSwasthya = () => {
                 fontWeight: 600, color: "#1a2416",
                 lineHeight: 1.0, letterSpacing: "-0.025em",
               }}>
-                Science-backed<br />
-                <em style={{ fontStyle: "italic", color: "#7d9667" }}>wellness tools</em>
+                Our science-backed<br />
+                <em style={{ fontStyle: "italic", color: "#7d9667" }}>approach</em>
               </h2>
             </div>
             <p style={{ fontSize: 14, color: "#7a8f72", lineHeight: 1.75, maxWidth: 340, fontWeight: 300 }}>
-              In the modern era, mental health has become a critical focal point. Digital dependency, urbanisation, and constant connectivity can increase stress, burnout, and emotional fatigue.
+              True wellness is rooted in empirical clinical science. We curated a simple yet powerful digital toolkit to stimulate your parasympathetic nervous system and build supportive neural pathways.
             </p>
           </div>
         </Reveal>
@@ -425,26 +443,106 @@ const AboutMentalSwasthya = () => {
 
               <div style={{ position: "relative", zIndex: 1 }}>
                 <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(168,200,150,0.45)", marginBottom: 16 }}>
-                  Why It Matters
+                  The Modern Challenge
                 </p>
                 <h3 style={{
                   fontFamily: "'Cormorant Garamond', serif",
                   fontSize: "clamp(2rem, 3.5vw, 3rem)", fontWeight: 600,
                   color: "#e8f0e3", lineHeight: 1.05, letterSpacing: "-0.02em",
                 }}>
-                  Mental wellness for<br />
-                  <em style={{ fontStyle: "italic", color: "#a8c896" }}>modern daily pressure</em>
+                  Stepping off the<br />
+                  <em style={{ fontStyle: "italic", color: "#a8c896" }}>treadmill of acceleration</em>
                 </h3>
               </div>
 
               <div style={{ position: "relative", zIndex: 1 }}>
                 <p style={{ fontSize: 14, color: "rgba(232,240,227,0.58)", lineHeight: 1.8, fontWeight: 300, marginBottom: 18 }}>
-                  MentalSwasthya is designed as a simple, minimalist digital haven for people seeking inner peace in a fast-moving world. It brings together science-backed wellness tools that support calm, clarity, and resilience.
+                  We live in an era of constant digital stimulation, work demands, and endless notifications. This hyper-connected lifestyle keeps our nervous systems in a chronic state of fight-or-flight — leading to digital fatigue, elevated stress, and emotional depletion. We run on autopilot and lose touch with our inner presence.
                 </p>
                 <p style={{ fontSize: 14, color: "rgba(232,240,227,0.4)", lineHeight: 1.8, fontWeight: 300 }}>
-                  Navigating modern pressures requires more than endurance — it calls for a proactive approach to emotional and social well-being.
+                  Mental Swasthya was created to change that. It is an accessible, daily canvas to help you pause, and move your mind into a state of rest, clarity, and balance.
                 </p>
               </div>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* ── Consistency & joy ── */}
+        <div style={{ maxWidth: 1080, margin: "72px auto 0" }}>
+          <Reveal>
+            <div style={{ textAlign: "center", maxWidth: 680, margin: "0 auto 40px" }}>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667", marginBottom: 14 }}>
+                Built for the Long Run
+              </p>
+              <h2 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)", fontWeight: 600,
+                color: "#1a2416", lineHeight: 1.02, letterSpacing: "-0.025em", marginBottom: 18,
+              }}>
+                Designed for consistency<br />
+                <em style={{ fontStyle: "italic", color: "#7d9667" }}>and joy</em>
+              </h2>
+              <p style={{ fontSize: 14.5, color: "#6b7f63", lineHeight: 1.8, fontWeight: 300 }}>
+                Building a wellness habit takes support. Mental Swasthya pairs a hassle-free, intuitive experience with the little things that keep you going — so it fits seamlessly into your unique daily schedule.
+              </p>
+            </div>
+          </Reveal>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: 16 }}>
+            {habitFeatures.map((f, i) => (
+              <Reveal key={f.title} delay={i * 0.08}>
+                <div style={{
+                  height: "100%", padding: "24px 22px", borderRadius: 20,
+                  background: "#ffffff", border: "1.5px solid #e8eee3",
+                  boxShadow: "0 2px 12px rgba(22,35,20,0.05)",
+                }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, marginBottom: 16,
+                    background: "rgba(125,150,103,0.12)", border: "1px solid rgba(125,150,103,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center", color: "#4a7c59",
+                  }}>
+                    {f.icon}
+                  </div>
+                  <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.3rem", fontWeight: 600, color: "#1a2416", lineHeight: 1.1, marginBottom: 8 }}>
+                    {f.title}
+                  </h3>
+                  <p style={{ fontSize: 13, color: "#7a8f72", lineHeight: 1.65 }}>{f.text}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Community ── */}
+        <div style={{ maxWidth: 1080, margin: "72px auto 0" }}>
+          <Reveal>
+            <div className="ams-community" style={{
+              borderRadius: 28, textAlign: "center", position: "relative", overflow: "hidden",
+              background: "linear-gradient(160deg, #f1f7ea 0%, #e3eed8 100%)",
+              border: "1.5px solid #d6e5bd",
+            }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 16, margin: "0 auto 20px",
+                background: "#1e3019", color: "#a8c896",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <FiGlobe size={22} />
+              </div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7d9667", marginBottom: 14 }}>
+                Our Community
+              </p>
+              <h3 style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "clamp(1.9rem, 3.6vw, 3rem)", fontWeight: 600,
+                color: "#1a2416", lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 18,
+              }}>
+                Join our <em style={{ fontStyle: "italic", color: "#4a7c59" }}>global community</em>
+              </h3>
+              <p style={{ fontSize: 14.5, color: "#556b50", lineHeight: 1.8, maxWidth: 620, margin: "0 auto 14px", fontWeight: 300 }}>
+                Whether you want to escape digital fatigue, stay steady under workplace pressure, or simply enjoy a dedicated moment of daily relaxation, your curated wellness ritual awaits here.
+              </p>
+              <p style={{ fontSize: 14.5, color: "#556b50", lineHeight: 1.8, maxWidth: 620, margin: "0 auto", fontWeight: 400 }}>
+                We are proud to support people around the world discovering inner peace, building emotional resilience, and reclaiming their cognitive rest — one day at a time.
+              </p>
             </div>
           </Reveal>
         </div>
@@ -556,6 +654,7 @@ const AboutMentalSwasthya = () => {
         .ams-section-head { margin-bottom: 64px !important; }
         .ams-tool-card { padding: 36px 32px; }
         .ams-context { padding: 52px 56px; grid-template-columns: 1fr 1fr; gap: 48px; }
+        .ams-community { padding: 56px 48px; }
         .ams-footer { padding: 80px 48px 60px; }
         .ams-cta { padding: 36px 44px; align-items: center; }
         @media (max-width: 768px) {
@@ -565,6 +664,7 @@ const AboutMentalSwasthya = () => {
           .ams-main { padding: 48px 24px 0; }
           .ams-section-head { margin-bottom: 40px !important; }
           .ams-context { grid-template-columns: 1fr; padding: 36px 28px; gap: 24px; }
+          .ams-community { padding: 40px 24px; }
           .ams-footer { padding: 48px 24px 40px; }
           .ams-cta { padding: 28px 24px; flex-direction: column; align-items: flex-start; gap: 24px; }
         }
