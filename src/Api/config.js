@@ -1,13 +1,9 @@
 import axios from "axios";
 import { getDeviceId } from "../utils/device";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "https://api.mentalswasthya.com/api";
-    // process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "";
 
-const API_KEY =
-  process.env.REACT_APP_API_KEY ||
-  "dyUIT372362iljkmsd,9zjs812`@@32389nmidhscjsdnhsuxe4e5rc67ivhjkp9,.,";
+const API_KEY = process.env.REACT_APP_API_KEY ||"";
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
